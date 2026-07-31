@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 11px; color: #222; margin: 0; padding: 24px; }
+    .header { border-bottom: 3px solid #003865; padding-bottom: 12px; margin-bottom: 16px; }
+    .header h1 { font-size: 16px; color: #003865; margin: 0 0 4px 0; }
+    .header .subtitulo { font-size: 12px; color: #555; }
+    .meta { display: flex; justify-content: space-between; margin-bottom: 16px; font-size: 10px; color: #555; }
+    .bloque { margin-bottom: 14px; }
+    .bloque h2 { font-size: 12px; color: #003865; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+    th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; font-size: 10px; }
+    th { background: #f2f6fa; color: #003865; }
+    .total { text-align: right; font-size: 13px; font-weight: bold; color: #003865; margin-top: 8px; }
+    .footer { margin-top: 20px; font-size: 9px; color: #777; border-top: 1px solid #ddd; padding-top: 8px; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Cotización de Seguro de Viaje — SENIOR 79+</h1>
+    <div class="subtitulo">Seguros Atlas (DINE)</div>
+  </div>
+
+  <div class="meta">
+    <span>Folio: <?= data.folio ?></span>
+    <span>Vigencia de la cotización: <?= data.vigenciaTexto ?></span>
+  </div>
+
+  <div class="bloque">
+    <h2>Datos del titular</h2>
+    <p>
+      <strong>Titular:</strong> <?= data.titular ?><br>
+      <strong>Producto:</strong> <?= data.producto ?><br>
+      <strong>Tipo:</strong> <?= data.tipoProducto ?>
+    </p>
+  </div>
+
+  <? if (!data.esAnualMultiviaje) { ?>
+  <div class="bloque">
+    <h2>Vigencia del viaje</h2>
+    <p>
+      <strong>Fecha de inicio:</strong> <?= data.fechaInicio ?><br>
+      <strong>Fecha de fin:</strong> <?= data.fechaFin ?>
+    </p>
+  </div>
+  <? } else { ?>
+  <div class="bloque">
+    <h2>Vigencia del producto</h2>
+    <p>Producto Anual Multiviaje — cobertura anual, sin fechas fijas de viaje.</p>
+  </div>
+  <? } ?>
+
+  <div class="bloque">
+    <h2>Asegurados</h2>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Nombre</th><th>Edad</th><th>Prima</th></tr>
+      </thead>
+      <tbody>
+        <? data.asegurados.forEach(function(asegurado) { ?>
+        <tr>
+          <td><?= asegurado.numero ?></td>
+          <td><?= asegurado.nombre ?></td>
+          <td><?= asegurado.edad ?></td>
+          <td><?= asegurado.prima ?></td>
+        </tr>
+        <? }); ?>
+      </tbody>
+    </table>
+    <div class="total">Prima total: <?= data.primaTotal ?></div>
+  </div>
+
+  <div class="footer">
+    Cotización sujeta a autorización de Seguros Atlas. Tiempo de respuesta estimado: 72 horas hábiles.<br>
+    Documento generado automáticamente — folio <?= data.folio ?>.
+  </div>
+
+</body>
+</html>
