@@ -199,6 +199,51 @@ function enviarWebhookPowerAutomate_(archivoPdf, data) {
 }
 
 // ============================================================
+// PRUEBA MANUAL (sin depender del trigger del formulario)
+// ============================================================
+
+/**
+ * Ejecutar directamente desde el editor (▶) para validar la generación
+ * del PDF y su guardado en Drive con datos hardcoded, sin necesidad de
+ * un envío real del formulario (por eso no usa el objeto `e`).
+ */
+function probarGeneracionManual() {
+  const datosPrueba = {
+    folio: 'COT-PRUEBA-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd-HHmmss'),
+    titular: 'Juan Pérez López',
+    correoDestino: 'prueba@example.com',
+    correoCC: 'contacto@example.com',
+    producto: 'Individual',
+    esAnualMultiviaje: false,
+    fechaInicio: '10/08/2026',
+    fechaFin: '20/08/2026',
+    vigenciaTexto: Utilities.formatDate(
+      new Date(new Date().getTime() + CONFIG.VIGENCIA_DIAS * 24 * 60 * 60 * 1000),
+      Session.getScriptTimeZone(),
+      'dd/MM/yyyy'
+    ),
+    primaTotal: '$3,450.00 MXN',
+    tipoProducto: 'Individual',
+    asegurados: [
+      { numero: 1, nombre: 'Juan Pérez López', edad: 81, prima: '$1,725.00 MXN' },
+      { numero: 2, nombre: 'María López García', edad: 79, prima: '$1,725.00 MXN' }
+    ],
+    nombreArchivo: 'Cotizacion_PRUEBA.pdf'
+  };
+
+  try {
+    const htmlContenido = generarHtmlCotizacion_(datosPrueba);
+    const pdfBlob = generarPdf_(htmlContenido, datosPrueba.nombreArchivo);
+    const archivoPdf = guardarPdfEnDrive_(pdfBlob, datosPrueba.nombreArchivo);
+    Logger.log('✅ PDF generado correctamente.');
+    Logger.log('URL: ' + archivoPdf.getUrl());
+    Logger.log('fileId: ' + archivoPdf.getId());
+  } catch (error) {
+    Logger.log('❌ Error en la prueba manual: ' + error.message);
+  }
+}
+
+// ============================================================
 // UTILIDADES
 // ============================================================
 
