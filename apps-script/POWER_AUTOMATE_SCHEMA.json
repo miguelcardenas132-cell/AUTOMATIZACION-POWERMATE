@@ -1,0 +1,15 @@
+{
+    "type": "object",
+    "properties": {
+        "htmlFileId": { "type": "string" },
+        "htmlFileUrl": { "type": "string" },
+        "nombreArchivo": { "type": "string" },
+        "folio": { "type": "string" },
+        "emailCliente": { "type": "string" },
+        "correoCC": { "type": "string" },
+        "destino": { "type": "string" },
+        "tipoProducto": { "type": "string" },
+        "aseguradosCount": { "type": "integer" },
+        "fechaGeneracion": { "type": "string" }
+    }
+}
