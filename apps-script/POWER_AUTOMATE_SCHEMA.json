@@ -8,8 +8,17 @@
         "emailCliente": { "type": "string" },
         "correoCC": { "type": "string" },
         "destino": { "type": "string" },
+        "fechaInicio": { "type": "string" },
+        "fechaFin": { "type": "string" },
+        "cantidadDias": { "type": "string" },
+        "vigenciaCotizacion": { "type": "string" },
+        "numAsegurados": { "type": "integer" },
+        "listaAsegurados": { "type": "string" },
         "tipoProducto": { "type": "string" },
-        "aseguradosCount": { "type": "integer" },
+        "primaMaster": { "type": "number" },
+        "primaSmart": { "type": "number" },
+        "primaElite": { "type": "number" },
+        "primaPremium": { "type": "number" },
         "fechaGeneracion": { "type": "string" }
     }
 }

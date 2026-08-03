@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 
 
 def construir_payload(destino, email, folio):
+    num_asegurados = 2
     return {
         "htmlFileId": "1AbCDeFGhIjKlMnOpQrStUvWxYz_ID_DE_PRUEBA",
         "htmlFileUrl": "https://drive.google.com/file/d/1AbCDeFGhIjKlMnOpQrStUvWxYz_ID_DE_PRUEBA/view",
@@ -21,8 +22,17 @@ def construir_payload(destino, email, folio):
         "emailCliente": email,
         "correoCC": "contacto@example.com",
         "destino": destino,
-        "tipoProducto": "Individual",
-        "aseguradosCount": 1,
+        "fechaInicio": "18/08/2026",
+        "fechaFin": "28/08/2026",
+        "cantidadDias": "11",
+        "vigenciaCotizacion": "10 de agosto de 2026",
+        "numAsegurados": num_asegurados,
+        "listaAsegurados": "Roberto García (82 años), María López (85 años)",
+        "tipoProducto": "Grupal" if num_asegurados > 1 else "Individual",
+        "primaMaster": 45.5,
+        "primaSmart": 65,
+        "primaElite": 95,
+        "primaPremium": 125,
         "fechaGeneracion": datetime.now(timezone.utc).isoformat()
     }
 
