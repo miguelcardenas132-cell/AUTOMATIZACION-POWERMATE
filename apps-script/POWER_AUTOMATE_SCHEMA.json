@@ -1,24 +1,16 @@
 {
     "type": "object",
     "properties": {
-        "htmlFileId": { "type": "string" },
-        "htmlFileUrl": { "type": "string" },
-        "nombreArchivo": { "type": "string" },
-        "folio": { "type": "string" },
         "emailCliente": { "type": "string" },
         "correoCC": { "type": "string" },
-        "destino": { "type": "string" },
-        "fechaInicio": { "type": "string" },
-        "fechaFin": { "type": "string" },
-        "cantidadDias": { "type": "string" },
-        "vigenciaCotizacion": { "type": "string" },
-        "numAsegurados": { "type": "integer" },
-        "listaAsegurados": { "type": "string" },
+        "asunto": { "type": "string" },
+        "estatus": { "type": "string" },
+        "cuerpoCorreoHtml": { "type": "string" },
         "tipoProducto": { "type": "string" },
-        "primaMaster": { "type": "number" },
-        "primaSmart": { "type": "number" },
-        "primaElite": { "type": "number" },
-        "primaPremium": { "type": "number" },
+        "htmlBase64": { "type": "string" },
+        "nombreArchivo": { "type": "string" },
+        "folio": { "type": "string" },
+        "htmlFileId": { "type": "string" },
         "fechaGeneracion": { "type": "string" }
     }
 }

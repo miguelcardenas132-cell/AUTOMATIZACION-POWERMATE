@@ -2,13 +2,21 @@
  * Cotizador Seguro de Viaje SENIOR 79+ — Seguros Atlas (DINE)
  * VERSIÓN SIMPLIFICADA — sin html2pdf.app.
  *
- * html2pdf.app generaba PDFs en blanco con COTIZACION_SENIOR79_v6_FINAL.html
- * (CSS/tablas complejas). Nueva responsabilidad de Apps Script:
+ * Toda la regla de negocio vive aquí. Power Automate solo emite el correo:
+ * recibe el cuerpo HTML ya armado y el adjunto listo para convertir a PDF.
+ *
  *   1) Leer la fila del formulario.
- *   2) Sustituir los tokens {{...}} sobre la plantilla real (guardada en Drive).
- *   3) Guardar el HTML resultante en Drive con codificación UTF-8 explícita.
- *   4) Disparar el webhook a Power Automate, que convierte ese HTML a PDF
- *      con Word Online / OneDrive y lo distribuye por Outlook corporativo.
+ *   2) Validar anticipación (mínimo 5 días naturales antes del viaje).
+ *   3) Filtrar asegurados elegibles (79-89 años) y registrar los excluidos.
+ *   4) Sustituir los tokens {{...}} sobre la plantilla real (guardada en Drive).
+ *   5) Guardar el HTML en Drive (auditoría) con codificación UTF-8 explícita.
+ *   6) Construir el cuerpo HTML del correo (aprobación o rechazo).
+ *   7) Disparar el webhook a Power Automate.
+ *
+ * NOTA SOBRE EL ADJUNTO: Apps Script NO produce el PDF (por eso se descartó
+ * html2pdf.app). Se envía `htmlBase64` con el HTML ya procesado; Power
+ * Automate hace base64ToBinary() -> guarda en OneDrive -> "Convert file"
+ * (Word Online) -> PDF. Así el flow tampoco necesita el conector de Drive.
  */
 
 // ============================================================
@@ -33,6 +41,13 @@ const CONFIG = {
   PRODUCTO_ANUAL_MULTIVIAJE: 'Anual Multiviaje',
   EDAD_MINIMA: 79,
   EDAD_MAXIMA: 89,
+  DIAS_ANTICIPACION_MINIMA: 5,
+
+  ESTATUS: {
+    APROBADO: 'APROBADO',
+    RECHAZADO_TIEMPO: 'RECHAZADO_TIEMPO',
+    RECHAZADO_SIN_ELEGIBLES: 'RECHAZADO_SIN_ELEGIBLES'
+  },
 
   // Ajustar a los encabezados reales (fila 1) de la hoja de respuestas.
   ENCABEZADOS: {
@@ -49,6 +64,18 @@ const CONFIG = {
     ESTADO: 'Estado de envío' // Columna opcional para trazabilidad
   },
   ASEGURADO_PREFIJO: 'Asegurado ' // columnas "Asegurado 1 Nombre"/"Asegurado 1 Edad".."Asegurado 5 ..."
+};
+
+// Paleta corporativa usada en el correo (misma que la plantilla PDF).
+const COLORES = {
+  VERDE: '#0d5e3a',
+  VERDE_CLARO: '#eef4f1',
+  AZUL: '#0f2b48',
+  BORDE: '#cbd5e1',
+  AMBAR_FONDO: '#fff8e1',
+  AMBAR_BORDE: '#f0ad4e',
+  ROJO_FONDO: '#fdecea',
+  ROJO_BORDE: '#d9534f'
 };
 
 // ============================================================
@@ -69,17 +96,31 @@ function onFormSubmit(e) {
     };
 
     const data = construirTokens_(fila, encabezados, valores, obtenerValor);
-    const htmlContenido = generarHtmlDesdeTokens_(data.tokens);
-    const archivoHtml = guardarHtmlEnDrive_(htmlContenido, data.nombreArchivo);
+    procesarSolicitud_(data);
 
-    enviarWebhookPowerAutomate_(archivoHtml, data);
-
-    marcarEstadoFila_(sheet, fila, encabezados, 'HTML generado y enviado a Power Automate ✅');
+    marcarEstadoFila_(sheet, fila, encabezados, data.estatus + ' — enviado a Power Automate');
   } catch (error) {
     Logger.log('Error en onFormSubmit (fila ' + fila + '): ' + error.message);
     marcarEstadoFila_(sheet, fila, encabezados, 'ERROR: ' + error.message);
     throw error;
   }
+}
+
+/**
+ * Decide la ruta según el estatus: las solicitudes rechazadas no generan
+ * cotización ni adjunto, solo el correo formal de rechazo.
+ */
+function procesarSolicitud_(data) {
+  if (data.estatus !== CONFIG.ESTATUS.APROBADO) {
+    data.cuerpoCorreoHtml = construirCorreoRechazo_(data);
+    enviarWebhookPowerAutomate_(null, data);
+    return;
+  }
+
+  const htmlContenido = generarHtmlDesdeTokens_(data.tokens);
+  const archivoHtml = guardarHtmlEnDrive_(htmlContenido, data.nombreArchivo);
+  data.cuerpoCorreoHtml = construirCorreoAprobado_(data);
+  enviarWebhookPowerAutomate_(archivoHtml, data, htmlContenido);
 }
 
 // ============================================================
@@ -96,63 +137,89 @@ function construirTokens_(fila, encabezados, valores, obtenerValor) {
   vigenciaDate.setDate(vigenciaDate.getDate() + CONFIG.VIGENCIA_DIAS);
   const vigenciaCotizacion = Utilities.formatDate(vigenciaDate, Session.getScriptTimeZone(), "dd 'de' MMMM 'de' yyyy");
 
-  // Filtro SENIOR: solo califican asegurados entre EDAD_MINIMA y EDAD_MAXIMA.
+  // --- Filtro SENIOR: solo califican asegurados de 79 a 89 años ---
   const asegurados = [];
+  const pasajerosExcluidos = [];
   for (let i = 1; i <= CONFIG.MAX_ASEGURADOS; i++) {
-    const nombre = obtenerValorSeguro_(encabezados, valores, CONFIG.ASEGURADO_PREFIJO + i + ' Nombre');
+    const nombreCrudo = obtenerValorSeguro_(encabezados, valores, CONFIG.ASEGURADO_PREFIJO + i + ' Nombre');
+    if (!nombreCrudo || nombreCrudo.toString().trim() === '') continue;
+
+    const nombre = nombreCrudo.toString().trim();
     const edadNum = Number(obtenerValorSeguro_(encabezados, valores, CONFIG.ASEGURADO_PREFIJO + i + ' Edad'));
-    if (!nombre || nombre.toString().trim() === '') continue;
-    if (isNaN(edadNum) || edadNum < CONFIG.EDAD_MINIMA || edadNum > CONFIG.EDAD_MAXIMA) continue;
-    asegurados.push({ nombre: nombre.toString().trim(), edad: edadNum });
+
+    if (isNaN(edadNum) || edadNum < CONFIG.EDAD_MINIMA || edadNum > CONFIG.EDAD_MAXIMA) {
+      pasajerosExcluidos.push({ nombre: nombre, edad: isNaN(edadNum) ? null : edadNum });
+      continue;
+    }
+    asegurados.push({ nombre: nombre, edad: edadNum });
   }
   const numAsegurados = asegurados.length;
   const listaAsegurados = asegurados.map((a) => a.nombre + ' (' + a.edad + ' años)').join(', ');
 
+  // --- Fechas del viaje ---
   // La plantilla espera "—" en fechas/días para Anual Multiviaje (no las oculta).
-  let fechaInicio = '—';
-  let fechaFin = '—';
-  let cantidadDias = '—';
-  if (!esAnualMultiviaje) {
-    const inicio = obtenerValor(H.FECHA_INICIO);
-    const fin = obtenerValor(H.FECHA_FIN);
-    fechaInicio = formatearFecha_(inicio);
-    fechaFin = formatearFecha_(fin);
-    cantidadDias = String(calcularDias_(inicio, fin));
+  const inicioRaw = esAnualMultiviaje ? null : obtenerValor(H.FECHA_INICIO);
+  const finRaw = esAnualMultiviaje ? null : obtenerValor(H.FECHA_FIN);
+  const fechaInicio = esAnualMultiviaje ? '—' : formatearFecha_(inicioRaw);
+  const fechaFin = esAnualMultiviaje ? '—' : formatearFecha_(finRaw);
+  const cantidadDias = esAnualMultiviaje ? '—' : String(calcularDias_(inicioRaw, finRaw));
+
+  // --- Regla de anticipación: mínimo 5 días naturales ---
+  // Anual Multiviaje no tiene fecha de inicio de viaje, así que la regla
+  // no le aplica (diasAnticipacion queda en null y no se evalúa).
+  const diasAnticipacion = esAnualMultiviaje ? null : calcularDiasAnticipacion_(hoy, inicioRaw);
+
+  let estatus = CONFIG.ESTATUS.APROBADO;
+  if (diasAnticipacion !== null && diasAnticipacion < CONFIG.DIAS_ANTICIPACION_MINIMA) {
+    estatus = CONFIG.ESTATUS.RECHAZADO_TIEMPO;
+  } else if (numAsegurados === 0) {
+    // Ningún pasajero cae en el rango 79-89: no hay nada que cotizar.
+    estatus = CONFIG.ESTATUS.RECHAZADO_SIN_ELEGIBLES;
   }
 
-  const primaMaster = Math.round((Number(obtenerValor(H.PRIMA_MASTER)) || 0) * 100) / 100;
-  const primaSmart = Math.round((Number(obtenerValor(H.PRIMA_SMART)) || 0) * 100) / 100;
-  const primaElite = Math.round((Number(obtenerValor(H.PRIMA_ELITE)) || 0) * 100) / 100;
-  const primaPremium = Math.round((Number(obtenerValor(H.PRIMA_PREMIUM)) || 0) * 100) / 100;
+  // --- Primas: solo se calculan si la solicitud procede ---
+  const aprobado = estatus === CONFIG.ESTATUS.APROBADO;
+  const primaMaster = aprobado ? leerPrima_(obtenerValor(H.PRIMA_MASTER)) : 0;
+  const primaSmart = aprobado ? leerPrima_(obtenerValor(H.PRIMA_SMART)) : 0;
+  const primaElite = aprobado ? leerPrima_(obtenerValor(H.PRIMA_ELITE)) : 0;
+  const primaPremium = aprobado ? leerPrima_(obtenerValor(H.PRIMA_PREMIUM)) : 0;
 
   const folio = 'COT-' + fila + '-' + Utilities.formatDate(hoy, Session.getScriptTimeZone(), 'yyyyMMdd-HHmmss');
   const destino = obtenerValor(H.DESTINO);
 
   return {
     folio: folio,
+    estatus: estatus,
     destino: destino,
     emailCliente: obtenerValor(H.EMAIL_CLIENTE),
     correoCC: obtenerValor(H.CORREO_CC),
+    esAnualMultiviaje: esAnualMultiviaje,
     fechaInicio: fechaInicio,
     fechaFin: fechaFin,
     cantidadDias: cantidadDias,
+    diasAnticipacion: diasAnticipacion,
     vigenciaCotizacion: vigenciaCotizacion,
     numAsegurados: numAsegurados,
     listaAsegurados: listaAsegurados,
+    pasajerosExcluidos: pasajerosExcluidos,
     primaMaster: primaMaster,
     primaSmart: primaSmart,
     primaElite: primaElite,
     primaPremium: primaPremium,
+    totalMaster: redondear_(primaMaster * numAsegurados),
+    totalSmart: redondear_(primaSmart * numAsegurados),
+    totalElite: redondear_(primaElite * numAsegurados),
+    totalPremium: redondear_(primaPremium * numAsegurados),
     nombreArchivo: 'Cotizacion_' + folio + '.html',
     tokens: {
       FOLIO: folio,
       FECHA_COTIZACION: Utilities.formatDate(hoy, Session.getScriptTimeZone(), "dd 'de' MMMM 'de' yyyy"),
       VIGENCIA: vigenciaCotizacion,
-      ASEGURADO_1: asegurados[0] ? asegurados[0].nombre + ', ' + asegurados[0].edad + ' años' : '',
-      ASEGURADO_2: asegurados[1] ? asegurados[1].nombre + ', ' + asegurados[1].edad + ' años' : '',
-      ASEGURADO_3: asegurados[2] ? asegurados[2].nombre + ', ' + asegurados[2].edad + ' años' : '',
-      ASEGURADO_4: asegurados[3] ? asegurados[3].nombre + ', ' + asegurados[3].edad + ' años' : '',
-      ASEGURADO_5: asegurados[4] ? asegurados[4].nombre + ', ' + asegurados[4].edad + ' años' : '',
+      ASEGURADO_1: etiquetaAsegurado_(asegurados[0]),
+      ASEGURADO_2: etiquetaAsegurado_(asegurados[1]),
+      ASEGURADO_3: etiquetaAsegurado_(asegurados[2]),
+      ASEGURADO_4: etiquetaAsegurado_(asegurados[3]),
+      ASEGURADO_5: etiquetaAsegurado_(asegurados[4]),
       NUM_ASEGURADOS: String(numAsegurados),
       DESTINO: destino,
       FECHA_INICIO: fechaInicio,
@@ -168,6 +235,18 @@ function construirTokens_(fila, encabezados, valores, obtenerValor) {
       TOTAL_PREMIUM: (primaPremium * numAsegurados).toFixed(2)
     }
   };
+}
+
+function etiquetaAsegurado_(asegurado) {
+  return asegurado ? asegurado.nombre + ', ' + asegurado.edad + ' años' : '';
+}
+
+function leerPrima_(valor) {
+  return redondear_(Number(valor) || 0);
+}
+
+function redondear_(numero) {
+  return Math.round(numero * 100) / 100;
 }
 
 function obtenerValorSeguro_(encabezados, valores, nombreEncabezado) {
@@ -187,6 +266,24 @@ function calcularDias_(inicio, fin) {
   const fechaFin = fin instanceof Date ? fin : new Date(fin);
   const msPorDia = 24 * 60 * 60 * 1000;
   return Math.round((fechaFin - fechaInicio) / msPorDia) + 1; // inclusive
+}
+
+/**
+ * Días naturales completos entre hoy y el inicio del viaje.
+ * Ambas fechas se normalizan a medianoche para que la hora en que se
+ * envía el formulario no altere la cuenta (un viaje que arranca mañana
+ * son 1 día de anticipación, se solicite a las 08:00 o a las 23:00).
+ * Devuelve null si no hay fecha de inicio válida.
+ */
+function calcularDiasAnticipacion_(hoy, fechaInicioViaje) {
+  if (!fechaInicioViaje) return null;
+  const inicio = fechaInicioViaje instanceof Date ? fechaInicioViaje : new Date(fechaInicioViaje);
+  if (isNaN(inicio.getTime())) return null;
+
+  const hoyMedianoche = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+  const inicioMedianoche = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate());
+  const msPorDia = 24 * 60 * 60 * 1000;
+  return Math.round((inicioMedianoche - hoyMedianoche) / msPorDia);
 }
 
 // ============================================================
@@ -230,45 +327,200 @@ function guardarHtmlEnDrive_(htmlContenido, nombreArchivo) {
 }
 
 // ============================================================
+// CUERPO HTML DEL CORREO
+// ============================================================
+// Se arma con tablas y CSS inline porque Outlook (escritorio y web) ignora
+// <style> en <head>, flexbox y grid.
+
+function construirAsunto_(data) {
+  if (data.estatus === CONFIG.ESTATUS.APROBADO) {
+    return 'Cotización Seguro de Viaje SENIOR +79 — ' + data.destino + ' — Folio ' + data.folio;
+  }
+  return 'Solicitud no procesada — Seguro de Viaje SENIOR +79 — Folio ' + data.folio;
+}
+
+function construirCorreoAprobado_(data) {
+  const filaResumen = (etiqueta, valor) =>
+    '<tr>' +
+    '<td style="padding:5px 10px;border-bottom:1px solid ' + COLORES.BORDE + ';font-weight:bold;color:' + COLORES.AZUL + ';width:42%;">' + escaparHtml_(etiqueta) + '</td>' +
+    '<td style="padding:5px 10px;border-bottom:1px solid ' + COLORES.BORDE + ';color:#333;">' + escaparHtml_(valor) + '</td>' +
+    '</tr>';
+
+  const filaPlan = (plan, total) =>
+    '<tr>' +
+    '<td style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';color:#333;">' + escaparHtml_(plan) + '</td>' +
+    '<td style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';text-align:right;font-weight:bold;color:' + COLORES.VERDE + ';">$' + total.toFixed(2) + ' USD</td>' +
+    '</tr>';
+
+  const resumenViaje = data.esAnualMultiviaje
+    ? filaResumen('Producto', 'Anual Multiviaje (cobertura anual, sin fechas fijas)')
+    : filaResumen('Fechas del viaje', data.fechaInicio + ' al ' + data.fechaFin) +
+      filaResumen('Días de cobertura', data.cantidadDias);
+
+  return '' +
+    '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;max-width:640px;">' +
+
+      // Encabezado
+      '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:' + COLORES.VERDE + ';border-collapse:collapse;">' +
+        '<tr><td style="padding:14px 18px;">' +
+          '<div style="font-size:17px;font-weight:bold;color:#ffffff;">Cotización Seguro de Viaje SENIOR +79</div>' +
+          '<div style="font-size:11px;color:#cfe6da;margin-top:3px;">Seguros Atlas · Dirección de Negocios Especiales (DINE)</div>' +
+        '</td></tr>' +
+      '</table>' +
+
+      '<div style="padding:18px;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
+
+        '<p style="margin:0 0 14px 0;">Estimado(a) cliente:</p>' +
+        '<p style="margin:0 0 16px 0;">Adjunto encontrará la cotización correspondiente a su solicitud. A continuación el resumen de los datos considerados:</p>' +
+
+        // Resumen general
+        '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;background-color:' + COLORES.VERDE_CLARO + ';margin-bottom:18px;">' +
+          filaResumen('Folio', data.folio) +
+          filaResumen('Destino', data.destino) +
+          resumenViaje +
+          filaResumen('Asegurados', String(data.numAsegurados) + ' — ' + data.listaAsegurados) +
+          filaResumen('Vigencia de esta cotización', data.vigenciaCotizacion) +
+        '</table>' +
+
+        // Tabla comparativa de primas totales
+        '<div style="font-size:15px;font-weight:bold;color:' + COLORES.VERDE + ';margin-bottom:6px;">Primas totales por plan</div>' +
+        '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:8px;">' +
+          '<tr>' +
+            '<th style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';background-color:' + COLORES.VERDE + ';color:#ffffff;text-align:left;font-size:13px;">Plan</th>' +
+            '<th style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';background-color:' + COLORES.VERDE + ';color:#ffffff;text-align:right;font-size:13px;">Prima total</th>' +
+          '</tr>' +
+          filaPlan('Master', data.totalMaster) +
+          filaPlan('Master Smart', data.totalSmart) +
+          filaPlan('Master Elite', data.totalElite) +
+          filaPlan('Master Premium', data.totalPremium) +
+        '</table>' +
+        '<p style="margin:0 0 18px 0;font-size:11px;color:#666;font-style:italic;">Importes en dólares americanos (USD) para ' + data.numAsegurados + ' asegurado(s). Primas netas, sin IVA ni derecho de póliza.</p>' +
+
+        construirAvisoExcluidos_(data.pasajerosExcluidos) +
+
+        // Llamado a revisar el PDF
+        '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;background-color:' + COLORES.VERDE_CLARO + ';border-left:4px solid ' + COLORES.VERDE + ';margin-bottom:18px;">' +
+          '<tr><td style="padding:12px 14px;">' +
+            '<strong style="color:' + COLORES.VERDE + ';">Revisión obligatoria del documento adjunto</strong><br>' +
+            'El detalle completo de <strong>coberturas, sumas aseguradas, especificaciones y requisitos de emisión</strong> se encuentra únicamente en la cotización en PDF adjunta a este correo. Le solicitamos revisarla en su totalidad antes de aceptar cualquier plan.' +
+          '</td></tr>' +
+        '</table>' +
+
+        '<p style="margin:0 0 6px 0;">Quedamos a sus órdenes para cualquier aclaración.</p>' +
+        '<p style="margin:0;color:#666;font-size:12px;">Dirección de Negocios Especiales · Seguros Atlas</p>' +
+
+      '</div>' +
+    '</div>';
+}
+
+function construirCorreoRechazo_(data) {
+  const motivo = data.estatus === CONFIG.ESTATUS.RECHAZADO_TIEMPO
+    ? '<p style="margin:0 0 14px 0;">Su solicitud para el destino <strong>' + escaparHtml_(data.destino) + '</strong>, con fecha de inicio de viaje el <strong>' + escaparHtml_(data.fechaInicio) + '</strong>, ' +
+      'no pudo ser procesada porque fue recibida con <strong>' + data.diasAnticipacion + ' día(s) de anticipación</strong>.</p>' +
+      '<p style="margin:0 0 14px 0;">Por políticas de la <strong>Dirección de Negocios Especiales</strong>, las solicitudes de cotización deben realizarse con un mínimo de <strong>' + CONFIG.DIAS_ANTICIPACION_MINIMA + ' días naturales de anticipación</strong> al inicio del viaje.</p>' +
+      '<p style="margin:0 0 14px 0;">Si las fechas de su viaje lo permiten, le invitamos a enviar nuevamente su solicitud respetando este plazo.</p>'
+    : '<p style="margin:0 0 14px 0;">Su solicitud para el destino <strong>' + escaparHtml_(data.destino) + '</strong> no pudo ser procesada porque ' +
+      '<strong>ninguno de los pasajeros indicados se encuentra dentro del rango de edad del Producto Senior</strong> (de ' + CONFIG.EDAD_MINIMA + ' a ' + CONFIG.EDAD_MAXIMA + ' años).</p>' +
+      '<p style="margin:0 0 14px 0;">Para cotizar a estos pasajeros, favor de solicitar el <strong>producto de viaje estándar</strong>.</p>';
+
+  return '' +
+    '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;max-width:640px;">' +
+
+      '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:' + COLORES.VERDE + ';border-collapse:collapse;">' +
+        '<tr><td style="padding:14px 18px;">' +
+          '<div style="font-size:17px;font-weight:bold;color:#ffffff;">Solicitud de cotización no procesada</div>' +
+          '<div style="font-size:11px;color:#cfe6da;margin-top:3px;">Seguros Atlas · Dirección de Negocios Especiales (DINE)</div>' +
+        '</td></tr>' +
+      '</table>' +
+
+      '<div style="padding:18px;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
+
+        '<p style="margin:0 0 14px 0;">Estimado(a) cliente:</p>' +
+
+        '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;background-color:' + COLORES.ROJO_FONDO + ';border-left:4px solid ' + COLORES.ROJO_BORDE + ';margin-bottom:18px;">' +
+          '<tr><td style="padding:12px 14px;">' + motivo + '</td></tr>' +
+        '</table>' +
+
+        '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;background-color:' + COLORES.VERDE_CLARO + ';margin-bottom:18px;">' +
+          '<tr>' +
+            '<td style="padding:5px 10px;font-weight:bold;color:' + COLORES.AZUL + ';width:42%;">Folio de la solicitud</td>' +
+            '<td style="padding:5px 10px;color:#333;">' + escaparHtml_(data.folio) + '</td>' +
+          '</tr>' +
+        '</table>' +
+
+        construirAvisoExcluidos_(data.pasajerosExcluidos) +
+
+        '<p style="margin:0 0 6px 0;">Quedamos a sus órdenes para cualquier aclaración.</p>' +
+        '<p style="margin:0;color:#666;font-size:12px;">Dirección de Negocios Especiales · Seguros Atlas</p>' +
+
+      '</div>' +
+    '</div>';
+}
+
+/**
+ * Alerta de pasajeros fuera del rango 79-89. Devuelve cadena vacía si no
+ * hubo exclusiones, para no dejar un bloque huérfano en el correo.
+ */
+function construirAvisoExcluidos_(pasajerosExcluidos) {
+  if (!pasajerosExcluidos || pasajerosExcluidos.length === 0) return '';
+
+  const nombres = pasajerosExcluidos
+    .map((p) => escaparHtml_(p.nombre) + (p.edad !== null ? ' (' + p.edad + ' años)' : ''))
+    .join(', ');
+
+  return '' +
+    '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;background-color:' + COLORES.AMBAR_FONDO + ';border-left:4px solid ' + COLORES.AMBAR_BORDE + ';margin-bottom:18px;">' +
+      '<tr><td style="padding:12px 14px;">' +
+        '<strong style="color:#8a6d3b;">Aviso importante</strong><br>' +
+        'El/los pasajero(s) <strong>' + nombres + '</strong> no fueron incluidos en esta cotización debido a que el Producto Senior aplica exclusivamente para personas de ' + CONFIG.EDAD_MINIMA + ' a ' + CONFIG.EDAD_MAXIMA + ' años. ' +
+        'Para cotizar a pasajeros menores a este rango, favor de solicitar el producto de viaje estándar.' +
+      '</td></tr>' +
+    '</table>';
+}
+
+// ============================================================
 // PUENTE HACIA POWER AUTOMATE
 // ============================================================
 
-function enviarWebhookPowerAutomate_(archivoHtml, data) {
+/**
+ * @param {File|null}   archivoHtml   Archivo en Drive; null si fue rechazada.
+ * @param {Object}      data          Datos de la solicitud (incluye cuerpoCorreoHtml).
+ * @param {string=}     htmlContenido HTML procesado; se envía en base64 como adjunto.
+ */
+function enviarWebhookPowerAutomate_(archivoHtml, data, htmlContenido) {
+  const aprobado = data.estatus === CONFIG.ESTATUS.APROBADO;
+
   const payload = {
-    // Metadatos y PDF
-    htmlFileId: archivoHtml.getId(),
-    htmlFileUrl: archivoHtml.getUrl(),
-    nombreArchivo: data.nombreArchivo,
-    folio: data.folio,
+    // Destinatarios y encabezado del correo
     emailCliente: data.emailCliente,
     correoCC: data.correoCC,
+    asunto: construirAsunto_(data),
 
-    // Datos del viaje
-    destino: data.destino,
-    fechaInicio: data.fechaInicio,
-    fechaFin: data.fechaFin,
-    cantidadDias: data.cantidadDias,
-    vigenciaCotizacion: data.vigenciaCotizacion,
-    numAsegurados: data.numAsegurados,
-    listaAsegurados: data.listaAsegurados,
+    // Resultado de la validación
+    estatus: data.estatus,
 
-    // Regla dinámica: Grupal si califica más de un asegurado (79-89 años),
-    // sin importar lo que reporte la hoja de cálculo.
+    // Cuerpo del correo ya renderizado: Power Automate solo lo emite.
+    cuerpoCorreoHtml: data.cuerpoCorreoHtml,
+
+    // Grupal si califica más de un asegurado (79-89 años), sin importar
+    // lo que reporte la hoja de cálculo.
     tipoProducto: (data.numAsegurados > 1) ? 'Grupal' : 'Individual',
 
-    // Primas por plan
-    primaMaster: data.primaMaster,
-    primaSmart: data.primaSmart,
-    primaElite: data.primaElite,
-    primaPremium: data.primaPremium,
+    // Adjunto: solo en solicitudes aprobadas. Apps Script no genera PDF
+    // (ver nota del encabezado); manda el HTML en base64 y Power Automate
+    // lo convierte con Word Online antes de adjuntarlo.
+    htmlBase64: aprobado && htmlContenido ? Utilities.base64Encode(htmlContenido, Utilities.Charset.UTF_8) : '',
+    nombreArchivo: aprobado ? data.nombreArchivo : '',
 
     // Auditoría
+    folio: data.folio,
+    htmlFileId: archivoHtml ? archivoHtml.getId() : '',
     fechaGeneracion: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ssXXX")
   };
 
   const respuesta = UrlFetchApp.fetch(getPropiedad_('WEBHOOK_POWER_AUTOMATE_URL'), {
     method: 'post',
-    contentType: 'application/json',
+    contentType: 'application/json; charset=utf-8',
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
   });
@@ -279,91 +531,95 @@ function enviarWebhookPowerAutomate_(archivoHtml, data) {
 }
 
 // ============================================================
-// PRUEBA DE UN SOLO CLIC (sin depender del formulario ni de la hoja)
+// PRUEBAS DE UN SOLO CLIC (sin depender del formulario ni de la hoja)
 // ============================================================
 
 /**
- * Ejecutar directamente desde el editor (▶) para validar de punta a punta:
- * generación del HTML, guardado en Drive y envío del webhook, con datos
- * MOCK ya filtrados (Roberto García, 82 años, y María López, 85 años —
- * Brasil). El filtro de edad 79-89 vive en construirTokens_, que esta
- * prueba no ejercita porque no lee la hoja; aquí se valida el resto del
- * flujo con dos asegurados ya calificados para confirmar tipoProducto=Grupal.
+ * Caso aprobado: dos asegurados elegibles (Roberto García 82, María López 85)
+ * más un pasajero excluido por edad (Ana Ruiz 65) para ver el aviso ámbar.
+ * Viaje a 15 días -> cumple la anticipación mínima.
  */
 function testearTodo() {
-  Logger.log('=== INICIO testearTodo() ===');
+  Logger.log('=== INICIO testearTodo() — caso APROBADO ===');
   try {
-    const hoy = new Date();
-    const vigencia = new Date(hoy.getTime());
-    vigencia.setDate(vigencia.getDate() + CONFIG.VIGENCIA_DIAS);
-    const folio = 'COT-TEST-' + Utilities.formatDate(hoy, Session.getScriptTimeZone(), 'yyyyMMdd-HHmmss');
+    const data = construirDatosPrueba_({ diasHastaViaje: 15 });
+    Logger.log('Estatus: ' + data.estatus + ' | anticipación: ' + data.diasAnticipacion + ' días');
 
-    const fechaInicio = new Date(hoy.getTime() + 15 * 24 * 60 * 60 * 1000);
-    const fechaFin = new Date(hoy.getTime() + 25 * 24 * 60 * 60 * 1000);
-    const asegurados = [
-      { nombre: 'Roberto García', edad: 82 },
-      { nombre: 'María López', edad: 85 }
-    ];
-    const numAsegurados = asegurados.length;
-    const listaAsegurados = asegurados.map((a) => a.nombre + ' (' + a.edad + ' años)').join(', ');
-    const primaMaster = 45.5;
-    const primaSmart = 65;
-    const primaElite = 95;
-    const primaPremium = 125;
-
-    const datosPrueba = {
-      folio: folio,
-      destino: 'Brasil',
-      emailCliente: 'prueba@example.com',
-      correoCC: 'contacto@example.com',
-      fechaInicio: formatearFecha_(fechaInicio),
-      fechaFin: formatearFecha_(fechaFin),
-      cantidadDias: String(calcularDias_(fechaInicio, fechaFin)),
-      vigenciaCotizacion: Utilities.formatDate(vigencia, Session.getScriptTimeZone(), "dd 'de' MMMM 'de' yyyy"),
-      numAsegurados: numAsegurados,
-      listaAsegurados: listaAsegurados,
-      primaMaster: primaMaster,
-      primaSmart: primaSmart,
-      primaElite: primaElite,
-      primaPremium: primaPremium,
-      nombreArchivo: 'Cotizacion_' + folio + '.html',
-      tokens: {
-        FOLIO: folio,
-        FECHA_COTIZACION: Utilities.formatDate(hoy, Session.getScriptTimeZone(), "dd 'de' MMMM 'de' yyyy"),
-        VIGENCIA: Utilities.formatDate(vigencia, Session.getScriptTimeZone(), "dd 'de' MMMM 'de' yyyy"),
-        ASEGURADO_1: asegurados[0].nombre + ', ' + asegurados[0].edad + ' años',
-        ASEGURADO_2: asegurados[1].nombre + ', ' + asegurados[1].edad + ' años',
-        ASEGURADO_3: '',
-        ASEGURADO_4: '',
-        ASEGURADO_5: '',
-        NUM_ASEGURADOS: String(numAsegurados),
-        DESTINO: 'Brasil',
-        FECHA_INICIO: formatearFecha_(fechaInicio),
-        FECHA_FIN: formatearFecha_(fechaFin),
-        CANTIDAD_DIAS: String(calcularDias_(fechaInicio, fechaFin)),
-        PRIMA_MASTER: primaMaster.toFixed(2),
-        PRIMA_SMART: primaSmart.toFixed(2),
-        PRIMA_ELITE: primaElite.toFixed(2),
-        PRIMA_PREMIUM: primaPremium.toFixed(2),
-        TOTAL_MASTER: (primaMaster * numAsegurados).toFixed(2),
-        TOTAL_SMART: (primaSmart * numAsegurados).toFixed(2),
-        TOTAL_ELITE: (primaElite * numAsegurados).toFixed(2),
-        TOTAL_PREMIUM: (primaPremium * numAsegurados).toFixed(2)
-      }
-    };
-
-    const htmlContenido = generarHtmlDesdeTokens_(datosPrueba.tokens);
-    const archivoHtml = guardarHtmlEnDrive_(htmlContenido, datosPrueba.nombreArchivo);
-    Logger.log('✅ HTML generado y guardado en Drive.');
+    const htmlContenido = generarHtmlDesdeTokens_(data.tokens);
+    const archivoHtml = guardarHtmlEnDrive_(htmlContenido, data.nombreArchivo);
+    Logger.log('✅ HTML de cotización guardado en Drive.');
     Logger.log('URL: ' + archivoHtml.getUrl());
     Logger.log('fileId: ' + archivoHtml.getId());
 
-    enviarWebhookPowerAutomate_(archivoHtml, datosPrueba);
+    data.cuerpoCorreoHtml = construirCorreoAprobado_(data);
+    Logger.log('Asunto: ' + construirAsunto_(data));
+    Logger.log('Cuerpo del correo (' + data.cuerpoCorreoHtml.length + ' caracteres):');
+    Logger.log(data.cuerpoCorreoHtml);
+
+    enviarWebhookPowerAutomate_(archivoHtml, data, htmlContenido);
     Logger.log('✅ Webhook enviado a Power Automate sin errores.');
   } catch (error) {
     Logger.log('❌ Error en testearTodo(): ' + error.message);
   }
   Logger.log('=== FIN testearTodo() ===');
+}
+
+/**
+ * Caso rechazado por anticipación: viaje que arranca en 2 días.
+ * No debe generar cotización ni primas, solo el correo de rechazo.
+ */
+function testearRechazoPorTiempo() {
+  Logger.log('=== INICIO testearRechazoPorTiempo() ===');
+  try {
+    const data = construirDatosPrueba_({ diasHastaViaje: 2 });
+    Logger.log('Estatus: ' + data.estatus + ' | anticipación: ' + data.diasAnticipacion + ' días');
+    Logger.log('Primas calculadas (deben ser 0): ' + data.totalMaster + ' / ' + data.totalPremium);
+
+    data.cuerpoCorreoHtml = construirCorreoRechazo_(data);
+    Logger.log('Asunto: ' + construirAsunto_(data));
+    Logger.log(data.cuerpoCorreoHtml);
+
+    enviarWebhookPowerAutomate_(null, data);
+    Logger.log('✅ Webhook de rechazo enviado sin errores.');
+  } catch (error) {
+    Logger.log('❌ Error en testearRechazoPorTiempo(): ' + error.message);
+  }
+  Logger.log('=== FIN testearRechazoPorTiempo() ===');
+}
+
+/**
+ * Arma un objeto `data` equivalente al de construirTokens_() sin tocar la
+ * hoja, reutilizando la misma lógica de estatus, filtro y primas.
+ */
+function construirDatosPrueba_(opciones) {
+  const hoy = new Date();
+  const msPorDia = 24 * 60 * 60 * 1000;
+  const inicioViaje = new Date(hoy.getTime() + opciones.diasHastaViaje * msPorDia);
+  const finViaje = new Date(inicioViaje.getTime() + 10 * msPorDia);
+
+  const encabezados = [
+    'Destino', 'Correo de contacto', 'Correo CC', 'Producto',
+    'Fecha de inicio del viaje', 'Fecha de fin del viaje',
+    'Prima Master', 'Prima Master Smart', 'Prima Master Elite', 'Prima Master Premium',
+    'Asegurado 1 Nombre', 'Asegurado 1 Edad',
+    'Asegurado 2 Nombre', 'Asegurado 2 Edad',
+    'Asegurado 3 Nombre', 'Asegurado 3 Edad'
+  ];
+  const valores = [
+    'Brasil', 'prueba@example.com', 'contacto@example.com', 'Viaje sencillo',
+    inicioViaje, finViaje,
+    45.5, 65, 95, 125,
+    'Roberto García', 82,
+    'María López', 85,
+    'Ana Ruiz', 65 // excluida por edad: dispara el aviso ámbar
+  ];
+  const obtenerValor = (nombre) => {
+    const indice = encabezados.indexOf(nombre);
+    if (indice === -1) throw new Error('Encabezado no encontrado: ' + nombre);
+    return valores[indice];
+  };
+
+  return construirTokens_(99, encabezados, valores, obtenerValor);
 }
 
 // ============================================================
