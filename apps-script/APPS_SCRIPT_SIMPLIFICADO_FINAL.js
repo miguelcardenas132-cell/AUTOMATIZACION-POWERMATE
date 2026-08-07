@@ -571,8 +571,9 @@ function estilosCotizacion_() {
     '.cierre td { vertical-align: top; }\n' +
     '.cierre-obs { padding-right: 9px; }\n' +
     '.cierre-qr { vertical-align: bottom; }\n' +
-    '.qr-tarjeta { border: 1px solid #d5d5d5; border-radius: 6px; background-color: #ffffff;\n' +
-    '              padding: 5px 6px; text-align: center; }\n' +
+    // Sin recuadro: el QR y su texto respiran sobre el blanco de la hoja,
+    // junto al bloque de observaciones.
+    '.qr-tarjeta { padding: 2px 4px 0; text-align: center; }\n' +
     '.qr-tarjeta img { width: 76px; height: 76px; display: block; margin: 0 auto 3px; }\n' +
     '.qr-tarjeta h3 { font-size: 8px; color: ' + COLORES.AZUL + '; margin-bottom: 1px; }\n' +
     '.qr-tarjeta p { font-size: 7px; line-height: 1.22; color: #444; }\n' +
