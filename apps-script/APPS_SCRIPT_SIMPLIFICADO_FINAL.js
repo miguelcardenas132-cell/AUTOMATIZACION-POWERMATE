@@ -481,7 +481,7 @@ function generarHtmlCotizacion_(data) {
 
 function estilosCotizacion_() {
   return '' +
-    '@page { size: letter; margin: 0.5cm; }\n' +
+    '@page { size: letter; margin: 0.3cm; }\n' +
     '* { box-sizing: border-box; margin: 0; padding: 0; }\n' +
     'body { font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #111; line-height: 1.3;\n' +
     '       -webkit-print-color-adjust: exact; print-color-adjust: exact; }\n' +
@@ -513,55 +513,55 @@ function estilosCotizacion_() {
     '.viaje .aseg.compacto { font-size: 8px; line-height: 1.2; }\n' +
 
     // --- 3. Tabla de coberturas ---
-    '.cob { font-size: 7.6px; line-height: 1.2; background-color: ' + COLORES.GRIS_TABLA + '; margin-top: 4px; }\n' +
-    '.cob th, .cob td { border: 1px solid #b0b0b0; padding: 0.6px 5px; text-align: left; }\n' +
+    '.cob { font-size: 8.5px; line-height: 1.2; background-color: ' + COLORES.GRIS_TABLA + '; margin-top: 4px; }\n' +
+    '.cob th, .cob td { border: 1px solid #b0b0b0; padding: 1.2px 5px; text-align: left; }\n' +
     '.cob th.planes { background-color: ' + COLORES.VERDE + '; color: #ffffff; text-align: center;\n' +
-    '                 font-size: 10px; font-weight: bold; letter-spacing: .5px; padding: 4px; text-transform: uppercase; }\n' +
+    '                 font-size: 10.5px; font-weight: bold; letter-spacing: .5px; padding: 4px; text-transform: uppercase; }\n' +
     '.cob th.sub { background-color: ' + COLORES.VERDE + '; color: #ffffff; font-weight: bold;\n' +
-    '              text-align: center; font-size: 7.8px; text-transform: uppercase; padding: 2.5px 4px; }\n' +
+    '              text-align: center; font-size: 8.5px; text-transform: uppercase; padding: 1.2px 4px; }\n' +
     '.cob th.sub-izq { text-align: left; }\n' +
     '.cob td.num { text-align: center; }\n' +
     '.cob tr.par { background-color: ' + COLORES.GRIS_FILA + '; }\n' +
-    '.cob .subnota { display: block; color: #444; font-size: 7px; }\n' +
-    '.cob tr.unit td { font-size: 8px; color: ' + COLORES.AZUL + '; background-color: #f0f6f3; padding: 2px 5px; }\n' +
+    '.cob .subnota { display: block; color: #444; font-size: 7.4px; }\n' +
+    '.cob tr.unit td { font-size: 8.5px; color: ' + COLORES.AZUL + '; background-color: #f0f6f3; padding: 2.5px 5px; }\n' +
     '.cob tr.total td { background-color: ' + COLORES.TOTAL_FONDO + '; font-weight: bold;\n' +
-    '                   border-top: 2px solid ' + COLORES.VERDE + '; font-size: 9px; color: ' + COLORES.VERDE + '; padding: 2.5px 5px; }\n' +
-    '.nota-tabla { font-size: 7.5px; color: #555; margin: 2px 0 0; }\n' +
+    '                   border-top: 2px solid ' + COLORES.VERDE + '; font-size: 9.5px; color: ' + COLORES.VERDE + '; padding: 3px 5px; }\n' +
+    '.nota-tabla { font-size: 7.8px; color: #555; margin: 2px 0 0; }\n' +
 
     // --- 4. Especificaciones ---
     '.espec { border: 1px solid ' + COLORES.VERDE_BORDE + '; background-color: #ffffff; }\n' +
     '.espec td { padding: 3px 10px; }\n' +
     '.espec ul { list-style: none; }\n' +
-    '.espec li { font-size: 8.5px; line-height: 1.3; padding-left: 8px; text-indent: -8px; }\n' +
+    '.espec li { font-size: 8.5px; line-height: 1.26; padding-left: 8px; text-indent: -8px; }\n' +
     '.espec strong { color: ' + COLORES.VERDE + '; }\n' +
 
     // --- 5. Recuadros operativos ---
-    '.ops-caja { margin-top: 4px; border: 1px solid #b9b9b9; }\n' +
+    '.ops-caja { margin-top: 3px; border: 1px solid #b9b9b9; }\n' +
     '.ops-banner { background-color: ' + COLORES.VERDE + '; color: #ffffff; text-align: center;\n' +
     '              font-weight: bold; font-size: 9.5px; text-transform: uppercase;\n' +
-    '              padding: 4px; letter-spacing: .4px; }\n' +
+    '              padding: 3px; letter-spacing: .4px; }\n' +
     // border-spacing separa las tarjetas; cellspacing en el HTML cubre el
     // caso de que el convertidor a DOCX ignore la propiedad CSS.
-    '.ops { border-collapse: separate; border-spacing: 5px; }\n' +
+    '.ops { border-collapse: separate; border-spacing: 3px; }\n' +
     '.ops td.celda { border: 1px solid #d5d5d5; border-radius: 6px; background-color: #ffffff;\n' +
-    '                padding: 4px 8px; vertical-align: top; }\n' +
+    '                padding: 3px 7px; vertical-align: top; }\n' +
     '.ops h3 { font-size: 8.5px; color: ' + COLORES.AZUL + '; margin-bottom: 2px; }\n' +
-    '.ops p { font-size: 7.8px; line-height: 1.3; }\n' +
+    '.ops p { font-size: 7.8px; line-height: 1.24; }\n' +
     '.ops ul { list-style: none; margin-top: 1px; margin-left: 7px; }\n' +
-    '.ops li { font-size: 7.8px; line-height: 1.28; padding-left: 7px; text-indent: -7px; }\n' +
+    '.ops li { font-size: 7.8px; line-height: 1.24; padding-left: 7px; text-indent: -7px; }\n' +
     '.ops td.qr { text-align: center; vertical-align: middle; padding: 3px; }\n' +
     '.ops td.qr img { width: 88px; height: 88px; display: block; margin: 0 auto; }\n' +
     '.ops td.centrado { text-align: center; vertical-align: middle; }\n' +
 
     // --- 6. Observaciones ---
-    '.obs { margin-top: 4px; }\n' +
-    '.obs h3 { font-size: 9px; color: ' + COLORES.VERDE + '; text-transform: uppercase; margin-bottom: 2px; }\n' +
-    '.obs ol { margin: 0 0 3px 13px; }\n' +
-    '.obs li { font-size: 8px; line-height: 1.25; text-align: justify; }\n' +
-    '.obs p { font-size: 8px; line-height: 1.25; margin-bottom: 1px; text-align: justify; }\n' +
+    '.obs { margin-top: 3px; }\n' +
+    '.obs h3 { font-size: 9px; color: ' + COLORES.VERDE + '; text-transform: uppercase; margin-bottom: 1px; }\n' +
+    '.obs ol { margin: 0 0 1.5px 13px; }\n' +
+    '.obs li { font-size: 8px; line-height: 1.12; text-align: justify; }\n' +
+    '.obs p { font-size: 8px; line-height: 1.12; margin-bottom: 0.5px; text-align: justify; }\n' +
 
     // --- 7. Pie ---
-    '.pie { margin-top: 5px; border-top: 1px solid ' + COLORES.BORDE + '; padding-top: 4px; }\n' +
+    '.pie { margin-top: 3px; border-top: 1px solid ' + COLORES.BORDE + '; padding-top: 3px; }\n' +
     '.pie td { font-size: 8px; color: #555; vertical-align: middle; text-align: center;\n' +
     '          line-height: 1.35; padding: 0 8px; }\n' +
     '.pie td.sep { border-left: 1px solid #c8c8c8; }\n' +
