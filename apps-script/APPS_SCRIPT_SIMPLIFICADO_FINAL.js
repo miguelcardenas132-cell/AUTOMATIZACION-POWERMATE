@@ -462,30 +462,44 @@ function escaparHtml_(valor) {
  * conversión HTML->DOCX los ignora y colapsaría las cuadrículas en una sola
  * columna. Las imágenes van como data: URI porque el convertidor tampoco
  * descarga recursos externos.
+ *
+ * La tabla "marco" ocupa el alto completo de la página: el contenido se
+ * alinea arriba y el pie queda anclado al fondo, de modo que el espacio
+ * sobrante se acumula como aire visible entre ambos. Si el convertidor
+ * ignorara el height:100%, el pie simplemente vuelve a quedar pegado al
+ * contenido: se pierde el aire, no la maquetación.
  */
 function generarHtmlCotizacion_(data) {
   return '<!DOCTYPE html>\n' +
     '<html lang="es">\n<head>\n<meta charset="UTF-8">\n' +
     '<title>Cotización ' + escaparHtml_(data.folio) + '</title>\n' +
     '<style>\n' + estilosCotizacion_() + '</style>\n</head>\n<body>\n' +
-    '<div class="hoja">\n' +
+    '<table class="marco" role="presentation">\n' +
+    '<tr><td class="marco-contenido">\n' +
       bloqueEncabezado_(data) +
       bloqueInfoViaje_(data) +
       bloqueCoberturas_(data) +
       bloqueEspecificaciones_() +
       bloqueAccionOperativa_() +
       bloqueObservaciones_() +
+    '</td></tr>\n' +
+    '<tr><td class="marco-pie">\n' +
       bloquePie_() +
-    '</div>\n</body>\n</html>';
+    '</td></tr>\n' +
+    '</table>\n</body>\n</html>';
 }
 
 function estilosCotizacion_() {
   return '' +
     '@page { size: letter; margin: 0.3cm; }\n' +
     '* { box-sizing: border-box; margin: 0; padding: 0; }\n' +
+    'html, body { height: 100%; }\n' +
+    // Marco de alto completo: empuja el pie al fondo de la hoja.
+    '.marco { width: 100%; height: 100%; border-collapse: collapse; }\n' +
+    '.marco-contenido { vertical-align: top; }\n' +
+    '.marco-pie { vertical-align: bottom; height: 1px; }\n' +
     'body { font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #111; line-height: 1.3;\n' +
     '       -webkit-print-color-adjust: exact; print-color-adjust: exact; }\n' +
-    '.hoja { width: 100%; }\n' +
     'table { border-collapse: collapse; width: 100%; }\n' +
     'a { color: ' + COLORES.VERDE + '; text-decoration: underline; }\n' +
 
