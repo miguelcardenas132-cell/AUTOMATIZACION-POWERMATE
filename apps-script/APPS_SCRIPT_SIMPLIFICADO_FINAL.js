@@ -580,10 +580,10 @@ function estilosCotizacion_() {
 
     // --- 6. Observaciones ---
     '.obs { margin-top: 3px; }\n' +
-    '.obs h3 { font-size: 9px; color: ' + COLORES.VERDE + '; text-transform: uppercase; margin-bottom: 1px; }\n' +
+    '.obs h3 { font-size: 10px; color: ' + COLORES.VERDE + '; text-transform: uppercase; margin-bottom: 1px; }\n' +
     '.obs ol { margin: 0 0 1.5px 13px; }\n' +
-    '.obs li { font-size: 8px; line-height: 1.12; text-align: justify; }\n' +
-    '.obs p { font-size: 8px; line-height: 1.12; margin-bottom: 0.5px; text-align: justify; }\n' +
+    '.obs li { font-size: 9px; line-height: 1.22; }\n' +
+    '.obs p { font-size: 9px; line-height: 1.22; margin-bottom: 0.5px; }\n' +
 
     // --- 7. Pie ---
     '.pie { margin-top: 3px; padding-top: 3px; }\n' +
