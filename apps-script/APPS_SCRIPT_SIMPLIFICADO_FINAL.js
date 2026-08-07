@@ -82,30 +82,32 @@ const CONFIG = {
   /**
    * Resolución de las columnas de cada asegurado.
    *
-   * Los nombres siguen el patrón 'Nombre Asegurado N'. Las edades YA VIENEN
-   * CALCULADAS en su propia columna: el script solo lee el entero, nunca lo
-   * deriva de una fecha de nacimiento.
+   * Los nombres siguen el patrón 'Nombre Asegurado N' y las edades 'Edad_N'.
+   * Las edades YA VIENEN CALCULADAS en su propia columna: el script solo lee
+   * el entero, nunca lo deriva de una fecha de nacimiento.
    *
-   * Como el encabezado exacto de las edades puede variar, se prueban varios
-   * patrones en orden. Si ninguno coincide, usa OVERRIDE_EDAD para fijar el
-   * encabezado literal por índice. Ejecuta listarEncabezados() para ver los
-   * nombres reales de tu hoja.
+   * Se prueban los patrones en orden hasta encontrar la columna, así que
+   * basta con que el primero coincida. Si algún encabezado se sale del
+   * patrón, fíjalo literalmente por índice en OVERRIDE_NOMBRE u OVERRIDE_EDAD
+   * (ej. { 3: 'Edad tercer asegurado' }). Ejecuta listarEncabezados() para
+   * ver los nombres reales de tu hoja.
    */
   ASEGURADOS: {
     PATRONES_NOMBRE: [
       'Nombre Asegurado {i}',
       'Nombre asegurado {i}',
-      'Asegurado {i} Nombre'
+      'Nombre_{i}',
+      'Asegurado {i} Nombre',
+      'Asegurado_{i}'
     ],
     PATRONES_EDAD: [
+      'Edad_{i}',
       'Edad Asegurado {i}',
       'Edad asegurado {i}',
       'EDAD ASEGURADO {i}',
       'Edad {i}',
-      'Asegurado {i} Edad',
-      'Nombre Asegurado {i} Edad'
+      'Asegurado {i} Edad'
     ],
-    // Ejemplo: { 1: 'Edad calculada 1', 2: 'Edad calculada 2' }
     OVERRIDE_NOMBRE: {},
     OVERRIDE_EDAD: {}
   }
