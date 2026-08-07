@@ -456,10 +456,12 @@ function escaparHtml_(valor) {
 // ============================================================================
 
 /**
- * Maquetación pensada para que Word Online la convierta a una sola página
- * carta: solo tablas (sin flex ni grid), anchos con <colgroup>, tipografía
- * compacta y CSS incrustado. Las imágenes van como data: URI porque el
- * convertidor no descarga recursos externos.
+ * Maquetación para que Word Online la convierta a una sola página carta.
+ *
+ * Todo se arma con tablas y <colgroup>, nunca con flex ni grid: el motor de
+ * conversión HTML->DOCX los ignora y colapsaría las cuadrículas en una sola
+ * columna. Las imágenes van como data: URI porque el convertidor tampoco
+ * descarga recursos externos.
  */
 function generarHtmlCotizacion_(data) {
   return '<!DOCTYPE html>\n' +
@@ -469,11 +471,11 @@ function generarHtmlCotizacion_(data) {
     '<div class="hoja">\n' +
       bloqueEncabezado_(data) +
       bloqueInfoViaje_(data) +
-      bloquePlanes_(data) +
+      bloqueCoberturas_(data) +
       bloqueEspecificaciones_() +
       bloqueAccionOperativa_() +
-      bloqueObservaciones_(data) +
-      '<div class="paginacion">Página 1 de 1</div>\n' +
+      bloqueObservaciones_() +
+      bloquePie_() +
     '</div>\n</body>\n</html>';
 }
 
@@ -481,83 +483,113 @@ function estilosCotizacion_() {
   return '' +
     '@page { size: letter; margin: 0.5cm; }\n' +
     '* { box-sizing: border-box; margin: 0; padding: 0; }\n' +
-    'body { font-family: Arial, Helvetica, sans-serif; font-size: 8px; color: #111; line-height: 1.25;\n' +
+    'body { font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #111; line-height: 1.3;\n' +
     '       -webkit-print-color-adjust: exact; print-color-adjust: exact; }\n' +
     '.hoja { width: 100%; }\n' +
     'table { border-collapse: collapse; width: 100%; }\n' +
+    'a { color: ' + COLORES.VERDE + '; text-decoration: underline; }\n' +
 
-    // Encabezado
-    '.enc { background-color: ' + COLORES.VERDE + '; color: #ffffff; }\n' +
-    '.enc td { padding: 6px 10px; vertical-align: middle; }\n' +
-    '.enc .titulo { font-size: 12.5px; font-weight: bold; letter-spacing: .3px; }\n' +
-    '.enc .sub { font-size: 7px; color: #cfe6da; margin-top: 1px; }\n' +
-    '.enc .dato { font-size: 7.5px; color: #ffffff; }\n' +
-    '.enc .dato strong { color: #ffffff; }\n' +
-    '.enc-der { text-align: right; width: 42%; }\n' +
-    '.enc-logo { max-height: 26px; width: auto; margin-bottom: 3px; }\n' +
+    // --- 1. Encabezado: título aislado + contenedor de datos ---
+    '.tit-tabla { background-color: ' + COLORES.VERDE + '; }\n' +
+    '.tit-tabla td { padding: 5px 11px; vertical-align: middle; }\n' +
+    '.tit-tabla .titulo { font-size: 15.5px; font-weight: bold; color: #ffffff; letter-spacing: .3px; }\n' +
+    '.tit-tabla .sub { font-size: 9px; color: #cfe6da; margin-top: 2px; }\n' +
+    '.tit-logo { text-align: right; width: 27%; }\n' +
+    '.tit-logo img { max-height: 30px; width: auto; }\n' +
+    '.meta { background-color: ' + COLORES.VERDE_CLARO + '; border: 1px solid ' + COLORES.VERDE_BORDE + ';\n' +
+    '        border-top: none; margin-bottom: 6px; }\n' +
+    '.meta td { padding: 3px 11px; font-size: 9.5px; color: #222; vertical-align: top; }\n' +
+    '.meta .et { font-weight: bold; color: ' + COLORES.AZUL + '; }\n' +
+    '.meta .der { text-align: right; }\n' +
 
-    // Bloques genéricos
+    // --- 2. Información del viaje ---
     '.banner { background-color: ' + COLORES.VERDE + '; color: #ffffff; font-weight: bold;\n' +
-    '          font-size: 8.5px; text-transform: uppercase; padding: 3px 8px; margin: 5px 0 3px; letter-spacing: .3px; }\n' +
-
-    // Información del viaje
+    '          font-size: 9.5px; text-transform: uppercase; padding: 3px 9px;\n' +
+    '          margin: 4px 0 0; letter-spacing: .4px; }\n' +
     '.viaje { background-color: ' + COLORES.VERDE_CLARO + '; border: 1px solid ' + COLORES.VERDE_BORDE + '; }\n' +
-    '.viaje td { padding: 3px 8px; font-size: 8px; vertical-align: top; }\n' +
+    '.viaje td { padding: 3px 9px; font-size: 9.5px; vertical-align: top; }\n' +
     '.viaje .et { font-weight: bold; color: ' + COLORES.AZUL + '; }\n' +
     '.viaje .aseg { border-top: 1px dashed ' + COLORES.VERDE_BORDE + '; }\n' +
+    '.viaje .aseg.compacto { font-size: 8px; line-height: 1.2; }\n' +
 
-    // Tabla de coberturas
-    '.cob { font-size: 7px; background-color: ' + COLORES.GRIS_TABLA + '; }\n' +
-    '.cob th, .cob td { border: 1px solid #b0b0b0; padding: 1.2px 4px; text-align: left; }\n' +
-    '.cob th { background-color: ' + COLORES.VERDE + '; color: #ffffff; font-weight: bold;\n' +
-    '          text-align: center; font-size: 7px; text-transform: uppercase; }\n' +
+    // --- 3. Tabla de coberturas ---
+    '.cob { font-size: 7.6px; line-height: 1.2; background-color: ' + COLORES.GRIS_TABLA + '; margin-top: 4px; }\n' +
+    '.cob th, .cob td { border: 1px solid #b0b0b0; padding: 0.6px 5px; text-align: left; }\n' +
+    '.cob th.planes { background-color: ' + COLORES.VERDE + '; color: #ffffff; text-align: center;\n' +
+    '                 font-size: 10px; font-weight: bold; letter-spacing: .5px; padding: 4px; text-transform: uppercase; }\n' +
+    '.cob th.sub { background-color: ' + COLORES.VERDE + '; color: #ffffff; font-weight: bold;\n' +
+    '              text-align: center; font-size: 7.8px; text-transform: uppercase; padding: 2.5px 4px; }\n' +
+    '.cob th.sub-izq { text-align: left; }\n' +
     '.cob td.num { text-align: center; }\n' +
     '.cob tr.par { background-color: ' + COLORES.GRIS_FILA + '; }\n' +
-    '.cob .subnota { display: block; color: #444; font-size: 6.2px; }\n' +
-    '.cob tr.unit td { font-size: 7px; color: ' + COLORES.AZUL + '; background-color: #f0f6f3; }\n' +
+    '.cob .subnota { display: block; color: #444; font-size: 7px; }\n' +
+    '.cob tr.unit td { font-size: 8px; color: ' + COLORES.AZUL + '; background-color: #f0f6f3; padding: 2px 5px; }\n' +
     '.cob tr.total td { background-color: ' + COLORES.TOTAL_FONDO + '; font-weight: bold;\n' +
-    '                   border-top: 2px solid ' + COLORES.VERDE + '; font-size: 8px; color: ' + COLORES.VERDE + '; }\n' +
+    '                   border-top: 2px solid ' + COLORES.VERDE + '; font-size: 9px; color: ' + COLORES.VERDE + '; padding: 2.5px 5px; }\n' +
+    '.nota-tabla { font-size: 7.5px; color: #555; margin: 2px 0 0; }\n' +
 
-    // Especificaciones
+    // --- 4. Especificaciones ---
     '.espec { border: 1px solid ' + COLORES.VERDE_BORDE + '; background-color: #ffffff; }\n' +
-    '.espec td { padding: 4px 8px; font-size: 7.2px; line-height: 1.3; }\n' +
+    '.espec td { padding: 3px 10px; }\n' +
+    '.espec ul { list-style: none; }\n' +
+    '.espec li { font-size: 8.5px; line-height: 1.3; padding-left: 8px; text-indent: -8px; }\n' +
     '.espec strong { color: ' + COLORES.VERDE + '; }\n' +
 
-    // Recuadros operativos
-    '.ops td { vertical-align: top; padding: 0 4px 0 0; }\n' +
-    '.ops td.ultima { padding-right: 0; }\n' +
-    '.caja { border: 1px solid ' + COLORES.BORDE + '; padding: 5px 7px; height: 100%; }\n' +
-    '.caja h3 { font-size: 7.8px; color: ' + COLORES.AZUL + '; margin-bottom: 2px; }\n' +
-    '.caja p, .caja li { font-size: 6.9px; line-height: 1.3; }\n' +
-    '.caja ul { list-style: none; margin-top: 2px; }\n' +
-    '.qr-caja { text-align: center; }\n' +
-    '.qr-caja img { width: 62px; height: 62px; display: block; margin: 0 auto 2px; }\n' +
+    // --- 5. Recuadros operativos ---
+    '.ops { margin-top: 4px; border: 1px solid #b9b9b9; }\n' +
+    '.ops td.ops-banner { background-color: ' + COLORES.VERDE + '; color: #ffffff; text-align: center;\n' +
+    '                     font-weight: bold; font-size: 9.5px; text-transform: uppercase;\n' +
+    '                     padding: 4px; letter-spacing: .4px; border: none; }\n' +
+    '.ops td.celda { border: 1px solid #c4c4c4; background-color: #fafafa;\n' +
+    '                padding: 2.5px 8px; vertical-align: top; }\n' +
+    '.ops h3 { font-size: 8.5px; color: ' + COLORES.AZUL + '; margin-bottom: 2px; }\n' +
+    '.ops p { font-size: 7.8px; line-height: 1.3; }\n' +
+    '.ops ul { list-style: none; margin-top: 1px; }\n' +
+    '.ops li { font-size: 7.8px; line-height: 1.28; padding-left: 7px; text-indent: -7px; }\n' +
+    '.ops td.qr { text-align: center; vertical-align: middle; }\n' +
+    '.ops td.qr img { width: 66px; height: 66px; display: block; margin: 0 auto; }\n' +
 
-    // Observaciones y pie
-    '.obs { border-top: 1px solid ' + COLORES.BORDE + '; margin-top: 4px; padding-top: 3px; }\n' +
-    '.obs h3 { font-size: 7.5px; color: ' + COLORES.VERDE + '; text-transform: uppercase; margin-bottom: 2px; }\n' +
-    '.obs p { font-size: 6.3px; line-height: 1.3; color: #333; text-align: justify; margin-bottom: 1.5px; }\n' +
-    '.pie-logo { text-align: right; margin-top: 2px; }\n' +
-    '.pie-logo img { max-width: 105px; height: auto; }\n' +
-    '.paginacion { text-align: right; font-size: 6.5px; color: #666; margin-top: 2px; }\n';
+    // --- 6. Observaciones ---
+    '.obs { margin-top: 4px; }\n' +
+    '.obs h3 { font-size: 9px; color: ' + COLORES.VERDE + '; text-transform: uppercase; margin-bottom: 2px; }\n' +
+    '.obs ol { margin: 0 0 3px 13px; }\n' +
+    '.obs li { font-size: 8px; line-height: 1.25; text-align: justify; }\n' +
+    '.obs p { font-size: 8px; line-height: 1.25; margin-bottom: 1px; text-align: justify; }\n' +
+
+    // --- 7. Pie ---
+    '.pie { margin-top: 4px; border-top: 1px solid ' + COLORES.BORDE + '; padding-top: 3px; }\n' +
+    '.pie td { font-size: 8px; color: #444; vertical-align: middle; }\n' +
+    '.pie .centro { text-align: center; }\n' +
+    '.pie .der { text-align: right; }\n' +
+    '.pie .der img { max-width: 100px; height: auto; }\n';
 }
 
+/**
+ * Título y subtítulo aislados arriba; debajo, el contenedor con folio,
+ * solicitante, agente (solo si aplica) y fecha/hora de emisión.
+ */
 function bloqueEncabezado_(data) {
   const agente = data.mostrarAgente
-    ? '<div class="dato"><strong>Agente:</strong> ' + escaparHtml_(data.agenteInfo) + '</div>'
+    ? '<div><span class="et">Agente:</span> ' + escaparHtml_(data.agenteInfo) + '</div>'
     : '';
 
-  return '<table class="enc" role="presentation">\n<tr>\n' +
+  return '<table class="tit-tabla" role="presentation">\n<tr>\n' +
     '<td>' +
       '<div class="titulo">COTIZACIÓN SENIOR +79 AÑOS</div>' +
       '<div class="sub">Seguro de Viaje · Dirección de Negocios Especiales (DINE)</div>' +
-      '<div class="dato" style="margin-top:4px;"><strong>No. Cotización:</strong> ' + escaparHtml_(data.folio) + '</div>' +
-      '<div class="dato"><strong>Solicitante:</strong> ' + escaparHtml_(data.nombreSolicitante) + '</div>' +
     '</td>\n' +
-    '<td class="enc-der">' +
-      '<img class="enc-logo" alt="Seguros Atlas" src="' + ASSETS.LOGO_HEADER + '">' +
+    '<td class="tit-logo"><img alt="Seguros Atlas" src="' + ASSETS.LOGO_HEADER + '"></td>\n' +
+    '</tr>\n</table>\n' +
+
+    '<table class="meta" role="presentation">\n' +
+    '<colgroup><col style="width:58%"><col style="width:42%"></colgroup>\n<tr>\n' +
+    '<td>' +
+      '<div><span class="et">No. Cotización:</span> ' + escaparHtml_(data.folio) + '</div>' +
+      '<div><span class="et">Solicitante:</span> ' + escaparHtml_(data.nombreSolicitante) + '</div>' +
+    '</td>\n' +
+    '<td class="der">' +
       agente +
-      '<div class="dato"><strong>Emitido:</strong> ' + escaparHtml_(data.fechaEmision) + '</div>' +
+      '<div><span class="et">Emitido:</span> ' + escaparHtml_(data.fechaEmision) + '</div>' +
     '</td>\n' +
     '</tr>\n</table>\n';
 }
@@ -578,14 +610,21 @@ function bloqueInfoViaje_(data) {
       celda('Cantidad de Asegurados', String(data.numAsegurados)) +
       celda('Vigencia de la cotización', data.vigenciaCotizacion) +
     '</tr>\n<tr>' +
-      '<td class="aseg" colspan="3"><span class="et">Asegurados:</span> ' +
-        escaparHtml_(data.listaAsegurados || '—') + '</td>' +
+      // Con muchos asegurados la lista es el único bloque que crece: se
+      // compacta para que la hoja no se desborde a una segunda página.
+      '<td class="aseg' + (data.numAsegurados > 3 ? ' compacto' : '') + '" colspan="3">' +
+        '<span class="et">Asegurados:</span> ' + escaparHtml_(data.listaAsegurados || '—') + '</td>' +
     '</tr>\n</table>\n';
 }
 
-function bloquePlanes_(data) {
-  const encabezadosPlanes = PLANES
-    .map((plan) => '<th>' + escaparHtml_(plan) + '</th>')
+/**
+ * Tabla de coberturas: banner "PLANES DISPONIBLES" a todo lo ancho, sub-
+ * encabezados por plan, y al pie la prima unitaria y la prima total.
+ * No lleva la fila de casillas de selección.
+ */
+function bloqueCoberturas_(data) {
+  const subEncabezados = PLANES
+    .map((plan) => '<th class="sub">' + escaparHtml_(plan) + '</th>')
     .join('');
 
   const filas = COBERTURAS.map((cobertura, indice) => {
@@ -604,35 +643,50 @@ function bloquePlanes_(data) {
   const primasTotales = [data.totalMaster, data.totalSmart, data.totalElite, data.totalPremium]
     .map((total) => '<td class="num">' + formatearMoneda_(total) + '</td>').join('');
 
-  return '<div class="banner">Planes disponibles</div>\n' +
-    '<table class="cob">\n' +
+  return '<table class="cob">\n' +
     '<colgroup><col style="width:40%"><col style="width:15%"><col style="width:15%"><col style="width:15%"><col style="width:15%"></colgroup>\n' +
-    '<thead><tr><th style="text-align:left;">Cobertura (sumas aseguradas en USD)</th>' + encabezadosPlanes + '</tr></thead>\n' +
-    '<tbody>\n' + filas + '\n' +
+    '<thead>\n' +
+    '<tr><th class="planes" colspan="5">Planes disponibles</th></tr>\n' +
+    '<tr><th class="sub sub-izq">Coberturas</th>' + subEncabezados + '</tr>\n' +
+    '</thead>\n<tbody>\n' + filas + '\n' +
     '<tr class="unit"><td>Prima por asegurado (USD)</td>' + primasUnitarias + '</tr>\n' +
-    '<tr class="total"><td>PRIMA TOTAL (USD) — ' + data.numAsegurados + ' asegurado(s)</td>' + primasTotales + '</tr>\n' +
-    '</tbody>\n</table>\n';
+    '<tr class="total"><td>PRIMA TOTAL (En dólares) — ' + data.numAsegurados + ' asegurado(s)</td>' +
+      primasTotales + '</tr>\n' +
+    '</tbody>\n</table>\n' +
+    '<p class="nota-tabla" style="font-style: italic;">*Nota: Las sumas aseguradas aplican por asegurado y ' +
+    'están expresadas en dólares americanos (USD). Primas netas, sin IVA ni derecho de póliza.</p>\n';
 }
 
 function bloqueEspecificaciones_() {
   return '<div class="banner">Especificaciones</div>\n' +
-    '<table class="espec" role="presentation">\n<tr><td>' +
-      '<strong>Edad de aceptación:</strong> de ' + CONFIG.EDAD_MINIMA + ' hasta ' + CONFIG.EDAD_MAXIMA + ' años. &nbsp;·&nbsp; ' +
-      '<strong>Asegurados:</strong> mexicanos o extranjeros residiendo en México. &nbsp;·&nbsp; ' +
-      '<strong>Cobertura:</strong> desde las 00:00 hrs del inicio hasta las 23:59 hrs de la culminación del viaje.<br>' +
-      '<strong>Territorialidad:</strong> México y el Extranjero. Excepto: Afganistán, Bielorrusia, Crimea, Zaporizhzhia, Kherson, ' +
-      'Donetsk, Luhansk, Irán, Israel, Corea del Norte, Rusia, Siria y Venezuela.<br>' +
-      '<strong>Viajes nacionales no incluyen cobertura COVID-19.</strong> &nbsp;·&nbsp; ' +
-      '<strong>No hay deducibles ni coaseguros.</strong>' +
-    '</td></tr>\n</table>\n';
+    '<table class="espec" role="presentation">\n<tr><td>\n<ul>\n' +
+      '<li>• <strong>Edad de aceptación:</strong> de ' + CONFIG.EDAD_MINIMA + ' hasta ' + CONFIG.EDAD_MAXIMA + ' años.</li>\n' +
+      '<li>• <strong>Asegurados:</strong> mexicanos o extranjeros residiendo en México.</li>\n' +
+      '<li>• <strong>Cobertura:</strong> desde las 00:00 hrs del inicio hasta las 23:59 hrs de la culminación del viaje.</li>\n' +
+      '<li>• <strong>Territorialidad:</strong> México y el Extranjero. Excepto: Afganistán, Bielorrusia, Crimea, ' +
+      'Zaporizhzhia, Kherson, Donetsk, Luhansk, Irán, Israel, Corea del Norte, Rusia, Siria y Venezuela.</li>\n' +
+      '<li>• <strong>Viajes nacionales no incluyen cobertura COVID-19.</strong></li>\n' +
+      '<li>• <strong>No hay deducibles ni coaseguros.</strong></li>\n' +
+    '</ul>\n</td></tr>\n</table>\n';
 }
 
+/**
+ * Cuadrícula de recuadros bajo un banner común.
+ *
+ * Se construye con una tabla de 6 columnas y colspan (3+3 arriba, 2+2+2
+ * abajo) en lugar de grid/flex: el resultado visual es la misma retícula
+ * alineada, pero sobrevive la conversión a DOCX de Word Online.
+ */
 function bloqueAccionOperativa_() {
-  return '<table class="ops" role="presentation" style="margin-top:5px;">\n' +
-    '<colgroup><col style="width:37%"><col style="width:37%"><col style="width:26%"></colgroup>\n<tr>\n' +
+  return '<table class="ops" role="presentation">\n' +
+    '<colgroup><col style="width:16.67%"><col style="width:16.67%"><col style="width:16.66%">' +
+    '<col style="width:16.67%"><col style="width:16.67%"><col style="width:16.66%"></colgroup>\n' +
 
-    '<td><div class="caja">' +
-      '<h3>¿CÓMO SOLICITAR LA EMISIÓN DE TU PÓLIZA?</h3>' +
+    '<tr><td class="ops-banner" colspan="6">¿Cómo solicitar la emisión de tu póliza?</td></tr>\n' +
+
+    '<tr>\n' +
+    '<td class="celda" colspan="3">' +
+      '<h3>Pasos y requisitos para iniciar tu proceso</h3>' +
       '<p>En caso de aceptar la propuesta, envía la siguiente documentación al correo ' +
       '<strong>segurodeviaje@segurosatlas.com.mx</strong>:</p>' +
       '<ul>' +
@@ -641,47 +695,80 @@ function bloqueAccionOperativa_() {
         '<li>• TCC y TCI (solicítalos a tu Mesa de Control).</li>' +
         '<li>• Constancia de Situación Fiscal (CSF) actualizada.</li>' +
       '</ul>' +
-    '</div></td>\n' +
+    '</td>\n' +
+    '<td class="celda" colspan="3">' +
+      '<h3>Consideraciones importantes</h3>' +
+      '<ul>' +
+        '<li>• <strong>Revisión de datos:</strong> verifica que la información de los asegurados y del contratante ' +
+        'sea correcta y legible.</li>' +
+        '<li>• <strong>Tiempo de gestión:</strong> la solicitud debe enviarse al menos 2 días hábiles antes del ' +
+        'inicio del viaje.</li>' +
+        '<li>• <strong>Correcciones:</strong> los cambios por errores u omisiones toman de 3 a 5 días hábiles.</li>' +
+        '<li>• <strong>Actualizaciones:</strong> cualquier cambio en los días de viaje requiere re-cotización ' +
+        'previa a la emisión.</li>' +
+      '</ul>' +
+    '</td>\n' +
+    '</tr>\n' +
 
-    '<td><div class="caja">' +
-      '<h3>REGISTRO DE CONSTANCIA DE SITUACIÓN FISCAL</h3>' +
+    '<tr>\n' +
+    '<td class="celda" colspan="2">' +
+      '<h3>Registro de Constancia de Situación Fiscal</h3>' +
       '<p>Si requieres factura, antes de solicitar la emisión es indispensable registrar la situación fiscal ' +
       'enviando un correo a <strong>constanciafiscal@segurosatlas.com.mx</strong> con este formato estricto:</p>' +
       '<ul>' +
         '<li>• <strong>Asunto (mayúsculas):</strong> RFC DEL CONTRATANTE.</li>' +
         '<li>• <strong>Contenido:</strong> completamente en blanco (sin firma, sin texto).</li>' +
-        '<li>• <strong>Adjunto (PDF en mayúsculas):</strong> CONSTANCIA + RFC.</li>' +
+        '<li>• <strong>Archivo adjunto (PDF en mayúsculas):</strong> CONSTANCIA + RFC.</li>' +
         '<li>• <strong>Confirmación:</strong> recibirás un correo con el estatus "Registro Exitoso".</li>' +
       '</ul>' +
-    '</div></td>\n' +
-
-    '<td class="ultima"><div class="caja qr-caja">' +
-      '<h3>¿DESEAS RECOTIZAR TU VIAJE?</h3>' +
+    '</td>\n' +
+    '<td class="celda qr" colspan="2">' +
       '<img alt="Código QR para cotizar" src="' + ASSETS.QR_COTIZAR + '">' +
+    '</td>\n' +
+    '<td class="celda" colspan="2">' +
+      '<h3>¿Deseas cotizar o recotizar tu viaje?</h3>' +
       '<p>Escanea el código QR y solicita una nueva cotización de forma rápida y sencilla.</p>' +
-    '</div></td>\n' +
+    '</td>\n' +
+    '</tr>\n' +
 
-    '</tr>\n</table>\n';
+    '</table>\n';
 }
 
-function bloqueObservaciones_(data) {
+function bloqueObservaciones_() {
   return '<div class="obs">\n' +
     '<h3>Observaciones</h3>\n' +
-    '<p>Las sumas aseguradas aplican por asegurado y están expresadas en dólares americanos (USD). Las primas ' +
-    'señaladas son netas, no incluyen IVA ni derecho de póliza, y corresponden exclusivamente a los asegurados ' +
-    'listados en esta cotización dentro del rango de edad de ' + CONFIG.EDAD_MINIMA + ' a ' + CONFIG.EDAD_MAXIMA + ' años.</p>\n' +
-    '<p>La presente cotización tiene una vigencia al <strong>' + escaparHtml_(data.vigenciaCotizacion) + '</strong> y no constituye ' +
-    'una póliza ni garantiza la aceptación del riesgo; queda sujeta a la autorización de Seguros Atlas, S.A. y al ' +
-    'cumplimiento de los requisitos de emisión. Verifica que la información de los asegurados y del contratante sea ' +
-    'correcta y legible antes de solicitar la emisión.</p>\n' +
-    '<p>Por políticas de la Dirección de Negocios Especiales, la solicitud de emisión debe enviarse con un mínimo de ' +
-    CONFIG.DIAS_ANTICIPACION_MINIMA + ' días naturales de anticipación al inicio del viaje. Las correcciones por errores u ' +
-    'omisiones toman de 3 a 5 días hábiles. Cualquier cambio en las fechas o en los días de viaje requiere una ' +
-    're-cotización previa a la emisión. La cobertura, exclusiones, deducibles y condiciones aplicables se rigen en su ' +
-    'totalidad por las condiciones generales del producto contratado registradas ante la Comisión Nacional de Seguros ' +
-    'y Fianzas.</p>\n' +
-    '<div class="pie-logo"><img alt="Seguros Atlas" src="' + ASSETS.LOGO_FOOTER + '"></div>\n' +
+    '<ol>\n' +
+    '<li>La presente es únicamente una COTIZACIÓN, POR LO QUE NO SURTE NINGÚN EFECTO LEGAL COMO PÓLIZA DE SEGURO</li>\n' +
+    '<li>La presenta propuesta tiene un máximo de 10 DÍAS NATURALES a partir de la fecha y hora de cotización, ' +
+    'en caso de la aceptación de la misma, deberá sujetarse a las condiciones y políticas vigentes de Seguros Atlas.</li>\n' +
+    '<li>En caso de existir una cotización anterior o póliza emitida vigente, esta cotización quedará sin efecto alguno.</li>\n' +
+    '<li>Los límites máximos de responsabilidad de la presente cotización son por Asegurado</li>\n' +
+    '</ol>\n' +
+    '<p>El alcance, términos, condiciones, exclusiones y limitantes de las coberturas cotizadas se encuentran en ' +
+    'las condiciones generales que se le entregarán al momento de la contratación de la póliza, las cuales también ' +
+    'podrá obtener de forma gratuita en nuestra página web ' +
+    '<a href="https://www.segurosatlas.com.mx/Descargas.html">www.segurosatlas.com.mx/Descargas.html</a></p>\n' +
+    '<p>En Seguros Atlas S.A. sus datos están protegidos. Consulte el aviso de privacidad en ' +
+    '<a href="https://www.segurosatlas.com.mx">www.segurosatlas.com.mx</a></p>\n' +
+    '<p>Nota : El Impuesto al Valor Agregado se calcula de conformidad con el artículo 1 de LIVA.</p>\n' +
     '</div>\n';
+}
+
+/**
+ * Pie institucional. El domicilio, el teléfono y los contactos se reparten en
+ * tres celdas (izquierda / centro / derecha), que es el mismo reparto que
+ * produciría justify-content: space-between sin depender de flexbox.
+ */
+function bloquePie_() {
+  return '<table class="pie" role="presentation">\n' +
+    '<colgroup><col style="width:44%"><col style="width:28%"><col style="width:28%"></colgroup>\n<tr>\n' +
+    '<td>Seguros Atlas S.A. Paseo de los Tamarindos 60 Planta Baja Col. Bosques de las Lomas ' +
+    'Ciudad de México C.P.05120</td>\n' +
+    '<td class="centro">T. 55 9177-5000<br>' +
+    '<a href="https://www.segurosatlas.com.mx">www.segurosatlas.com.mx</a><br>' +
+    'segurodeviaje@segurosatlas.com.mx</td>\n' +
+    '<td class="der"><img alt="Seguros Atlas" src="' + ASSETS.LOGO_FOOTER + '"></td>\n' +
+    '</tr>\n</table>\n';
 }
 
 // ============================================================================
