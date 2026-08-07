@@ -530,11 +530,6 @@ function estilosCotizacion_() {
     '.viaje .et { font-weight: bold; color: ' + COLORES.AZUL + '; }\n' +
 
     // --- 3. Tabla de coberturas ---
-    // Marca de agua del emblema Atlas, en mosaico vertical detrás de la
-    // tabla: al quitar el fondo gris y las líneas horizontales, se ve sin
-    // interrupciones de arriba a abajo.
-    '.cob-wrap { background-image: url(' + ASSETS.WATERMARK_ROJO + ');\n' +
-    '            background-repeat: repeat-y; background-position: center top; background-size: 130px auto; }\n' +
     '.cob { font-size: 9.2px; line-height: 1.2; margin-top: 4px; border-top: 1px solid #d6d6d6;\n' +
     '       border-bottom: 1px solid #d6d6d6; }\n' +
     // Solo líneas verticales (columnas): sin borde superior/inferior por celda.
@@ -676,8 +671,7 @@ function bloqueCoberturas_(data) {
   const primasTotales = [data.totalMaster, data.totalSmart, data.totalElite, data.totalPremium]
     .map((total) => '<td class="num">' + formatearMoneda_(total) + '</td>').join('');
 
-  return '<div class="cob-wrap">\n' +
-    '<table class="cob">\n' +
+  return '<table class="cob">\n' +
     '<colgroup><col style="width:40%"><col style="width:15%"><col style="width:15%"><col style="width:15%"><col style="width:15%"></colgroup>\n' +
     '<thead>\n' +
     '<tr><th class="planes" colspan="5">Planes disponibles</th></tr>\n' +
@@ -687,7 +681,6 @@ function bloqueCoberturas_(data) {
       (data.numAsegurados === 1 ? 'asegurado' : 'asegurados') + ') + IVA en dólares (USD)</td>' +
       primasTotales + '</tr>\n' +
     '</tbody>\n</table>\n' +
-    '</div>\n' +
     '<p class="nota-tabla" style="font-style: italic;">Nota: Las sumas aseguradas aplican por asegurado y ' +
     'están expresadas en dólares americanos (USD).</p>\n';
 }
