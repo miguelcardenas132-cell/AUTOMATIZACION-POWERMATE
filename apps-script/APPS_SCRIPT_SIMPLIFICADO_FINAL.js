@@ -486,7 +486,7 @@ function generarHtmlCotizacion_(data) {
       bloqueCoberturas_(data) +
       bloqueEspecificaciones_() +
       bloqueAccionOperativa_() +
-      bloqueObservaciones_() +
+      bloqueObservacionesYQr_() +
     '</td></tr>\n' +
     '<tr><td class="marco-pie">\n' +
       bloquePie_() +
@@ -530,20 +530,20 @@ function estilosCotizacion_() {
     '.viaje .et { font-weight: bold; color: ' + COLORES.AZUL + '; }\n' +
 
     // --- 3. Tabla de coberturas ---
-    '.cob { font-size: 8.5px; line-height: 1.2; background-color: ' + COLORES.GRIS_TABLA + '; margin-top: 4px; }\n' +
-    '.cob th, .cob td { border: 1px solid #b0b0b0; padding: 1.2px 5px; text-align: left; }\n' +
+    '.cob { font-size: 9.2px; line-height: 1.2; background-color: ' + COLORES.GRIS_TABLA + '; margin-top: 4px; }\n' +
+    '.cob th, .cob td { border: 1px solid #b0b0b0; padding: 2.3px 5px; text-align: left; }\n' +
     '.cob th.planes { background-color: ' + COLORES.VERDE + '; color: #ffffff; text-align: center;\n' +
-    '                 font-size: 10.5px; font-weight: bold; letter-spacing: .5px; padding: 4px; text-transform: uppercase; }\n' +
+    '                 font-size: 11.5px; font-weight: bold; letter-spacing: .5px; padding: 4px; text-transform: uppercase; }\n' +
     '.cob th.sub { background-color: ' + COLORES.VERDE + '; color: #ffffff; font-weight: bold;\n' +
-    '              text-align: center; font-size: 8.5px; text-transform: uppercase; padding: 1.2px 4px; }\n' +
+    '              text-align: center; font-size: 9.1px; text-transform: uppercase; padding: 2.3px 4px; }\n' +
     '.cob th.sub-izq { text-align: left; }\n' +
-    '.cob th .moneda { display: block; font-weight: normal; font-size: 7px; }\n' +
+    '.cob th .moneda { display: block; font-weight: normal; font-size: 7.6px; }\n' +
     '.cob td.num { text-align: center; }\n' +
     '.cob tr.par { background-color: ' + COLORES.GRIS_FILA + '; }\n' +
-    '.cob .subnota { display: block; color: #444; font-size: 7.4px; }\n' +
+    '.cob .subnota { display: block; color: #444; font-size: 7.9px; }\n' +
     '.cob tr.total td { background-color: ' + COLORES.TOTAL_FONDO + '; font-weight: bold;\n' +
-    '                   border-top: 2px solid ' + COLORES.VERDE + '; font-size: 9.5px; color: ' + COLORES.VERDE + '; padding: 3px 5px; }\n' +
-    '.nota-tabla { font-size: 7.8px; color: #555; margin: 2px 0 0; }\n' +
+    '                   border-top: 2px solid ' + COLORES.VERDE + '; font-size: 10.2px; color: ' + COLORES.VERDE + '; padding: 3.5px 5px; }\n' +
+    '.nota-tabla { font-size: 8.2px; color: #555; margin: 2px 0 0; }\n' +
 
     // --- 4. Especificaciones ---
     '.espec { border: 1px solid ' + COLORES.VERDE_BORDE + '; background-color: #ffffff; }\n' +
@@ -566,11 +566,16 @@ function estilosCotizacion_() {
     '.ops p { font-size: 7.8px; line-height: 1.24; }\n' +
     '.ops ul { list-style: none; margin-top: 1px; margin-left: 7px; }\n' +
     '.ops li { font-size: 7.8px; line-height: 1.24; padding-left: 7px; text-indent: -7px; }\n' +
-    '.qr-bloque { border-collapse: collapse; width: 100%; }\n' +
-    '.qr-bloque td { border: none; padding: 0; vertical-align: middle; }\n' +
-    '.qr-bloque td.qr-img { width: 84px; }\n' +
-    '.qr-bloque td.qr-img img { width: 78px; height: 78px; display: block; }\n' +
-    '.qr-bloque td.qr-txt { padding-left: 10px; }\n' +
+    // Cierre: observaciones a la izquierda, QR esquinado abajo a la derecha.
+    '.cierre { border-collapse: collapse; margin-top: 3px; }\n' +
+    '.cierre td { vertical-align: top; }\n' +
+    '.cierre-obs { padding-right: 9px; }\n' +
+    '.cierre-qr { vertical-align: bottom; }\n' +
+    '.qr-tarjeta { border: 1px solid #d5d5d5; border-radius: 6px; background-color: #ffffff;\n' +
+    '              padding: 5px 6px; text-align: center; }\n' +
+    '.qr-tarjeta img { width: 76px; height: 76px; display: block; margin: 0 auto 3px; }\n' +
+    '.qr-tarjeta h3 { font-size: 8px; color: ' + COLORES.AZUL + '; margin-bottom: 1px; }\n' +
+    '.qr-tarjeta p { font-size: 7px; line-height: 1.22; color: #444; }\n' +
 
     // --- 6. Observaciones ---
     '.obs { margin-top: 3px; }\n' +
@@ -665,7 +670,8 @@ function bloqueCoberturas_(data) {
     '<tr><th class="planes" colspan="5">Planes disponibles</th></tr>\n' +
     '<tr><th class="sub sub-izq">Coberturas</th>' + subEncabezados + '</tr>\n' +
     '</thead>\n<tbody>\n' + filas + '\n' +
-    '<tr class="total"><td>Prima neta por (' + data.numAsegurados + ') + IVA en dólares (USD)</td>' +
+    '<tr class="total"><td>Prima neta por (' + data.numAsegurados + ' ' +
+      (data.numAsegurados === 1 ? 'asegurado' : 'asegurados') + ') + IVA en dólares (USD)</td>' +
       primasTotales + '</tr>\n' +
     '</tbody>\n</table>\n' +
     '<p class="nota-tabla" style="font-style: italic;">Nota: Las sumas aseguradas aplican por asegurado y ' +
@@ -729,24 +735,26 @@ function bloqueAccionOperativa_() {
       '</ul>' +
     '</td>\n' +
     '</tr>\n' +
-
-    // QR y su texto en una sola tarjeta: la tabla interna no lleva bordes,
-    // así que se leen como un único bloque visual.
-    '<tr>\n' +
-    '<td class="celda" colspan="3">' +
-      '<table class="qr-bloque" role="presentation">' +
-        '<tr>' +
-          '<td class="qr-img"><img alt="Código QR para recotizar" src="' + ASSETS.QR_COTIZAR + '"></td>' +
-          '<td class="qr-txt">' +
-            '<h3>¿Deseas recotizar tu viaje?</h3>' +
-            '<p>Escanea el código QR y solicita una nueva cotización de forma rápida y sencilla.</p>' +
-          '</td>' +
-        '</tr>' +
-      '</table>' +
-    '</td>\n' +
-    '</tr>\n' +
-
     '</table>\n</div>\n';
+}
+
+/**
+ * Observaciones a la izquierda y el código QR esquinado abajo a la derecha,
+ * en una misma fila: el texto legal aprovecha el ancho que antes quedaba
+ * muerto junto al QR, y el QR cierra la hoja como llamada a la acción.
+ */
+function bloqueObservacionesYQr_() {
+  return '<table class="cierre" role="presentation">\n' +
+    '<colgroup><col style="width:79%"><col style="width:21%"></colgroup>\n<tr>\n' +
+    '<td class="cierre-obs">' + bloqueObservaciones_() + '</td>\n' +
+    '<td class="cierre-qr">' +
+      '<div class="qr-tarjeta">' +
+        '<img alt="Código QR para recotizar" src="' + ASSETS.QR_COTIZAR + '">' +
+        '<h3>¿Deseas recotizar tu viaje?</h3>' +
+        '<p>Escanea el código QR y solicita una nueva cotización de forma rápida y sencilla.</p>' +
+      '</div>' +
+    '</td>\n' +
+    '</tr>\n</table>\n';
 }
 
 function bloqueObservaciones_() {
