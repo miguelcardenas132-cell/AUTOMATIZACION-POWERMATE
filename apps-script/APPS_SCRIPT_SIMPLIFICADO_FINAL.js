@@ -530,19 +530,28 @@ function estilosCotizacion_() {
     '.viaje .et { font-weight: bold; color: ' + COLORES.AZUL + '; }\n' +
 
     // --- 3. Tabla de coberturas ---
-    '.cob { font-size: 9.2px; line-height: 1.2; background-color: ' + COLORES.GRIS_TABLA + '; margin-top: 4px; }\n' +
-    '.cob th, .cob td { border: 1px solid #b0b0b0; padding: 2.3px 5px; text-align: left; }\n' +
+    // Marca de agua del emblema Atlas, en mosaico vertical detrás de la
+    // tabla: al quitar el fondo gris y las líneas horizontales, se ve sin
+    // interrupciones de arriba a abajo.
+    '.cob-wrap { background-image: url(' + ASSETS.WATERMARK_ROJO + ');\n' +
+    '            background-repeat: repeat-y; background-position: center top; background-size: 130px auto; }\n' +
+    '.cob { font-size: 9.2px; line-height: 1.2; margin-top: 4px; border-top: 1px solid #d6d6d6;\n' +
+    '       border-bottom: 1px solid #d6d6d6; }\n' +
+    // Solo líneas verticales (columnas): sin borde superior/inferior por celda.
+    '.cob th, .cob td { border: none; border-left: 1px solid #d6d6d6; border-right: 1px solid #d6d6d6;\n' +
+    '                    padding: 2.3px 5px; text-align: left; }\n' +
     '.cob th.planes { background-color: ' + COLORES.VERDE + '; color: #ffffff; text-align: center;\n' +
-    '                 font-size: 11.5px; font-weight: bold; letter-spacing: .5px; padding: 4px; text-transform: uppercase; }\n' +
+    '                 font-size: 11.5px; font-weight: bold; letter-spacing: .5px; padding: 4px; text-transform: uppercase;\n' +
+    '                 border: none; }\n' +
     '.cob th.sub { background-color: ' + COLORES.VERDE + '; color: #ffffff; font-weight: bold;\n' +
     '              text-align: center; font-size: 9.1px; text-transform: uppercase; padding: 2.3px 4px; }\n' +
     '.cob th.sub-izq { text-align: left; }\n' +
     '.cob th .moneda { display: block; font-weight: normal; font-size: 7.6px; }\n' +
     '.cob td.num { text-align: center; }\n' +
-    '.cob tr.par { background-color: ' + COLORES.GRIS_FILA + '; }\n' +
     '.cob .subnota { display: block; color: #444; font-size: 7.9px; }\n' +
     '.cob tr.total td { background-color: ' + COLORES.TOTAL_FONDO + '; font-weight: bold;\n' +
-    '                   border-top: 2px solid ' + COLORES.VERDE + '; font-size: 10.2px; color: ' + COLORES.VERDE + '; padding: 3.5px 5px; }\n' +
+    '                   border-top: 2px solid ' + COLORES.VERDE + ' !important; border-bottom: none;\n' +
+    '                   font-size: 10.2px; color: ' + COLORES.VERDE + '; padding: 3.5px 5px; }\n' +
     '.nota-tabla { font-size: 8.2px; color: #555; margin: 2px 0 0; }\n' +
 
     // --- 4. Especificaciones ---
@@ -654,21 +663,21 @@ function bloqueCoberturas_(data) {
     .map((plan) => '<th class="sub">' + escaparHtml_(plan) + '<span class="moneda">(USD)</span></th>')
     .join('');
 
-  const filas = COBERTURAS.map((cobertura, indice) => {
+  const filas = COBERTURAS.map((cobertura) => {
     const celdas = cobertura.valores.map((valor, columna) => {
       const nota = cobertura.nota && cobertura.nota[columna]
         ? '<span class="subnota">' + escaparHtml_(cobertura.nota[columna]) + '</span>'
         : '';
       return '<td class="num">' + escaparHtml_(valor) + nota + '</td>';
     }).join('');
-    const clase = indice % 2 === 1 ? ' class="par"' : '';
-    return '<tr' + clase + '><td>' + escaparHtml_(cobertura.concepto) + '</td>' + celdas + '</tr>';
+    return '<tr><td>' + escaparHtml_(cobertura.concepto) + '</td>' + celdas + '</tr>';
   }).join('\n');
 
   const primasTotales = [data.totalMaster, data.totalSmart, data.totalElite, data.totalPremium]
     .map((total) => '<td class="num">' + formatearMoneda_(total) + '</td>').join('');
 
-  return '<table class="cob">\n' +
+  return '<div class="cob-wrap">\n' +
+    '<table class="cob">\n' +
     '<colgroup><col style="width:40%"><col style="width:15%"><col style="width:15%"><col style="width:15%"><col style="width:15%"></colgroup>\n' +
     '<thead>\n' +
     '<tr><th class="planes" colspan="5">Planes disponibles</th></tr>\n' +
@@ -678,6 +687,7 @@ function bloqueCoberturas_(data) {
       (data.numAsegurados === 1 ? 'asegurado' : 'asegurados') + ') + IVA en dólares (USD)</td>' +
       primasTotales + '</tr>\n' +
     '</tbody>\n</table>\n' +
+    '</div>\n' +
     '<p class="nota-tabla" style="font-style: italic;">Nota: Las sumas aseguradas aplican por asegurado y ' +
     'están expresadas en dólares americanos (USD).</p>\n';
 }
