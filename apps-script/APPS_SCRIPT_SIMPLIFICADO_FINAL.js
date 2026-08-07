@@ -575,7 +575,7 @@ function estilosCotizacion_() {
     '.obs p { font-size: 8px; line-height: 1.12; margin-bottom: 0.5px; text-align: justify; }\n' +
 
     // --- 7. Pie ---
-    '.pie { margin-top: 3px; border-top: 1px solid ' + COLORES.BORDE + '; padding-top: 3px; }\n' +
+    '.pie { margin-top: 3px; padding-top: 3px; }\n' +
     '.pie td { font-size: 8px; color: #555; vertical-align: middle; text-align: center;\n' +
     '          line-height: 1.35; padding: 0 8px; }\n' +
     '.pie td.sep { border-left: 1px solid #c8c8c8; }\n' +
