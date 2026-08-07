@@ -56,6 +56,22 @@ const CONFIG = {
   // Formulario que el cliente llena para solicitar la emisión (Paso 1 del PDF).
   URL_FORMULARIO_EMISION: 'https://forms.gle/PENDIENTE_URL_DEL_FORMULARIO',
 
+  // Enlaces del cuerpo del correo.
+  URL_PORTAL_AGENTES: 'https://PENDIENTE_URL_PORTAL_DE_AGENTES',
+  URL_AVISO_PRIVACIDAD: 'https://www.segurosatlas.com.mx/aviso-de-privacidad',
+
+  /**
+   * Imágenes del correo.
+   *
+   * Tienen que ser URLs públicas, NO data: URI en base64 como las del PDF:
+   * Gmail y Outlook bloquean o descartan las imágenes incrustadas en base64
+   * dentro del cuerpo de un correo. Sube los archivos a un servidor o
+   * biblioteca de SharePoint con acceso anónimo de lectura y pega aquí el
+   * enlace directo.
+   */
+  URL_LOGO_CORREO: 'https://PENDIENTE_URL_LOGO_ATLAS_BLANCO.png',
+  URL_FIRMA_CORREO: 'https://PENDIENTE_URL_FIRMA_85_ANIVERSARIO.png',
+
   ESTATUS: {
     APROBADO: 'APROBADO',
     RECHAZADO_TIEMPO: 'RECHAZADO_TIEMPO',
@@ -815,18 +831,69 @@ function construirAsunto_(data) {
   return 'Solicitud no procesada — Seguro de Viaje SENIOR +79 — Folio ' + data.folio;
 }
 
+/**
+ * Franja verde superior: título y bajada a la izquierda, logotipo a la
+ * derecha. Se reparte con una tabla de dos celdas porque Outlook ignora
+ * flexbox; el logo lleva max-width para no desbordar en pantallas chicas.
+ */
 function encabezadoCorreo_(titulo) {
   return '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
     'style="background-color:' + COLORES.VERDE + ';border-collapse:collapse;">' +
-    '<tr><td style="padding:14px 18px;">' +
-      '<div style="font-size:17px;font-weight:bold;color:#ffffff;">' + escaparHtml_(titulo) + '</div>' +
-      '<div style="font-size:11px;color:#cfe6da;margin-top:3px;">Seguros Atlas · Dirección de Negocios Especiales (DINE)</div>' +
+    '<tr>' +
+      '<td align="left" valign="middle" style="padding:14px 10px 14px 18px;">' +
+        '<div style="font-size:17px;font-weight:bold;color:#ffffff;font-family:Arial,Helvetica,sans-serif;">' +
+          escaparHtml_(titulo) + '</div>' +
+        '<div style="font-size:11px;color:#cfe6da;margin-top:3px;font-family:Arial,Helvetica,sans-serif;">' +
+          'emitido por Seguro de Viaje - Dirección de Negocios Especiales (DINE)</div>' +
+      '</td>' +
+      '<td align="right" valign="middle" style="padding:14px 18px 14px 10px;width:130px;">' +
+        '<img src="' + escaparHtml_(CONFIG.URL_LOGO_CORREO) + '" alt="Seguros Atlas" width="120" ' +
+        'style="display:block;width:120px;max-width:100%;height:auto;border:0;margin-left:auto;">' +
+      '</td>' +
+    '</tr></table>';
+}
+
+/** Despedida más la firma corporativa. */
+function pieCorreo_() {
+  return '<p style="margin:0 0 16px 0;">Quedamos a sus órdenes para cualquier aclaración.</p>' +
+    firmaCorreo_();
+}
+
+/**
+ * Firma institucional del área. El bloque de datos va en texto (no como
+ * imagen) para que siga siendo legible aunque el cliente de correo bloquee
+ * la descarga de imágenes; solo el gráfico del aniversario es un <img>.
+ */
+function firmaCorreo_() {
+  const linea = (contenido) =>
+    '<div style="font-size:12px;line-height:1.45;color:#333333;' +
+    'font-family:Arial,Helvetica,sans-serif;">' + contenido + '</div>';
+
+  return '<table role="presentation" cellpadding="0" cellspacing="0" ' +
+    'style="border-collapse:collapse;border-top:1px solid ' + COLORES.BORDE + ';padding-top:12px;">' +
+    '<tr><td style="padding:12px 0 0 0;">' +
+      '<div style="font-size:14px;font-weight:bold;color:' + COLORES.AZUL + ';' +
+        'font-family:Arial,Helvetica,sans-serif;">Seguro de Viaje</div>' +
+      '<div style="font-size:12px;color:#666666;margin-bottom:8px;' +
+        'font-family:Arial,Helvetica,sans-serif;">DINE (Dirección de Negocios Especiales)</div>' +
+      linea('<strong>Tel.</strong> (55) 9177 &ndash; 5000 Ext. 4931 &nbsp; <strong>Cel:</strong> 55 1322 6276') +
+      linea('<strong>Correo.</strong> <a href="mailto:segurodeviaje@segurosatlas.com.mx" ' +
+        'style="color:' + COLORES.VERDE + ';">segurodeviaje@segurosatlas.com.mx</a>') +
+      linea('AV. Paseo de los Tamarindos No. 60 INT. PB, C.P. 05120') +
+      linea('Col. Bosques de las Lomas, Ciudad de México') +
+      '<img src="' + escaparHtml_(CONFIG.URL_FIRMA_CORREO) + '" alt="85 Aniversario Seguros Atlas" ' +
+      'width="260" style="display:block;width:260px;max-width:100%;height:auto;border:0;margin-top:12px;">' +
     '</td></tr></table>';
 }
 
-function pieCorreo_() {
-  return '<p style="margin:0 0 6px 0;">Quedamos a sus órdenes para cualquier aclaración.</p>' +
-    '<p style="margin:0;color:#666;font-size:12px;">Dirección de Negocios Especiales · Seguros Atlas</p>';
+/** Línea discreta de cierre, fuera del marco del mensaje. */
+function avisoPrivacidadCorreo_() {
+  return '<div style="text-align:center;font-size:10px;color:#a3a3a3;' +
+    'font-family:Arial,Helvetica,sans-serif;padding:12px 10px 0;line-height:1.5;">' +
+    '<a href="' + escaparHtml_(CONFIG.URL_AVISO_PRIVACIDAD) + '" style="color:#a3a3a3;">Aviso de Privacidad</a>' +
+    ' &nbsp;--&nbsp; Contacto: ' +
+    '<a href="mailto:segurodeviaje@segurosatlas.com.mx" style="color:#a3a3a3;">segurodeviaje@segurosatlas.com.mx</a>' +
+    '</div>';
 }
 
 function construirCorreoAprobado_(data) {
@@ -864,7 +931,9 @@ function construirCorreoAprobado_(data) {
           filaResumen('Vigencia de esta cotización', data.vigenciaCotizacion) +
         '</table>' +
 
-        '<div style="font-size:15px;font-weight:bold;color:' + COLORES.VERDE + ';margin-bottom:6px;">Primas totales por plan</div>' +
+        '<div style="font-size:15px;font-weight:bold;color:' + COLORES.VERDE + ';margin-bottom:6px;">' +
+        'Prima Neta por (' + data.numAsegurados + ' ' +
+        (data.numAsegurados === 1 ? 'asegurado' : 'asegurados') + ') + IVA en USD</div>' +
         '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:8px;">' +
           '<tr>' +
             '<th style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';background-color:' + COLORES.VERDE + ';color:#ffffff;text-align:left;font-size:13px;">Plan</th>' +
@@ -892,6 +961,7 @@ function construirCorreoAprobado_(data) {
 
         pieCorreo_() +
       '</div>' +
+      avisoPrivacidadCorreo_() +
     '</div>';
 }
 
@@ -927,6 +997,7 @@ function construirCorreoRechazo_(data) {
         construirAvisoExcluidos_(data.pasajerosExcluidos) +
         pieCorreo_() +
       '</div>' +
+      avisoPrivacidadCorreo_() +
     '</div>';
 }
 
@@ -969,7 +1040,9 @@ function construirAvisoExcluidos_(pasajerosExcluidos) {
         '<strong style="color:' + COLORES.AMBAR_TEXTO + ';">Aviso importante</strong><br>' +
         'El/los pasajero(s) <strong>' + nombres + '</strong> no fueron incluidos en esta cotización debido a que el ' +
         'Producto Senior aplica exclusivamente para personas de ' + CONFIG.EDAD_MINIMA + ' a ' + CONFIG.EDAD_MAXIMA + ' años. ' +
-        'Para cotizar a pasajeros fuera de este rango, favor de solicitar el producto de viaje estándar.' +
+        'Favor de ingresar al portal de agentes donde podrán cotizar y emitir directamente en la siguiente liga: ' +
+        '<a href="' + escaparHtml_(CONFIG.URL_PORTAL_AGENTES) + '" style="color:' + COLORES.VERDE + ';">' +
+        escaparHtml_(CONFIG.URL_PORTAL_AGENTES) + '</a> o contacte a su ejecutivo.' +
       '</td></tr>' +
     '</table>';
 }
