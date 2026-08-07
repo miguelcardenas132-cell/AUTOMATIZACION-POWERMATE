@@ -53,6 +53,9 @@ const CONFIG = {
   VIGENCIA_DIAS: 7,
   MAX_ASEGURADOS: 10,
 
+  // Formulario que el cliente llena para solicitar la emisión (Paso 1 del PDF).
+  URL_FORMULARIO_EMISION: 'https://forms.gle/PENDIENTE_URL_DEL_FORMULARIO',
+
   ESTATUS: {
     APROBADO: 'APROBADO',
     RECHAZADO_TIEMPO: 'RECHAZADO_TIEMPO',
@@ -525,8 +528,6 @@ function estilosCotizacion_() {
     '.viaje { background-color: ' + COLORES.VERDE_CLARO + '; border: 1px solid ' + COLORES.VERDE_BORDE + '; }\n' +
     '.viaje td { padding: 3px 9px; font-size: 9.5px; vertical-align: top; }\n' +
     '.viaje .et { font-weight: bold; color: ' + COLORES.AZUL + '; }\n' +
-    '.viaje .aseg { border-top: 1px dashed ' + COLORES.VERDE_BORDE + '; }\n' +
-    '.viaje .aseg.compacto { font-size: 8px; line-height: 1.2; }\n' +
 
     // --- 3. Tabla de coberturas ---
     '.cob { font-size: 8.5px; line-height: 1.2; background-color: ' + COLORES.GRIS_TABLA + '; margin-top: 4px; }\n' +
@@ -536,10 +537,10 @@ function estilosCotizacion_() {
     '.cob th.sub { background-color: ' + COLORES.VERDE + '; color: #ffffff; font-weight: bold;\n' +
     '              text-align: center; font-size: 8.5px; text-transform: uppercase; padding: 1.2px 4px; }\n' +
     '.cob th.sub-izq { text-align: left; }\n' +
+    '.cob th .moneda { display: block; font-weight: normal; font-size: 7px; }\n' +
     '.cob td.num { text-align: center; }\n' +
     '.cob tr.par { background-color: ' + COLORES.GRIS_FILA + '; }\n' +
     '.cob .subnota { display: block; color: #444; font-size: 7.4px; }\n' +
-    '.cob tr.unit td { font-size: 8.5px; color: ' + COLORES.AZUL + '; background-color: #f0f6f3; padding: 2.5px 5px; }\n' +
     '.cob tr.total td { background-color: ' + COLORES.TOTAL_FONDO + '; font-weight: bold;\n' +
     '                   border-top: 2px solid ' + COLORES.VERDE + '; font-size: 9.5px; color: ' + COLORES.VERDE + '; padding: 3px 5px; }\n' +
     '.nota-tabla { font-size: 7.8px; color: #555; margin: 2px 0 0; }\n' +
@@ -565,9 +566,11 @@ function estilosCotizacion_() {
     '.ops p { font-size: 7.8px; line-height: 1.24; }\n' +
     '.ops ul { list-style: none; margin-top: 1px; margin-left: 7px; }\n' +
     '.ops li { font-size: 7.8px; line-height: 1.24; padding-left: 7px; text-indent: -7px; }\n' +
-    '.ops td.qr { text-align: center; vertical-align: middle; padding: 3px; }\n' +
-    '.ops td.qr img { width: 88px; height: 88px; display: block; margin: 0 auto; }\n' +
-    '.ops td.centrado { text-align: center; vertical-align: middle; }\n' +
+    '.qr-bloque { border-collapse: collapse; width: 100%; }\n' +
+    '.qr-bloque td { border: none; padding: 0; vertical-align: middle; }\n' +
+    '.qr-bloque td.qr-img { width: 84px; }\n' +
+    '.qr-bloque td.qr-img img { width: 78px; height: 78px; display: block; }\n' +
+    '.qr-bloque td.qr-txt { padding-left: 10px; }\n' +
 
     // --- 6. Observaciones ---
     '.obs { margin-top: 3px; }\n' +
@@ -609,7 +612,7 @@ function bloqueEncabezado_(data) {
     '</td>\n' +
     '<td class="der">' +
       agente +
-      '<div><span class="et">Emitido:</span> ' + escaparHtml_(data.fechaEmision) + '</div>' +
+      '<div><span class="et">Fecha y hora de emisión:</span> ' + escaparHtml_(data.fechaEmision) + '</div>' +
     '</td>\n' +
     '</tr>\n</table>\n';
 }
@@ -629,11 +632,6 @@ function bloqueInfoViaje_(data) {
       celda('Duración del viaje', data.duracionDias + ' días') +
       celda('Cantidad de Asegurados', String(data.numAsegurados)) +
       celda('Vigencia de la cotización', data.vigenciaCotizacion) +
-    '</tr>\n<tr>' +
-      // Con muchos asegurados la lista es el único bloque que crece: se
-      // compacta para que la hoja no se desborde a una segunda página.
-      '<td class="aseg' + (data.numAsegurados > 3 ? ' compacto' : '') + '" colspan="3">' +
-        '<span class="et">Asegurados:</span> ' + escaparHtml_(data.listaAsegurados || '—') + '</td>' +
     '</tr>\n</table>\n';
 }
 
@@ -644,7 +642,7 @@ function bloqueInfoViaje_(data) {
  */
 function bloqueCoberturas_(data) {
   const subEncabezados = PLANES
-    .map((plan) => '<th class="sub">' + escaparHtml_(plan) + '</th>')
+    .map((plan) => '<th class="sub">' + escaparHtml_(plan) + '<span class="moneda">(USD)</span></th>')
     .join('');
 
   const filas = COBERTURAS.map((cobertura, indice) => {
@@ -658,8 +656,6 @@ function bloqueCoberturas_(data) {
     return '<tr' + clase + '><td>' + escaparHtml_(cobertura.concepto) + '</td>' + celdas + '</tr>';
   }).join('\n');
 
-  const primasUnitarias = [data.primaMaster, data.primaSmart, data.primaElite, data.primaPremium]
-    .map((prima) => '<td class="num">' + formatearMoneda_(prima) + '</td>').join('');
   const primasTotales = [data.totalMaster, data.totalSmart, data.totalElite, data.totalPremium]
     .map((total) => '<td class="num">' + formatearMoneda_(total) + '</td>').join('');
 
@@ -669,12 +665,11 @@ function bloqueCoberturas_(data) {
     '<tr><th class="planes" colspan="5">Planes disponibles</th></tr>\n' +
     '<tr><th class="sub sub-izq">Coberturas</th>' + subEncabezados + '</tr>\n' +
     '</thead>\n<tbody>\n' + filas + '\n' +
-    '<tr class="unit"><td>Prima por asegurado (USD)</td>' + primasUnitarias + '</tr>\n' +
-    '<tr class="total"><td>PRIMA TOTAL (En dólares) — ' + data.numAsegurados + ' asegurado(s)</td>' +
+    '<tr class="total"><td>Prima neta por (' + data.numAsegurados + ') + IVA en dólares (USD)</td>' +
       primasTotales + '</tr>\n' +
     '</tbody>\n</table>\n' +
-    '<p class="nota-tabla" style="font-style: italic;">*Nota: Las sumas aseguradas aplican por asegurado y ' +
-    'están expresadas en dólares americanos (USD). Primas netas, sin IVA ni derecho de póliza.</p>\n';
+    '<p class="nota-tabla" style="font-style: italic;">Nota: Las sumas aseguradas aplican por asegurado y ' +
+    'están expresadas en dólares americanos (USD).</p>\n';
 }
 
 function bloqueEspecificaciones_() {
@@ -699,26 +694,30 @@ function bloqueEspecificaciones_() {
  */
 function bloqueAccionOperativa_() {
   return '<div class="ops-caja">\n' +
-    '<div class="ops-banner">¿Cómo solicitar la emisión de tu póliza?</div>\n' +
+    '<div class="ops-banner">Solicita tu póliza</div>\n' +
     '<table class="ops" role="presentation" cellspacing="5">\n' +
-    '<colgroup><col style="width:16.67%"><col style="width:16.67%"><col style="width:16.66%">' +
-    '<col style="width:16.67%"><col style="width:16.67%"><col style="width:16.66%"></colgroup>\n' +
+    '<colgroup><col style="width:33.34%"><col style="width:33.33%"><col style="width:33.33%"></colgroup>\n' +
 
     '<tr>\n' +
-    '<td class="celda" colspan="3">' +
-      '<h3>Pasos y requisitos para iniciar tu proceso</h3>' +
-      '<p>En caso de aceptar la propuesta, envía la siguiente documentación al correo ' +
-      '<strong>segurodeviaje@segurosatlas.com.mx</strong>:</p>' +
+    '<td class="celda">' +
+      '<h3>Paso 1. Requisitos para iniciar tu proceso</h3>' +
+      '<p>En caso de aceptar la propuesta, completa el siguiente formulario para el envío de tu póliza: ' +
+      '<a href="' + escaparHtml_(CONFIG.URL_FORMULARIO_EMISION) + '">' +
+      escaparHtml_(CONFIG.URL_FORMULARIO_EMISION) + '</a></p>' +
+    '</td>\n' +
+    '<td class="celda">' +
+      '<h3>Paso 2. Registro de constancia de situación fiscal</h3>' +
+      '<p>Si requieres factura, antes de solicitar la emisión es indispensable registrar la situación fiscal ' +
+      'enviando un correo a <strong>constanciafiscal@segurosatlas.com.mx</strong> con este formato estricto:</p>' +
       '<ul>' +
-        '<li>• Formato de emisión debidamente llenado.</li>' +
-        '<li>• Cotización aceptada.</li>' +
-        '<li>• TCC y TCI (solicítalos a tu Mesa de Control).</li>' +
-        '<li>• Constancia de Situación Fiscal (CSF) actualizada.</li>' +
+        '<li>• <strong>Asunto (mayúsculas):</strong> RFC DEL CONTRATANTE.</li>' +
+        '<li>• <strong>Contenido:</strong> completamente en blanco (sin firma, sin texto).</li>' +
+        '<li>• <strong>Archivo adjunto (PDF en mayúsculas):</strong> CONSTANCIA + RFC.</li>' +
+        '<li>• <strong>Confirmación:</strong> recibirás un correo con el estatus "Registro Exitoso".</li>' +
       '</ul>' +
     '</td>\n' +
-    '<td class="celda" colspan="3">' +
-      '<h3>Consideraciones importantes</h3>' +
-      '<p>Para garantizar un proceso sin contratiempos, toma en cuenta lo siguiente:</p>' +
+    '<td class="celda">' +
+      '<h3>Paso 3. Consideraciones importantes</h3>' +
       '<ul>' +
         '<li>• <strong>Revisión de datos:</strong> verifica que la información de los asegurados y del contratante ' +
         'sea correcta y legible.</li>' +
@@ -731,24 +730,19 @@ function bloqueAccionOperativa_() {
     '</td>\n' +
     '</tr>\n' +
 
+    // QR y su texto en una sola tarjeta: la tabla interna no lleva bordes,
+    // así que se leen como un único bloque visual.
     '<tr>\n' +
     '<td class="celda" colspan="3">' +
-      '<h3>Registro de Constancia de Situación Fiscal</h3>' +
-      '<p>Si requieres factura, antes de solicitar la emisión es indispensable registrar la situación fiscal ' +
-      'enviando un correo a <strong>constanciafiscal@segurosatlas.com.mx</strong> con este formato estricto:</p>' +
-      '<ul>' +
-        '<li>• <strong>Asunto (mayúsculas):</strong> RFC DEL CONTRATANTE.</li>' +
-        '<li>• <strong>Contenido:</strong> completamente en blanco (sin firma, sin texto).</li>' +
-        '<li>• <strong>Archivo adjunto (PDF en mayúsculas):</strong> CONSTANCIA + RFC.</li>' +
-        '<li>• <strong>Confirmación:</strong> recibirás un correo con el estatus "Registro Exitoso".</li>' +
-      '</ul>' +
-    '</td>\n' +
-    '<td class="celda qr">' +
-      '<img alt="Código QR para cotizar" src="' + ASSETS.QR_COTIZAR + '">' +
-    '</td>\n' +
-    '<td class="celda centrado" colspan="2">' +
-      '<h3>¿Deseas cotizar o recotizar tu viaje?</h3>' +
-      '<p>Escanea el código QR y solicita una nueva cotización de forma rápida y sencilla.</p>' +
+      '<table class="qr-bloque" role="presentation">' +
+        '<tr>' +
+          '<td class="qr-img"><img alt="Código QR para recotizar" src="' + ASSETS.QR_COTIZAR + '"></td>' +
+          '<td class="qr-txt">' +
+            '<h3>¿Deseas recotizar tu viaje?</h3>' +
+            '<p>Escanea el código QR y solicita una nueva cotización de forma rápida y sencilla.</p>' +
+          '</td>' +
+        '</tr>' +
+      '</table>' +
     '</td>\n' +
     '</tr>\n' +
 
