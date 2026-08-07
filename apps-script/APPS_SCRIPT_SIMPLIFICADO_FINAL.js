@@ -536,18 +536,22 @@ function estilosCotizacion_() {
     '.espec strong { color: ' + COLORES.VERDE + '; }\n' +
 
     // --- 5. Recuadros operativos ---
-    '.ops { margin-top: 4px; border: 1px solid #b9b9b9; }\n' +
-    '.ops td.ops-banner { background-color: ' + COLORES.VERDE + '; color: #ffffff; text-align: center;\n' +
-    '                     font-weight: bold; font-size: 9.5px; text-transform: uppercase;\n' +
-    '                     padding: 4px; letter-spacing: .4px; border: none; }\n' +
-    '.ops td.celda { border: 1px solid #c4c4c4; background-color: #fafafa;\n' +
-    '                padding: 2.5px 8px; vertical-align: top; }\n' +
+    '.ops-caja { margin-top: 4px; border: 1px solid #b9b9b9; }\n' +
+    '.ops-banner { background-color: ' + COLORES.VERDE + '; color: #ffffff; text-align: center;\n' +
+    '              font-weight: bold; font-size: 9.5px; text-transform: uppercase;\n' +
+    '              padding: 4px; letter-spacing: .4px; }\n' +
+    // border-spacing separa las tarjetas; cellspacing en el HTML cubre el
+    // caso de que el convertidor a DOCX ignore la propiedad CSS.
+    '.ops { border-collapse: separate; border-spacing: 5px; }\n' +
+    '.ops td.celda { border: 1px solid #d5d5d5; border-radius: 6px; background-color: #ffffff;\n' +
+    '                padding: 4px 8px; vertical-align: top; }\n' +
     '.ops h3 { font-size: 8.5px; color: ' + COLORES.AZUL + '; margin-bottom: 2px; }\n' +
     '.ops p { font-size: 7.8px; line-height: 1.3; }\n' +
-    '.ops ul { list-style: none; margin-top: 1px; }\n' +
+    '.ops ul { list-style: none; margin-top: 1px; margin-left: 7px; }\n' +
     '.ops li { font-size: 7.8px; line-height: 1.28; padding-left: 7px; text-indent: -7px; }\n' +
-    '.ops td.qr { text-align: center; vertical-align: middle; }\n' +
-    '.ops td.qr img { width: 66px; height: 66px; display: block; margin: 0 auto; }\n' +
+    '.ops td.qr { text-align: center; vertical-align: middle; padding: 3px; }\n' +
+    '.ops td.qr img { width: 88px; height: 88px; display: block; margin: 0 auto; }\n' +
+    '.ops td.centrado { text-align: center; vertical-align: middle; }\n' +
 
     // --- 6. Observaciones ---
     '.obs { margin-top: 4px; }\n' +
@@ -557,11 +561,11 @@ function estilosCotizacion_() {
     '.obs p { font-size: 8px; line-height: 1.25; margin-bottom: 1px; text-align: justify; }\n' +
 
     // --- 7. Pie ---
-    '.pie { margin-top: 4px; border-top: 1px solid ' + COLORES.BORDE + '; padding-top: 3px; }\n' +
-    '.pie td { font-size: 8px; color: #444; vertical-align: middle; }\n' +
-    '.pie .centro { text-align: center; }\n' +
-    '.pie .der { text-align: right; }\n' +
-    '.pie .der img { max-width: 100px; height: auto; }\n';
+    '.pie { margin-top: 5px; border-top: 1px solid ' + COLORES.BORDE + '; padding-top: 4px; }\n' +
+    '.pie td { font-size: 8px; color: #555; vertical-align: middle; text-align: center;\n' +
+    '          line-height: 1.35; padding: 0 8px; }\n' +
+    '.pie td.sep { border-left: 1px solid #c8c8c8; }\n' +
+    '.pie a { color: ' + COLORES.VERDE + '; text-decoration: underline; }\n';
 }
 
 /**
@@ -678,11 +682,11 @@ function bloqueEspecificaciones_() {
  * alineada, pero sobrevive la conversión a DOCX de Word Online.
  */
 function bloqueAccionOperativa_() {
-  return '<table class="ops" role="presentation">\n' +
+  return '<div class="ops-caja">\n' +
+    '<div class="ops-banner">¿Cómo solicitar la emisión de tu póliza?</div>\n' +
+    '<table class="ops" role="presentation" cellspacing="5">\n' +
     '<colgroup><col style="width:16.67%"><col style="width:16.67%"><col style="width:16.66%">' +
     '<col style="width:16.67%"><col style="width:16.67%"><col style="width:16.66%"></colgroup>\n' +
-
-    '<tr><td class="ops-banner" colspan="6">¿Cómo solicitar la emisión de tu póliza?</td></tr>\n' +
 
     '<tr>\n' +
     '<td class="celda" colspan="3">' +
@@ -698,6 +702,7 @@ function bloqueAccionOperativa_() {
     '</td>\n' +
     '<td class="celda" colspan="3">' +
       '<h3>Consideraciones importantes</h3>' +
+      '<p>Para garantizar un proceso sin contratiempos, toma en cuenta lo siguiente:</p>' +
       '<ul>' +
         '<li>• <strong>Revisión de datos:</strong> verifica que la información de los asegurados y del contratante ' +
         'sea correcta y legible.</li>' +
@@ -711,7 +716,7 @@ function bloqueAccionOperativa_() {
     '</tr>\n' +
 
     '<tr>\n' +
-    '<td class="celda" colspan="2">' +
+    '<td class="celda" colspan="3">' +
       '<h3>Registro de Constancia de Situación Fiscal</h3>' +
       '<p>Si requieres factura, antes de solicitar la emisión es indispensable registrar la situación fiscal ' +
       'enviando un correo a <strong>constanciafiscal@segurosatlas.com.mx</strong> con este formato estricto:</p>' +
@@ -722,16 +727,16 @@ function bloqueAccionOperativa_() {
         '<li>• <strong>Confirmación:</strong> recibirás un correo con el estatus "Registro Exitoso".</li>' +
       '</ul>' +
     '</td>\n' +
-    '<td class="celda qr" colspan="2">' +
+    '<td class="celda qr">' +
       '<img alt="Código QR para cotizar" src="' + ASSETS.QR_COTIZAR + '">' +
     '</td>\n' +
-    '<td class="celda" colspan="2">' +
+    '<td class="celda centrado" colspan="2">' +
       '<h3>¿Deseas cotizar o recotizar tu viaje?</h3>' +
       '<p>Escanea el código QR y solicita una nueva cotización de forma rápida y sencilla.</p>' +
     '</td>\n' +
     '</tr>\n' +
 
-    '</table>\n';
+    '</table>\n</div>\n';
 }
 
 function bloqueObservaciones_() {
@@ -755,19 +760,19 @@ function bloqueObservaciones_() {
 }
 
 /**
- * Pie institucional. El domicilio, el teléfono y los contactos se reparten en
- * tres celdas (izquierda / centro / derecha), que es el mismo reparto que
- * produciría justify-content: space-between sin depender de flexbox.
+ * Pie institucional repartido en cuatro segmentos separados por filetes
+ * verticales, que es el mismo reparto que produciría justify-content:
+ * space-between sin depender de flexbox.
  */
 function bloquePie_() {
   return '<table class="pie" role="presentation">\n' +
-    '<colgroup><col style="width:44%"><col style="width:28%"><col style="width:28%"></colgroup>\n<tr>\n' +
-    '<td>Seguros Atlas S.A. Paseo de los Tamarindos 60 Planta Baja Col. Bosques de las Lomas ' +
-    'Ciudad de México C.P.05120</td>\n' +
-    '<td class="centro">T. 55 9177-5000<br>' +
-    '<a href="https://www.segurosatlas.com.mx">www.segurosatlas.com.mx</a><br>' +
-    'segurodeviaje@segurosatlas.com.mx</td>\n' +
-    '<td class="der"><img alt="Seguros Atlas" src="' + ASSETS.LOGO_FOOTER + '"></td>\n' +
+    '<colgroup><col style="width:19%"><col style="width:29%"><col style="width:26%"><col style="width:26%"></colgroup>\n' +
+    '<tr>\n' +
+    '<td>Seguros Atlas S.A</td>\n' +
+    '<td class="sep">Paseo de los Tamarindos 60 Planta Baja<br>T. 55 9177-5000</td>\n' +
+    '<td class="sep">Col. Bosques de las Lomas<br>' +
+    '<a href="https://www.segurosatlas.com.mx">www.segurosatlas.com.mx</a></td>\n' +
+    '<td class="sep">Ciudad de México C.P.05120<br>segurodeviaje@segurosatlas.com.mx</td>\n' +
     '</tr>\n</table>\n';
 }
 
