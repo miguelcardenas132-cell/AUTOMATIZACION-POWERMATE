@@ -577,13 +577,16 @@ function estilosCotizacion_() {
     '.qr-tarjeta img { width: 76px; height: 76px; display: block; margin: 0 auto 3px; }\n' +
     '.qr-tarjeta h3 { font-size: 8px; color: ' + COLORES.AZUL + '; margin-bottom: 1px; }\n' +
     '.qr-tarjeta p { font-size: 7px; line-height: 1.22; color: #444; }\n' +
+    '.qr-tarjeta p.qr-nota { font-style: italic; margin-top: 2px; }\n' +
 
     // --- 6. Observaciones ---
     '.obs { margin-top: 3px; }\n' +
     '.obs h3 { font-size: 10px; color: ' + COLORES.VERDE + '; text-transform: uppercase; margin-bottom: 1px; }\n' +
     '.obs ol { margin: 0 0 1.5px 13px; }\n' +
-    '.obs li { font-size: 9px; line-height: 1.22; }\n' +
-    '.obs p { font-size: 9px; line-height: 1.22; margin-bottom: 0.5px; }\n' +
+    // Mismo tamaño e interlineado que .espec li, para que ambos bloques de
+    // texto corrido se lean homogéneos.
+    '.obs li { font-size: 8.5px; line-height: 1.26; }\n' +
+    '.obs p { font-size: 8.5px; line-height: 1.26; margin-bottom: 0.5px; }\n' +
 
     // --- 7. Pie ---
     '.pie { margin-top: 3px; padding-top: 3px; }\n' +
@@ -728,8 +731,8 @@ function bloqueAccionOperativa_() {
       '<ul>' +
         '<li>• <strong>Revisión de datos:</strong> verifica que la información de los asegurados y del contratante ' +
         'sea correcta y legible.</li>' +
-        '<li>• <strong>Tiempo de gestión:</strong> la solicitud debe enviarse al menos 2 días hábiles antes del ' +
-        'inicio del viaje.</li>' +
+        '<li>• <strong>Tiempo de gestión:</strong> el formulario de emisión deberá ser enviado hasta un máximo ' +
+        'de 4 días hábiles antes de iniciar tu viaje.</li>' +
         '<li>• <strong>Correcciones:</strong> los cambios por errores u omisiones toman de 3 a 5 días hábiles.</li>' +
         '<li>• <strong>Actualizaciones:</strong> cualquier cambio en los días de viaje requiere re-cotización ' +
         'previa a la emisión.</li>' +
@@ -753,6 +756,7 @@ function bloqueObservacionesYQr_() {
         '<img alt="Código QR para recotizar" src="' + ASSETS.QR_COTIZAR + '">' +
         '<h3>¿Deseas recotizar tu viaje?</h3>' +
         '<p>Escanea el código QR y solicita una nueva cotización de forma rápida y sencilla.</p>' +
+        '<p class="qr-nota">(Máximo 5 días hábiles antes del inicio del viaje)</p>' +
       '</div>' +
     '</td>\n' +
     '</tr>\n</table>\n';
