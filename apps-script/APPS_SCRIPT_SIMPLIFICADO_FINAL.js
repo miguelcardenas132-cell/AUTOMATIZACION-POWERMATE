@@ -40,8 +40,8 @@
  */
 function configurarPropiedades() {
   PropertiesService.getScriptProperties().setProperties({
-    CARPETA_SALIDA_ID: 'ID_CARPETA_DRIVE_DONDE_SE_GUARDA_EL_HTML_GENERADO',
-    WEBHOOK_POWER_AUTOMATE_URL: 'URL_DEL_TRIGGER_HTTP_DE_POWER_AUTOMATE'
+    CARPETA_SALIDA_ID: '18TeoYPc4hv3PJg7_We7ENFLPL8L1q4ba',
+    WEBHOOK_POWER_AUTOMATE_URL: 'https://default32a81134015a4387b28dc065cc42c1.74.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/30/workflows/d2932e8514cc4650ae65a9ce97240394/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=R8glq89ev9F9bDJydk_CRjmqTJIiQ1i8l6Xr8_A_81w'
   });
 }
 
@@ -54,10 +54,11 @@ const CONFIG = {
   MAX_ASEGURADOS: 10,
 
   // Formulario que el cliente llena para solicitar la emisión (Paso 1 del PDF).
-  URL_FORMULARIO_EMISION: 'https://forms.gle/PENDIENTE_URL_DEL_FORMULARIO',
+  // Pendiente de configurar antes de lanzar.
+  URL_FORMULARIO_EMISION: 'PENDIENTE_URL_DEL_FORMULARIO',
 
   // Enlaces del cuerpo del correo.
-  URL_PORTAL_AGENTES: 'https://PENDIENTE_URL_PORTAL_DE_AGENTES',
+  URL_PORTAL_AGENTES: 'https://www.atlasconmigo.com.mx/login',
   URL_AVISO_PRIVACIDAD: 'https://www.segurosatlas.com.mx/aviso-de-privacidad',
 
   /**
@@ -69,8 +70,8 @@ const CONFIG = {
    * biblioteca de SharePoint con acceso anónimo de lectura y pega aquí el
    * enlace directo.
    */
-  URL_LOGO_CORREO: 'https://PENDIENTE_URL_LOGO_ATLAS_BLANCO.png',
-  URL_FIRMA_CORREO: 'https://PENDIENTE_URL_FIRMA_85_ANIVERSARIO.png',
+  URL_LOGO_CORREO: 'https://drive.google.com/uc?export=view&id=102HW04JcuRuelEvkoZYV34fJQz9s2FOV',
+  URL_FIRMA_CORREO: 'https://drive.google.com/uc?export=view&id=1PVMOnr8P9YA5uFgv-0Hf4MZm-p0kaIA9',
 
   ESTATUS: {
     APROBADO: 'APROBADO',
@@ -90,10 +91,10 @@ const CONFIG = {
 
   // Columnas de primas por asegurado. No hay tabla tarifaria en el script:
   // las primas se leen de la hoja, que ya las calcula.
-  COL_PRIMA_MASTER: 'Prima Master',
-  COL_PRIMA_SMART: 'Prima Master Smart',
-  COL_PRIMA_ELITE: 'Prima Master Elite',
-  COL_PRIMA_PREMIUM: 'Prima Master Premium',
+  COL_PRIMA_MASTER: 'PrimaMaster',
+  COL_PRIMA_SMART: 'PrimaSmart',
+  COL_PRIMA_ELITE: 'PrimaElite',
+  COL_PRIMA_PREMIUM: 'PrimaPremium',
 
   // Columna opcional de trazabilidad. Si no existe en la hoja, se ignora.
   COL_ESTADO: 'Estado de envío',
