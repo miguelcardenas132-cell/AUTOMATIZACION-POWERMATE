@@ -259,6 +259,19 @@ function listarEncabezados() {
   Logger.log('=== TOTAL: ' + encabezados.length + ' columnas ===');
 }
 
+/**
+ * Diagnóstico: imprime encabezado + valor de una fila real, para confirmar
+ * el formato exacto que producen las fórmulas del Sheet (Estado_Final,
+ * Motivo_Rechazo, Validacion_Edad, etc.) antes de mapearlas en CONFIG.
+ */
+function listarValoresFila_(fila) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  const encabezados = leerEncabezados_(sheet);
+  const valores = sheet.getRange(fila, 1, 1, sheet.getLastColumn()).getValues()[0];
+  Logger.log('=== VALORES DE LA FILA ' + fila + ' ===');
+  encabezados.forEach((h, i) => Logger.log(h + ': ' + JSON.stringify(valores[i])));
+}
+
 function letraColumna_(indice) {
   let letra = '';
   let n = indice;
