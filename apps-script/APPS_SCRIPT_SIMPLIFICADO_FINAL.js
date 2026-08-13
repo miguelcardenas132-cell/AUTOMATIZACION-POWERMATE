@@ -855,7 +855,7 @@ function encabezadoCorreo_(titulo) {
 
 /** Despedida más la firma corporativa. */
 function pieCorreo_() {
-  return '<p style="margin:0 0 16px 0;">Quedamos a sus órdenes para cualquier aclaración.</p>' +
+  return '<p style="margin:0 0 16px 0;">Saludos.</p>' +
     firmaCorreo_();
 }
 
@@ -876,7 +876,7 @@ function firmaCorreo_() {
         'font-family:Arial,Helvetica,sans-serif;">Seguro de Viaje</div>' +
       '<div style="font-size:12px;color:#666666;margin-bottom:8px;' +
         'font-family:Arial,Helvetica,sans-serif;">DINE (Dirección de Negocios Especiales)</div>' +
-      linea('<strong>Tel.</strong> (55) 9177 &ndash; 5000 Ext. 4931 &nbsp; <strong>Cel:</strong> 55 1322 6276') +
+      linea('<strong>Tel.</strong> (55) 9177 &ndash; 5000 Ext. 4931') +
       linea('<strong>Correo.</strong> <a href="mailto:segurodeviaje@segurosatlas.com.mx" ' +
         'style="color:' + COLORES.VERDE + ';">segurodeviaje@segurosatlas.com.mx</a>') +
       linea('AV. Paseo de los Tamarindos No. 60 INT. PB, C.P. 05120') +
