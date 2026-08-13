@@ -1152,8 +1152,8 @@ function textoExcluidosPorEdad_(pasajerosExcluidos) {
 
   if (grupos.mayores.length > 0) {
     texto += '<p style="margin:0 0 8px 0;">Para el/los pasajero(s) <strong>' + listaPasajerosTexto_(grupos.mayores) +
-      '</strong>, mayores a ' + textoEdadMaxima_() + ': por políticas de suscripción, Seguros Atlas ya no puede ' +
-      'asegurarlos.</p>';
+      '</strong>, mayores a ' + textoEdadMaxima_() + ': por políticas de suscripción ya no es posible brindar ' +
+      'una propuesta.</p>';
   }
 
   if (grupos.sinDato.length > 0) {
