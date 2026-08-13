@@ -54,8 +54,7 @@ const CONFIG = {
   MAX_ASEGURADOS: 10,
 
   // Formulario que el cliente llena para solicitar la emisión (Paso 1 del PDF).
-  // Pendiente de configurar antes de lanzar.
-  URL_FORMULARIO_EMISION: 'PENDIENTE_URL_DEL_FORMULARIO',
+  URL_FORMULARIO_EMISION: 'https://forms.gle/P2iiskLHtBALa9F36',
 
   // Enlaces del cuerpo del correo.
   URL_PORTAL_AGENTES: 'https://www.atlasconmigo.com.mx/login',
@@ -1254,4 +1253,37 @@ function marcarEstadoFila_(sheet, fila, encabezados, mensaje) {
   const indiceEstado = indiceDe_(encabezados, CONFIG.COL_ESTADO);
   if (indiceEstado === -1) return; // columna opcional
   sheet.getRange(fila, indiceEstado + 1).setValue(mensaje + ' — ' + new Date());
+}
+
+/**
+ * Procesa en lote filas pegadas directo en la hoja (no pasan por el
+ * formulario, así que nunca disparan onFormSubmit). Reutiliza el mismo
+ * trigger fila por fila.
+ *
+ * Se salta las filas ya marcadas en COL_ESTADO, para poder correrla varias
+ * veces sobre la misma hoja sin reenviar folios ya procesados; y aísla el
+ * error de cada fila para que una sola solicitud mal capturada no detenga
+ * el resto del lote.
+ */
+function procesarPegadoMasivo() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  const encabezados = leerEncabezados_(sheet);
+  const indiceEstado = indiceDe_(encabezados, CONFIG.COL_ESTADO);
+  const ultimaFila = sheet.getLastRow();
+
+  for (let fila = 2; fila <= ultimaFila; fila++) {
+    const valores = sheet.getRange(fila, 1, 1, sheet.getLastColumn()).getValues()[0];
+    if (valores.every((valor) => valor === '' || valor === null)) continue; // fila vacía
+
+    if (indiceEstado !== -1 && valores[indiceEstado]) continue; // ya procesada
+
+    try {
+      const data = construirDatosSolicitud_(fila, encabezados, valores);
+      procesarSolicitud_(data);
+      marcarEstadoFila_(sheet, fila, encabezados, data.estatus + ' — enviado a Power Automate');
+    } catch (error) {
+      Logger.log('❌ Fila ' + fila + ': ' + error.message);
+      marcarEstadoFila_(sheet, fila, encabezados, 'ERROR: ' + error.message);
+    }
+  }
 }
