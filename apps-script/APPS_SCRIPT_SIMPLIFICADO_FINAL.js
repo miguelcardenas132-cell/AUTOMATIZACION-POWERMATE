@@ -1019,7 +1019,7 @@ function construirCorreoAprobado_(data) {
   const filaPlan = (plan, total) =>
     '<tr>' +
     '<td style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';color:#333;">' + escaparHtml_(plan) + '</td>' +
-    '<td style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';text-align:right;font-weight:bold;color:' + COLORES.VERDE + ';">' +
+    '<td style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';text-align:right;font-weight:bold;color:#333;">' +
       formatearMoneda_(total) + ' USD</td>' +
     '</tr>';
 
