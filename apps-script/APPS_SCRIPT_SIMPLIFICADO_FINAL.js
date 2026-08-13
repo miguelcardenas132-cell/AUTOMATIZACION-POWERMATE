@@ -367,8 +367,16 @@ function construirDatosSolicitud_(fila, encabezados, valores) {
     const mesesEdad = calcularEdadEnMeses_(fechaNacCruda, fechaSalida);
     const edadNum = mesesEdad === null ? null : Math.floor(mesesEdad / 12);
 
-    if (mesesEdad === null || mesesEdad < mesesMinimo || mesesEdad > mesesMaximo) {
-      pasajerosExcluidos.push({ nombre: nombre, edad: edadNum });
+    // El motivo de exclusión importa para el correo: los menores a la edad
+    // mínima sí tienen alternativa (portal de agentes); los mayores a la
+    // edad máxima no se pueden asegurar por políticas de suscripción.
+    let motivoExclusion = null;
+    if (mesesEdad === null) motivoExclusion = 'SIN_DATO';
+    else if (mesesEdad < mesesMinimo) motivoExclusion = 'MENOR';
+    else if (mesesEdad > mesesMaximo) motivoExclusion = 'MAYOR';
+
+    if (motivoExclusion !== null) {
+      pasajerosExcluidos.push({ nombre: nombre, edad: edadNum, motivo: motivoExclusion });
       continue;
     }
     asegurados.push({ nombre: nombre, edad: edadNum });
@@ -519,8 +527,17 @@ function formatearMoneda_(numero) {
 
 /** Texto del rango de edad de aceptación, ej. "79 años 11 meses a 89 años 11 meses". */
 function textoRangoEdad_() {
-  return CONFIG.EDAD_MINIMA + ' años ' + CONFIG.EDAD_MESES_ADICIONALES + ' meses a ' +
-    CONFIG.EDAD_MAXIMA + ' años ' + CONFIG.EDAD_MESES_ADICIONALES + ' meses';
+  return textoEdadMinima_() + ' a ' + textoEdadMaxima_();
+}
+
+/** Ej. "79 años 11 meses". */
+function textoEdadMinima_() {
+  return CONFIG.EDAD_MINIMA + ' años ' + CONFIG.EDAD_MESES_ADICIONALES + ' meses';
+}
+
+/** Ej. "89 años 11 meses". */
+function textoEdadMaxima_() {
+  return CONFIG.EDAD_MAXIMA + ' años ' + CONFIG.EDAD_MESES_ADICIONALES + ' meses';
 }
 
 function escaparHtml_(valor) {
@@ -1085,49 +1102,82 @@ function motivoRechazoTiempo_(data) {
 }
 
 /**
- * Motivo de rechazo por edad. Incluye nombre y edad de cada pasajero
- * indicado: como este es el único bloque del correo que explica el
- * rechazo (ver construirCorreoRechazo_, que omite el aviso ámbar
- * redundante en este caso), tiene que bastarse solo.
+ * Motivo de rechazo por edad. Se apoya en textoExcluidosPorEdad_ para el
+ * detalle de cada pasajero: como este es el único bloque del correo que
+ * explica el rechazo (ver construirCorreoRechazo_, que omite el aviso
+ * ámbar redundante en este caso), tiene que bastarse solo.
  */
 function motivoRechazoSinElegibles_(data) {
-  const excluidos = data.pasajerosExcluidos || [];
-  const plural = excluidos.length !== 1;
-  const sujeto = excluidos.length === 0
-    ? 'el pasajero indicado'
-    : (plural ? 'los pasajeros ' : 'el pasajero ') + '<strong>' + excluidos
-      .map((p) => escaparHtml_(p.nombre) + (p.edad !== null ? ' (' + p.edad + ' años)' : ''))
-      .join(', ') + '</strong>';
-
-  return '<p style="margin:0 0 14px 0;">Su solicitud para el destino <strong>' + escaparHtml_(data.destino) + '</strong> ' +
-    'no pudo ser procesada porque ' + sujeto + ' no ' + (plural ? 'se encuentran' : 'se encuentra') +
-    ' dentro del rango de edad del <strong>Producto Senior</strong>, que aplica exclusivamente para personas de ' +
-    textoRangoEdad_() + '.</p>' +
-    '<p style="margin:0;">Para cotizar a ' + (plural ? 'estos pasajeros' : 'este pasajero') + ', favor de solicitar el ' +
-    '<strong>producto de viaje estándar</strong> a través de su Mesa de Control.</p>';
+  return '<p style="margin:0 0 10px 0;">Su solicitud para el destino <strong>' + escaparHtml_(data.destino) + '</strong> ' +
+    'no pudo ser procesada porque ningún pasajero indicado se encuentra dentro del rango de edad del ' +
+    '<strong>Producto Senior</strong> (' + textoRangoEdad_() + ').</p>' +
+    textoExcluidosPorEdad_(data.pasajerosExcluidos);
 }
 
 /**
- * Aviso ámbar de pasajeros fuera del rango 79-89. Devuelve cadena vacía si no
- * hubo exclusiones, para no dejar un bloque huérfano en el correo.
+ * Separa a los pasajeros excluidos según por qué quedaron fuera: los
+ * menores a la edad mínima sí tienen alternativa (portal de agentes); los
+ * mayores a la edad máxima no se pueden asegurar por políticas de
+ * suscripción, así que no llevan ninguna llamada a la acción.
+ */
+function agruparExcluidosPorMotivo_(pasajerosExcluidos) {
+  const lista = pasajerosExcluidos || [];
+  return {
+    menores: lista.filter((p) => p.motivo === 'MENOR'),
+    mayores: lista.filter((p) => p.motivo === 'MAYOR'),
+    sinDato: lista.filter((p) => p.motivo === 'SIN_DATO')
+  };
+}
+
+function listaPasajerosTexto_(lista) {
+  return lista.map((p) => escaparHtml_(p.nombre) + (p.edad !== null ? ' (' + p.edad + ' años)' : '')).join(', ');
+}
+
+/**
+ * Texto explicativo de pasajeros excluidos por edad, agrupado por motivo.
+ * Devuelve cadena vacía si no hubo exclusiones.
+ */
+function textoExcluidosPorEdad_(pasajerosExcluidos) {
+  if (!pasajerosExcluidos || pasajerosExcluidos.length === 0) return '';
+  const grupos = agruparExcluidosPorMotivo_(pasajerosExcluidos);
+  let texto = '';
+
+  if (grupos.menores.length > 0) {
+    texto += '<p style="margin:0 0 8px 0;">Para el/los pasajero(s) <strong>' + listaPasajerosTexto_(grupos.menores) +
+      '</strong>, menores a ' + textoEdadMinima_() + ': favor de ingresar al portal de agentes donde podrán ' +
+      'cotizar y emitir directamente en la siguiente liga: ' +
+      '<a href="' + escaparHtml_(CONFIG.URL_PORTAL_AGENTES) + '" style="color:' + COLORES.VERDE + ';">' +
+      escaparHtml_(CONFIG.URL_PORTAL_AGENTES) + '</a> o contacte a su ejecutivo.</p>';
+  }
+
+  if (grupos.mayores.length > 0) {
+    texto += '<p style="margin:0 0 8px 0;">Para el/los pasajero(s) <strong>' + listaPasajerosTexto_(grupos.mayores) +
+      '</strong>, mayores a ' + textoEdadMaxima_() + ': por políticas de suscripción, Seguros Atlas ya no puede ' +
+      'asegurarlos.</p>';
+  }
+
+  if (grupos.sinDato.length > 0) {
+    texto += '<p style="margin:0;">No fue posible validar la edad de <strong>' + listaPasajerosTexto_(grupos.sinDato) +
+      '</strong>: verifique la fecha de nacimiento capturada.</p>';
+  }
+
+  return texto;
+}
+
+/**
+ * Aviso ámbar de pasajeros fuera del rango de edad elegible. Devuelve
+ * cadena vacía si no hubo exclusiones, para no dejar un bloque huérfano en
+ * el correo.
  */
 function construirAvisoExcluidos_(pasajerosExcluidos) {
   if (!pasajerosExcluidos || pasajerosExcluidos.length === 0) return '';
-
-  const nombres = pasajerosExcluidos
-    .map((p) => escaparHtml_(p.nombre) + (p.edad !== null ? ' (' + p.edad + ' años)' : ''))
-    .join(', ');
 
   return '' +
     '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
     'style="border-collapse:collapse;background-color:' + COLORES.AMBAR_FONDO + ';border-left:4px solid ' + COLORES.AMBAR_BORDE + ';margin-bottom:18px;">' +
       '<tr><td style="padding:12px 14px;">' +
         '<strong style="color:' + COLORES.AMBAR_TEXTO + ';">Aviso importante</strong><br>' +
-        'El/los pasajero(s) <strong>' + nombres + '</strong> no fueron incluidos en esta cotización debido a que el ' +
-        'Producto Senior aplica exclusivamente para personas de ' + textoRangoEdad_() + '. ' +
-        'Favor de ingresar al portal de agentes donde podrán cotizar y emitir directamente en la siguiente liga: ' +
-        '<a href="' + escaparHtml_(CONFIG.URL_PORTAL_AGENTES) + '" style="color:' + COLORES.VERDE + ';">' +
-        escaparHtml_(CONFIG.URL_PORTAL_AGENTES) + '</a> o contacte a su ejecutivo.' +
+        textoExcluidosPorEdad_(pasajerosExcluidos) +
       '</td></tr>' +
     '</table>';
 }
