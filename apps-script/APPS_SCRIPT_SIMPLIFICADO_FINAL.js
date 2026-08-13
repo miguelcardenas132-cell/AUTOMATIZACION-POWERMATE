@@ -244,7 +244,7 @@ function procesarSolicitud_(data) {
   }
 
   const htmlCotizacion = generarHtmlCotizacion_(data);
-  const archivoHtml = guardarHtmlEnDrive_(htmlCotizacion, data.nombreArchivo);
+  const archivoHtml = guardarHtmlEnDrive_(htmlCotizacion, data.nombreArchivoDrive);
   data.cuerpoCorreoHtml = construirCorreoAprobado_(data);
   enviarWebhookPowerAutomate_(archivoHtml, data, htmlCotizacion);
 }
@@ -445,7 +445,9 @@ function construirDatosSolicitud_(fila, encabezados, valores) {
     totalElite: redondear_(primaElite * numAsegurados),
     totalPremium: redondear_(primaPremium * numAsegurados),
 
-    nombreArchivo: 'Cotizacion_' + folio + '.html',
+    // Nombre interno del respaldo en Drive (auditoría). Distinto del nombre
+    // del PDF adjunto que recibe el cliente: ver construirNomenclatura_.
+    nombreArchivoDrive: 'Cotizacion_' + folio + '.html',
     cuerpoCorreoHtml: ''
   };
 }
@@ -900,9 +902,35 @@ function bloquePie_() {
 // Tablas y CSS inline: Outlook (escritorio y web) ignora <style> en <head>,
 // flexbox y grid.
 
+/**
+ * Etiqueta de nomenclatura para el asunto del correo y el nombre del PDF
+ * adjunto (solo en solicitudes aprobadas):
+ * "Cotización Seguro de Viaje Senior +79 - <fecha de salida> // <días del
+ * viaje>D, <destino> <fecha de envío>"
+ * Ej.: "Cotización Seguro de Viaje Senior +79 - 25082026 // 011D, BRA 13082026"
+ */
+function construirNomenclatura_(data) {
+  const fechaInicioFormato = data.fechaInicio.replace(/\//g, ''); // dd/MM/yyyy -> ddMMyyyy
+  const diasFormato = String(data.duracionDias).padStart(3, '0') + 'D';
+  const destinoFormato = data.destino.toString().trim().substring(0, 3).toUpperCase();
+  const fechaEnvioFormato = data.fechaEmision.split(' ')[0].replace(/\//g, ''); // dd/MM/yyyy HH:mm:ss -> ddMMyyyy
+
+  return 'Cotización Seguro de Viaje Senior +79 - ' + fechaInicioFormato + ' // ' +
+    diasFormato + ', ' + destinoFormato + ' ' + fechaEnvioFormato;
+}
+
+/**
+ * Nombre del PDF adjunto: misma nomenclatura que el asunto, pero sin '/'
+ * —OneDrive/SharePoint no lo permiten en nombres de archivo— reemplazado
+ * por un guion.
+ */
+function construirNombreArchivoPdf_(data) {
+  return construirNomenclatura_(data).replace(' // ', ' - ') + '.pdf';
+}
+
 function construirAsunto_(data) {
   if (data.estatus === CONFIG.ESTATUS.APROBADO) {
-    return 'Cotización Seguro de Viaje SENIOR +79 — ' + data.destino + ' — Folio ' + data.folio;
+    return construirNomenclatura_(data);
   }
   return 'Solicitud no procesada — Seguro de Viaje SENIOR +79 — Folio ' + data.folio;
 }
@@ -1215,7 +1243,9 @@ function enviarWebhookPowerAutomate_(archivoHtml, data, htmlCotizacion) {
     htmlBase64: aprobado && htmlCotizacion
       ? Utilities.base64Encode(htmlCotizacion, Utilities.Charset.UTF_8)
       : '',
-    nombreArchivo: aprobado ? data.nombreArchivo : '',
+    // Nombre del PDF que recibe el cliente (misma nomenclatura que el
+    // asunto, sin '/'); no confundir con nombreArchivoDrive, el respaldo interno.
+    nombreArchivo: aprobado ? construirNombreArchivoPdf_(data) : '',
 
     folio: data.folio,
     htmlFileId: archivoHtml ? archivoHtml.getId() : '',
@@ -1255,7 +1285,7 @@ function testearTodo() {
       ' | Elite: ' + data.totalElite + ' | Premium: ' + data.totalPremium);
 
     const htmlCotizacion = generarHtmlCotizacion_(data);
-    const archivoHtml = guardarHtmlEnDrive_(htmlCotizacion, data.nombreArchivo);
+    const archivoHtml = guardarHtmlEnDrive_(htmlCotizacion, data.nombreArchivoDrive);
     Logger.log('✅ Cotización guardada en Drive (' + htmlCotizacion.length + ' caracteres).');
     Logger.log('URL: ' + archivoHtml.getUrl());
     Logger.log('fileId: ' + archivoHtml.getId());
