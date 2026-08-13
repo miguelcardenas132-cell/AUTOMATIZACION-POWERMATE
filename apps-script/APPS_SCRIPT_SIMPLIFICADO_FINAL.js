@@ -933,7 +933,7 @@ function construirAsunto_(data) {
   if (data.estatus === CONFIG.ESTATUS.APROBADO) {
     return construirNomenclatura_(data);
   }
-  return 'Solicitud no procesada — Seguro de Viaje SENIOR +79 — Folio ' + data.folio;
+  return 'Folio ' + data.folio;
 }
 
 /**
@@ -1101,14 +1101,6 @@ function construirCorreoRechazo_(data) {
         '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
         'style="border-collapse:collapse;background-color:' + COLORES.ROJO_FONDO + ';border-left:4px solid ' + COLORES.ROJO_BORDE + ';margin-bottom:18px;">' +
           '<tr><td style="padding:12px 14px;">' + motivo + '</td></tr>' +
-        '</table>' +
-
-        '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
-        'style="border-collapse:collapse;background-color:' + COLORES.VERDE_CLARO + ';margin-bottom:18px;">' +
-          filaResumen_('Folio', data.folio) +
-          filaResumen_('Destino', data.destino) +
-          filaResumen_('Fechas del viaje', data.fechaInicio + ' al ' + data.fechaFin) +
-          filaResumen_('Duración del viaje', data.duracionDias + ' días') +
         '</table>' +
 
         avisoExcluidos +
