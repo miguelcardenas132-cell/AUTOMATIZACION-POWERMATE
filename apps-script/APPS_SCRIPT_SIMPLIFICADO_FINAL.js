@@ -911,7 +911,7 @@ function bloquePie_() {
  */
 function construirNomenclatura_(data) {
   const fechaInicioFormato = data.fechaInicio.replace(/\//g, ''); // dd/MM/yyyy -> ddMMyyyy
-  const diasFormato = String(data.duracionDias).padStart(3, '0') + 'D';
+  const diasFormato = String(data.duracionDias).padStart(2, '0') + 'D';
   const destinoFormato = data.destino.toString().trim().substring(0, 3).toUpperCase();
   const fechaEnvioFormato = data.fechaEmision.split(' ')[0].replace(/\//g, ''); // dd/MM/yyyy HH:mm:ss -> ddMMyyyy
 
