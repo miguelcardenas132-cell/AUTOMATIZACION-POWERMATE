@@ -933,7 +933,7 @@ function construirAsunto_(data) {
   if (data.estatus === CONFIG.ESTATUS.APROBADO) {
     return construirNomenclatura_(data);
   }
-  return 'Folio ' + data.folio;
+  return 'Solicitud de cotización no procesada';
 }
 
 /**
