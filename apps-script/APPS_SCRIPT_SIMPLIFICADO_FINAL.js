@@ -100,6 +100,7 @@ const CONFIG = {
   COL_DESTINO: 'Destino',
   COL_FECHA_INICIO: 'Fecha de Salida',
   COL_FECHA_FIN: 'Fecha de Regreso',
+  COL_FOLIO: 'Folio',
 
   // Columnas de primas por asegurado. No hay tabla tarifaria en el script:
   // las primas se leen de la hoja, que ya las calcula.
@@ -409,7 +410,7 @@ function construirDatosSolicitud_(fila, encabezados, valores) {
   const mostrarAgente = perfil === 'Soy Agente' ||
     (agenteInfo !== '' && agenteInfo.toUpperCase() !== 'NA');
 
-  const folio = 'COT-' + fila + '-' + Utilities.formatDate(hoy, tz, 'yyyyMMdd-HHmmss');
+  const folio = valorObligatorio_(encabezados, valores, CONFIG.COL_FOLIO);
 
   return {
     folio: folio,
@@ -1368,6 +1369,13 @@ function construirDatosPrueba_(diasHastaSalida, pasajeros) {
     { nombre: 'Ana Ruiz', edad: 65 } // excluida: dispara el aviso ámbar
   ];
 
+  // Folio sintético con el mismo formato que ya produce la fórmula real de
+  // la hoja: SEGURO_VIAJE_+79-<días de viaje>D-<destino 3 letras>-<salida DDMMYYYY>.
+  const diasViajePrueba = Math.round((regreso - salida) / msPorDia) + 1;
+  const p2 = (n) => String(n).padStart(2, '0');
+  const folioPrueba = 'SEGURO_VIAJE_+79-' + diasViajePrueba + 'D-BRA-' +
+    p2(salida.getDate()) + p2(salida.getMonth() + 1) + salida.getFullYear();
+
   const encabezados = [
     CONFIG.COL_PERFIL,
     CONFIG.COL_AGENTE_INFO,
@@ -1377,6 +1385,7 @@ function construirDatosPrueba_(diasHastaSalida, pasajeros) {
     CONFIG.COL_DESTINO,
     CONFIG.COL_FECHA_INICIO,
     CONFIG.COL_FECHA_FIN,
+    CONFIG.COL_FOLIO,
     CONFIG.COL_PRIMA_MASTER,
     CONFIG.COL_PRIMA_SMART,
     CONFIG.COL_PRIMA_ELITE,
@@ -1391,6 +1400,7 @@ function construirDatosPrueba_(diasHastaSalida, pasajeros) {
     'Brasil',
     salida,
     regreso,
+    folioPrueba,
     45.5, 65, 95, 125
   ];
 
