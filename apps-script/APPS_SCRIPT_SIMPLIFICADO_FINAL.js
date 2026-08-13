@@ -1018,14 +1018,13 @@ function espaciador_(altura) {
 }
 
 /**
- * Envoltura centrada del correo. Outlook de escritorio (motor Word) ignora
- * margin:0 auto en un <div>: el centrado real solo se respeta con el
- * atributo HTML align="center" en una <table>, así que esta es la única
- * capa que define el ancho y el centrado del mensaje completo.
+ * Envoltura del correo, pegada a la izquierda con ancho fijo. El atributo
+ * HTML align="left" (no solo el CSS) evita que algún cliente la centre por
+ * cuenta propia, igual que en el ajuste anterior con align="center".
  */
 function envolverCorreo_(contenidoHtml) {
-  return '<table role="presentation" align="center" width="600" cellpadding="0" cellspacing="0" border="0" ' +
-    'style="width:600px;max-width:600px;margin:0 auto;">' +
+  return '<table role="presentation" align="left" width="600" cellpadding="0" cellspacing="0" border="0" ' +
+    'style="width:600px;max-width:600px;margin:0;">' +
     '<tr><td style="font-family:\'Aptos Display\',Arial,sans-serif;font-size:11pt;color:#222;">' +
       contenidoHtml +
     '</td></tr></table>';
@@ -1051,7 +1050,12 @@ function construirCorreoAprobado_(data) {
 
   return envolverCorreo_(
     encabezadoCorreo_('Cotización Seguro de Viaje SENIOR +79') +
-    '<div style="padding:18px;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
+    // Tabla, no <div>: un <div> con borde y sin ancho explícito puede
+    // desalinearse por debajo del ancho de la fila 100% del encabezado en
+    // clientes con soporte de CSS irregular (ver envolverCorreo_). Usando
+    // tabla en ambos, el ancho de las dos secciones queda garantizado igual.
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">' +
+    '<tr><td style="padding:18px;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
 
       '<p style="margin:8px 0 18px 0;">Estimado(a) ' + escaparHtml_(data.nombreSolicitante) + ':</p>' +
       '<p style="margin:0 0 16px 0;">Adjunto encontraras la cotización correspondiente en tu solicitud. ' +
@@ -1101,7 +1105,7 @@ function construirCorreoAprobado_(data) {
       '</table>' +
 
       pieCorreo_() +
-    '</div>' +
+    '</td></tr></table>' +
     avisoPrivacidadCorreo_()
   );
 }
@@ -1127,7 +1131,8 @@ function construirCorreoRechazo_(data) {
 
   return envolverCorreo_(
     encabezadoCorreo_('Solicitud de cotización no procesada') +
-    '<div style="padding:18px;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">' +
+    '<tr><td style="padding:18px;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
 
       '<p style="margin:8px 0 18px 0;">Estimado(a) ' + escaparHtml_(data.nombreSolicitante) + ':</p>' +
 
@@ -1138,7 +1143,7 @@ function construirCorreoRechazo_(data) {
 
       avisoExcluidos +
       pieCorreo_() +
-    '</div>' +
+    '</td></tr></table>' +
     avisoPrivacidadCorreo_()
   );
 }
