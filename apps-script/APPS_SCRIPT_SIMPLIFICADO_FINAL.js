@@ -1005,6 +1005,32 @@ function avisoPrivacidadCorreo_() {
     '</div>';
 }
 
+/**
+ * Fila vacía de altura fija para separar dos tablas consecutivas del correo.
+ * El margin-bottom de un <table> no es confiable en Outlook de escritorio
+ * (motor Word): la separación real solo se respeta como celda con altura
+ * explícita y contenido (&nbsp;), nunca como espacio en blanco vacío.
+ */
+function espaciador_(altura) {
+  return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">' +
+    '<tr><td style="height:' + altura + 'px;line-height:' + altura + 'px;font-size:1px;">&nbsp;</td></tr>' +
+    '</table>';
+}
+
+/**
+ * Envoltura centrada del correo. Outlook de escritorio (motor Word) ignora
+ * margin:0 auto en un <div>: el centrado real solo se respeta con el
+ * atributo HTML align="center" en una <table>, así que esta es la única
+ * capa que define el ancho y el centrado del mensaje completo.
+ */
+function envolverCorreo_(contenidoHtml) {
+  return '<table role="presentation" align="center" width="600" cellpadding="0" cellspacing="0" border="0" ' +
+    'style="width:600px;max-width:600px;margin:0 auto;">' +
+    '<tr><td style="font-family:\'Aptos Display\',Arial,sans-serif;font-size:11pt;color:#222;">' +
+      contenidoHtml +
+    '</td></tr></table>';
+}
+
 /** Fila etiqueta/valor de las tablas resumen (verde claro) del correo. */
 function filaResumen_(etiqueta, valor) {
   return '<tr>' +
@@ -1023,58 +1049,61 @@ function construirCorreoAprobado_(data) {
       formatearMoneda_(total) + ' USD</td>' +
     '</tr>';
 
-  return '' +
-    '<div style="max-width:600px;margin:0 auto;font-family:\'Aptos Display\',Arial,sans-serif;font-size:11pt;color:#222;">' +
-      encabezadoCorreo_('Cotización Seguro de Viaje SENIOR +79') +
-      '<div style="padding:18px;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
+  return envolverCorreo_(
+    encabezadoCorreo_('Cotización Seguro de Viaje SENIOR +79') +
+    '<div style="padding:18px;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
 
-        '<p style="margin:8px 0 18px 0;">Estimado(a) ' + escaparHtml_(data.nombreSolicitante) + ':</p>' +
-        '<p style="margin:0 0 16px 0;">Adjunto encontraras la cotización correspondiente en tu solicitud. ' +
-        'A continuación el resumen</p>' +
+      '<p style="margin:8px 0 18px 0;">Estimado(a) ' + escaparHtml_(data.nombreSolicitante) + ':</p>' +
+      '<p style="margin:0 0 16px 0;">Adjunto encontraras la cotización correspondiente en tu solicitud. ' +
+      'A continuación el resumen</p>' +
 
-        '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
-        'style="border-collapse:collapse;background-color:' + COLORES.VERDE_CLARO + ';margin-bottom:18px;">' +
-          filaResumen_('Folio', data.folio) +
-          filaResumen_('Destino', data.destino) +
-          filaResumen_('Fechas del viaje', data.fechaInicio + ' al ' + data.fechaFin) +
-          filaResumen_('Duración del viaje', data.duracionDias + ' días') +
-          filaResumen_('Asegurados', String(data.numAsegurados) + ' — ' + data.listaAsegurados) +
-          filaResumen_('Vigencia de esta cotización', data.vigenciaCotizacion) +
-        '</table>' +
+      '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
+      'style="border-collapse:collapse;background-color:' + COLORES.VERDE_CLARO + ';">' +
+        filaResumen_('Folio', data.folio) +
+        filaResumen_('Destino', data.destino) +
+        filaResumen_('Fechas del viaje', data.fechaInicio + ' al ' + data.fechaFin) +
+        filaResumen_('Duración del viaje', data.duracionDias + ' días') +
+        filaResumen_('Asegurados', String(data.numAsegurados) + ' — ' + data.listaAsegurados) +
+        filaResumen_('Vigencia de esta cotización', data.vigenciaCotizacion) +
+      '</table>' +
 
-        '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:8px;">' +
-          '<tr>' +
-            '<th style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';background-color:' + COLORES.VERDE + ';color:#ffffff;text-align:left;font-size:11pt;">Plan</th>' +
-            '<th style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';background-color:' + COLORES.VERDE + ';color:#ffffff;text-align:right;font-size:11pt;">' +
-              '<span style="display:block;font-weight:normal;font-size:9pt;color:#e3f1ef;margin-bottom:2px;">Prima Neta por (' +
-              data.numAsegurados + ' ' + (data.numAsegurados === 1 ? 'asegurado' : 'asegurados') + ') + IVA en USD</span>' +
-              'Prima total' +
-            '</th>' +
-          '</tr>' +
-          filaPlan('Master', data.totalMaster) +
-          filaPlan('Master Smart', data.totalSmart) +
-          filaPlan('Master Elite', data.totalElite) +
-          filaPlan('Master Premium', data.totalPremium) +
-        '</table>' +
-        '<p style="margin:0 0 18px 0;font-size:11px;color:#666;font-style:italic;">Importes en dólares americanos (USD) ' +
-        'para ' + data.numAsegurados + ' asegurado(s). Primas netas, sin IVA ni derecho de póliza.</p>' +
+      // Separador explícito: dos tablas distintas (resumen de la solicitud
+      // vs. primas por plan), no una continuación de la misma.
+      espaciador_(20) +
 
-        construirAvisoExcluidos_(data.pasajerosExcluidos) +
+      '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:8px;">' +
+        '<tr>' +
+          '<th style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';background-color:' + COLORES.VERDE + ';color:#ffffff;text-align:left;font-size:11pt;">Plan</th>' +
+          '<th style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';background-color:' + COLORES.VERDE + ';color:#ffffff;text-align:right;font-size:11pt;">' +
+            '<span style="font-weight:normal;font-size:9pt;color:#e3f1ef;">Prima Neta por (' +
+            data.numAsegurados + ' ' + (data.numAsegurados === 1 ? 'asegurado' : 'asegurados') + ') + IVA en USD</span>' +
+            '<br>Prima total' +
+          '</th>' +
+        '</tr>' +
+        filaPlan('Master', data.totalMaster) +
+        filaPlan('Master Smart', data.totalSmart) +
+        filaPlan('Master Elite', data.totalElite) +
+        filaPlan('Master Premium', data.totalPremium) +
+      '</table>' +
+      '<p style="margin:0 0 18px 0;font-size:11px;color:#666;font-style:italic;">Importes en dólares americanos (USD) ' +
+      'para ' + data.numAsegurados + ' asegurado(s). Primas netas, sin IVA ni derecho de póliza.</p>' +
 
-        '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
-        'style="border-collapse:collapse;background-color:' + COLORES.VERDE_CLARO + ';border-left:4px solid ' + COLORES.VERDE + ';margin-bottom:18px;">' +
-          '<tr><td style="padding:12px 14px;">' +
-            '<strong style="color:' + COLORES.VERDE + ';">Revisión obligatoria del documento adjunto</strong><br>' +
-            'El detalle completo de <strong>coberturas, sumas aseguradas, especificaciones y requisitos de emisión</strong> ' +
-            'se encuentra únicamente en la cotización en PDF adjunta a este correo. Le solicitamos revisarla en su ' +
-            'totalidad antes de aceptar cualquier plan.' +
-          '</td></tr>' +
-        '</table>' +
+      construirAvisoExcluidos_(data.pasajerosExcluidos) +
 
-        pieCorreo_() +
-      '</div>' +
-      avisoPrivacidadCorreo_() +
-    '</div>';
+      '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
+      'style="border-collapse:collapse;background-color:' + COLORES.VERDE_CLARO + ';border-left:4px solid ' + COLORES.VERDE + ';margin-bottom:18px;">' +
+        '<tr><td style="padding:12px 14px;">' +
+          '<strong style="color:' + COLORES.VERDE + ';">Revisión obligatoria del documento adjunto</strong><br>' +
+          'El detalle completo de <strong>coberturas, sumas aseguradas, especificaciones y requisitos de emisión</strong> ' +
+          'se encuentra únicamente en la cotización en PDF adjunta a este correo. Le solicitamos revisarla en su ' +
+          'totalidad antes de aceptar cualquier plan.' +
+        '</td></tr>' +
+      '</table>' +
+
+      pieCorreo_() +
+    '</div>' +
+    avisoPrivacidadCorreo_()
+  );
 }
 
 /**
@@ -1096,23 +1125,22 @@ function construirCorreoRechazo_(data) {
     ? ''
     : construirAvisoExcluidos_(data.pasajerosExcluidos);
 
-  return '' +
-    '<div style="max-width:600px;margin:0 auto;font-family:\'Aptos Display\',Arial,sans-serif;font-size:11pt;color:#222;">' +
-      encabezadoCorreo_('Solicitud de cotización no procesada') +
-      '<div style="padding:18px;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
+  return envolverCorreo_(
+    encabezadoCorreo_('Solicitud de cotización no procesada') +
+    '<div style="padding:18px;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
 
-        '<p style="margin:8px 0 18px 0;">Estimado(a) ' + escaparHtml_(data.nombreSolicitante) + ':</p>' +
+      '<p style="margin:8px 0 18px 0;">Estimado(a) ' + escaparHtml_(data.nombreSolicitante) + ':</p>' +
 
-        '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
-        'style="border-collapse:collapse;background-color:' + COLORES.ROJO_FONDO + ';border-left:4px solid ' + COLORES.ROJO_BORDE + ';margin-bottom:18px;">' +
-          '<tr><td style="padding:12px 14px;">' + motivo + '</td></tr>' +
-        '</table>' +
+      '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
+      'style="border-collapse:collapse;background-color:' + COLORES.ROJO_FONDO + ';border-left:4px solid ' + COLORES.ROJO_BORDE + ';margin-bottom:18px;">' +
+        '<tr><td style="padding:12px 14px;">' + motivo + '</td></tr>' +
+      '</table>' +
 
-        avisoExcluidos +
-        pieCorreo_() +
-      '</div>' +
-      avisoPrivacidadCorreo_() +
-    '</div>';
+      avisoExcluidos +
+      pieCorreo_() +
+    '</div>' +
+    avisoPrivacidadCorreo_()
+  );
 }
 
 function motivoRechazoTiempo_(data) {
