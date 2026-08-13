@@ -955,15 +955,17 @@ function avisoPrivacidadCorreo_() {
     '</div>';
 }
 
-function construirCorreoAprobado_(data) {
-  const filaResumen = (etiqueta, valor) =>
-    '<tr>' +
+/** Fila etiqueta/valor de las tablas resumen (verde claro) del correo. */
+function filaResumen_(etiqueta, valor) {
+  return '<tr>' +
     '<td style="padding:5px 10px;border-bottom:1px solid ' + COLORES.BORDE + ';font-weight:bold;color:' + COLORES.AZUL + ';width:42%;">' +
       escaparHtml_(etiqueta) + '</td>' +
     '<td style="padding:5px 10px;border-bottom:1px solid ' + COLORES.BORDE + ';color:#333;">' +
       escaparHtml_(valor) + '</td>' +
     '</tr>';
+}
 
+function construirCorreoAprobado_(data) {
   const filaPlan = (plan, total) =>
     '<tr>' +
     '<td style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';color:#333;">' + escaparHtml_(plan) + '</td>' +
@@ -982,12 +984,12 @@ function construirCorreoAprobado_(data) {
 
         '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
         'style="border-collapse:collapse;background-color:' + COLORES.VERDE_CLARO + ';margin-bottom:18px;">' +
-          filaResumen('Folio', data.folio) +
-          filaResumen('Destino', data.destino) +
-          filaResumen('Fechas del viaje', data.fechaInicio + ' al ' + data.fechaFin) +
-          filaResumen('Duración del viaje', data.duracionDias + ' días') +
-          filaResumen('Asegurados', String(data.numAsegurados) + ' — ' + data.listaAsegurados) +
-          filaResumen('Vigencia de esta cotización', data.vigenciaCotizacion) +
+          filaResumen_('Folio', data.folio) +
+          filaResumen_('Destino', data.destino) +
+          filaResumen_('Fechas del viaje', data.fechaInicio + ' al ' + data.fechaFin) +
+          filaResumen_('Duración del viaje', data.duracionDias + ' días') +
+          filaResumen_('Asegurados', String(data.numAsegurados) + ' — ' + data.listaAsegurados) +
+          filaResumen_('Vigencia de esta cotización', data.vigenciaCotizacion) +
         '</table>' +
 
         '<div style="font-size:15px;font-weight:bold;color:' + COLORES.VERDE + ';margin-bottom:6px;">' +
@@ -1024,10 +1026,24 @@ function construirCorreoAprobado_(data) {
     '</div>';
 }
 
+/**
+ * Correo de rechazo. Siempre lleva la información completa del viaje en el
+ * resumen (folio, destino, fechas, duración), sin importar el motivo.
+ *
+ * El aviso ámbar de pasajeros excluidos (construirAvisoExcluidos_) solo se
+ * agrega cuando SÍ hubo al menos un asegurado elegible en otras filas de la
+ * solicitud —o sea, nunca en RECHAZADO_SIN_ELEGIBLES—: si ningún pasajero
+ * calificó, el motivo de rechazo ya lo explica con nombres y edades, y
+ * repetirlo en un segundo bloque es redundante.
+ */
 function construirCorreoRechazo_(data) {
   const motivo = data.estatus === CONFIG.ESTATUS.RECHAZADO_TIEMPO
     ? motivoRechazoTiempo_(data)
     : motivoRechazoSinElegibles_(data);
+
+  const avisoExcluidos = data.estatus === CONFIG.ESTATUS.RECHAZADO_SIN_ELEGIBLES
+    ? ''
+    : construirAvisoExcluidos_(data.pasajerosExcluidos);
 
   return '' +
     '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;max-width:640px;">' +
@@ -1043,17 +1059,13 @@ function construirCorreoRechazo_(data) {
 
         '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
         'style="border-collapse:collapse;background-color:' + COLORES.VERDE_CLARO + ';margin-bottom:18px;">' +
-          '<tr>' +
-            '<td style="padding:5px 10px;font-weight:bold;color:' + COLORES.AZUL + ';width:42%;">Folio de la solicitud</td>' +
-            '<td style="padding:5px 10px;color:#333;">' + escaparHtml_(data.folio) + '</td>' +
-          '</tr>' +
-          '<tr>' +
-            '<td style="padding:5px 10px;font-weight:bold;color:' + COLORES.AZUL + ';">Destino</td>' +
-            '<td style="padding:5px 10px;color:#333;">' + escaparHtml_(data.destino) + '</td>' +
-          '</tr>' +
+          filaResumen_('Folio', data.folio) +
+          filaResumen_('Destino', data.destino) +
+          filaResumen_('Fechas del viaje', data.fechaInicio + ' al ' + data.fechaFin) +
+          filaResumen_('Duración del viaje', data.duracionDias + ' días') +
         '</table>' +
 
-        construirAvisoExcluidos_(data.pasajerosExcluidos) +
+        avisoExcluidos +
         pieCorreo_() +
       '</div>' +
       avisoPrivacidadCorreo_() +
@@ -1072,12 +1084,27 @@ function motivoRechazoTiempo_(data) {
     'respetando este plazo.</p>';
 }
 
+/**
+ * Motivo de rechazo por edad. Incluye nombre y edad de cada pasajero
+ * indicado: como este es el único bloque del correo que explica el
+ * rechazo (ver construirCorreoRechazo_, que omite el aviso ámbar
+ * redundante en este caso), tiene que bastarse solo.
+ */
 function motivoRechazoSinElegibles_(data) {
+  const excluidos = data.pasajerosExcluidos || [];
+  const plural = excluidos.length !== 1;
+  const sujeto = excluidos.length === 0
+    ? 'el pasajero indicado'
+    : (plural ? 'los pasajeros ' : 'el pasajero ') + '<strong>' + excluidos
+      .map((p) => escaparHtml_(p.nombre) + (p.edad !== null ? ' (' + p.edad + ' años)' : ''))
+      .join(', ') + '</strong>';
+
   return '<p style="margin:0 0 14px 0;">Su solicitud para el destino <strong>' + escaparHtml_(data.destino) + '</strong> ' +
-    'no pudo ser procesada porque <strong>ninguno de los pasajeros indicados se encuentra dentro del rango de edad ' +
-    'del Producto Senior</strong>, que aplica exclusivamente para personas de ' + textoRangoEdad_() + '.</p>' +
-    '<p style="margin:0;">Para cotizar a estos pasajeros, favor de solicitar el <strong>producto de viaje ' +
-    'estándar</strong> a través de su Mesa de Control.</p>';
+    'no pudo ser procesada porque ' + sujeto + ' no ' + (plural ? 'se encuentran' : 'se encuentra') +
+    ' dentro del rango de edad del <strong>Producto Senior</strong>, que aplica exclusivamente para personas de ' +
+    textoRangoEdad_() + '.</p>' +
+    '<p style="margin:0;">Para cotizar a ' + (plural ? 'estos pasajeros' : 'este pasajero') + ', favor de solicitar el ' +
+    '<strong>producto de viaje estándar</strong> a través de su Mesa de Control.</p>';
 }
 
 /**
