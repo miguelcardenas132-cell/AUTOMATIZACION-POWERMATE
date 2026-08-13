@@ -950,10 +950,10 @@ function encabezadoCorreo_(titulo) {
     'style="background-color:' + COLORES.VERDE + ';border-collapse:collapse;">' +
     '<tr>' +
       '<td align="left" valign="middle" style="padding:14px 10px 14px 18px;">' +
-        '<div style="font-size:17px;font-weight:bold;color:#ffffff;font-family:Arial,Helvetica,sans-serif;">' +
+        '<div style="font-size:17px;font-weight:bold;color:#ffffff;font-family:\'Aptos Display\',Arial,sans-serif;">' +
           escaparHtml_(titulo) + '</div>' +
-        '<div style="font-size:11px;color:#cfe6da;margin-top:3px;font-family:Arial,Helvetica,sans-serif;">' +
-          'emitido por Seguro de Viaje - Dirección de Negocios Especiales (DINE)</div>' +
+        '<div style="font-size:11px;color:#cfe6da;margin-top:3px;font-family:\'Aptos Display\',Arial,sans-serif;">' +
+          'Emitido por Seguro de Viaje - Dirección de Negocios Especiales (DINE)</div>' +
       '</td>' +
       '<td align="right" valign="middle" style="padding:14px 18px 14px 10px;width:130px;">' +
         '<img src="' + escaparHtml_(CONFIG.URL_LOGO_CORREO) + '" alt="Seguros Atlas" width="120" ' +
@@ -976,15 +976,15 @@ function pieCorreo_() {
 function firmaCorreo_() {
   const linea = (contenido) =>
     '<div style="font-size:12px;line-height:1.45;color:#333333;' +
-    'font-family:Arial,Helvetica,sans-serif;">' + contenido + '</div>';
+    'font-family:\'Aptos Display\',Arial,sans-serif;">' + contenido + '</div>';
 
   return '<table role="presentation" cellpadding="0" cellspacing="0" ' +
     'style="border-collapse:collapse;border-top:1px solid ' + COLORES.BORDE + ';padding-top:12px;">' +
     '<tr><td style="padding:12px 0 0 0;">' +
       '<div style="font-size:14px;font-weight:bold;color:' + COLORES.AZUL + ';' +
-        'font-family:Arial,Helvetica,sans-serif;">Seguro de Viaje</div>' +
+        'font-family:\'Aptos Display\',Arial,sans-serif;">Seguro de Viaje</div>' +
       '<div style="font-size:12px;color:#666666;margin-bottom:8px;' +
-        'font-family:Arial,Helvetica,sans-serif;">DINE (Dirección de Negocios Especiales)</div>' +
+        'font-family:\'Aptos Display\',Arial,sans-serif;">DINE (Dirección de Negocios Especiales)</div>' +
       linea('<strong>Tel.</strong> (55) 9177 &ndash; 5000 Ext. 4931') +
       linea('<strong>Correo.</strong> <a href="mailto:segurodeviaje@segurosatlas.com.mx" ' +
         'style="color:' + COLORES.VERDE + ';">segurodeviaje@segurosatlas.com.mx</a>') +
@@ -998,7 +998,7 @@ function firmaCorreo_() {
 /** Línea discreta de cierre, fuera del marco del mensaje. */
 function avisoPrivacidadCorreo_() {
   return '<div style="text-align:center;font-size:10px;color:#a3a3a3;' +
-    'font-family:Arial,Helvetica,sans-serif;padding:12px 10px 0;line-height:1.5;">' +
+    'font-family:\'Aptos Display\',Arial,sans-serif;padding:12px 10px 0;line-height:1.5;">' +
     '<a href="' + escaparHtml_(CONFIG.URL_AVISO_PRIVACIDAD) + '" style="color:#a3a3a3;">Aviso de Privacidad</a>' +
     ' &nbsp;--&nbsp; Contacto: ' +
     '<a href="mailto:segurodeviaje@segurosatlas.com.mx" style="color:#a3a3a3;">segurodeviaje@segurosatlas.com.mx</a>' +
@@ -1024,13 +1024,13 @@ function construirCorreoAprobado_(data) {
     '</tr>';
 
   return '' +
-    '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;max-width:640px;">' +
+    '<div style="max-width:600px;margin:0 auto;font-family:\'Aptos Display\',Arial,sans-serif;font-size:11pt;color:#222;">' +
       encabezadoCorreo_('Cotización Seguro de Viaje SENIOR +79') +
       '<div style="padding:18px;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
 
         '<p style="margin:8px 0 18px 0;">Estimado(a) ' + escaparHtml_(data.nombreSolicitante) + ':</p>' +
-        '<p style="margin:0 0 16px 0;">Adjunto encontrará la cotización correspondiente a su solicitud. ' +
-        'A continuación el resumen de los datos considerados:</p>' +
+        '<p style="margin:0 0 16px 0;">Adjunto encontraras la cotización correspondiente en tu solicitud. ' +
+        'A continuación el resumen</p>' +
 
         '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
         'style="border-collapse:collapse;background-color:' + COLORES.VERDE_CLARO + ';margin-bottom:18px;">' +
@@ -1042,13 +1042,14 @@ function construirCorreoAprobado_(data) {
           filaResumen_('Vigencia de esta cotización', data.vigenciaCotizacion) +
         '</table>' +
 
-        '<div style="font-size:15px;font-weight:bold;color:' + COLORES.VERDE + ';margin-bottom:6px;">' +
-        'Prima Neta por (' + data.numAsegurados + ' ' +
-        (data.numAsegurados === 1 ? 'asegurado' : 'asegurados') + ') + IVA en USD</div>' +
         '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:8px;">' +
           '<tr>' +
-            '<th style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';background-color:' + COLORES.VERDE + ';color:#ffffff;text-align:left;font-size:13px;">Plan</th>' +
-            '<th style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';background-color:' + COLORES.VERDE + ';color:#ffffff;text-align:right;font-size:13px;">Prima total</th>' +
+            '<th style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';background-color:' + COLORES.VERDE + ';color:#ffffff;text-align:left;font-size:11pt;">Plan</th>' +
+            '<th style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';background-color:' + COLORES.VERDE + ';color:#ffffff;text-align:right;font-size:11pt;">' +
+              '<span style="display:block;font-weight:normal;font-size:9pt;color:#e3f1ef;margin-bottom:2px;">Prima Neta por (' +
+              data.numAsegurados + ' ' + (data.numAsegurados === 1 ? 'asegurado' : 'asegurados') + ') + IVA en USD</span>' +
+              'Prima total' +
+            '</th>' +
           '</tr>' +
           filaPlan('Master', data.totalMaster) +
           filaPlan('Master Smart', data.totalSmart) +
@@ -1096,7 +1097,7 @@ function construirCorreoRechazo_(data) {
     : construirAvisoExcluidos_(data.pasajerosExcluidos);
 
   return '' +
-    '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;max-width:640px;">' +
+    '<div style="max-width:600px;margin:0 auto;font-family:\'Aptos Display\',Arial,sans-serif;font-size:11pt;color:#222;">' +
       encabezadoCorreo_('Solicitud de cotización no procesada') +
       '<div style="padding:18px;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
 
