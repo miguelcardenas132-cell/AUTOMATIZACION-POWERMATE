@@ -147,7 +147,7 @@ const CONFIG = {
 
 // Paleta corporativa, compartida por la cotización y el correo.
 const COLORES = {
-  VERDE: '#0d5e3a',
+  VERDE: '#027370',
   VERDE_CLARO: '#eef4f1',
   VERDE_BORDE: '#bcd5c9',
   AZUL: '#0f2b48',
@@ -632,13 +632,17 @@ function estilosCotizacion_() {
     '                    padding: 2.3px 5px; text-align: left; }\n' +
     '.cob th.planes { background-color: ' + COLORES.VERDE + '; color: #ffffff; text-align: center;\n' +
     '                 font-size: 11.5px; font-weight: bold; letter-spacing: .5px; padding: 4px; text-transform: uppercase;\n' +
-    '                 border: none; }\n' +
+    '                 border: none; border-bottom: 2px solid #ffffff; }\n' +
     '.cob th.sub { background-color: ' + COLORES.VERDE + '; color: #ffffff; font-weight: bold;\n' +
     '              text-align: center; font-size: 9.1px; text-transform: uppercase; padding: 2.3px 4px; }\n' +
     '.cob th.sub-izq { text-align: left; }\n' +
     '.cob th .moneda { display: block; font-weight: normal; font-size: 7.6px; }\n' +
     '.cob td.num { text-align: center; }\n' +
     '.cob .subnota { display: block; color: #444; font-size: 7.9px; }\n' +
+    // Coberturas principales (con número romano) resaltadas; sub-límites
+    // (sin número romano) con sangría para mostrar que dependen de la de arriba.
+    '.cob tr.principal td { font-weight: bold; }\n' +
+    '.cob tr.sublimite td:first-child { padding-left: 18px; }\n' +
     '.cob tr.total td { background-color: ' + COLORES.TOTAL_FONDO + '; font-weight: bold;\n' +
     '                   border-top: 2px solid ' + COLORES.VERDE + ' !important; border-bottom: none;\n' +
     '                   font-size: 10.2px; color: ' + COLORES.VERDE + '; padding: 3.5px 5px; }\n' +
@@ -673,7 +677,7 @@ function estilosCotizacion_() {
     // Sin recuadro: el QR y su texto respiran sobre el blanco de la hoja,
     // junto al bloque de observaciones.
     '.qr-tarjeta { padding: 2px 4px 0; text-align: center; }\n' +
-    '.qr-tarjeta img { width: 76px; height: 76px; display: block; margin: 0 auto 3px; }\n' +
+    '.qr-tarjeta img { width: 76px; height: 76px; display: block; margin: 3px auto 0; }\n' +
     '.qr-tarjeta h3 { font-size: 8px; color: ' + COLORES.AZUL + '; margin-bottom: 1px; }\n' +
     '.qr-tarjeta p { font-size: 7px; line-height: 1.22; color: #444; }\n' +
     '.qr-tarjeta p.qr-nota { font-style: italic; margin-top: 2px; }\n' +
@@ -754,13 +758,18 @@ function bloqueCoberturas_(data) {
     .join('');
 
   const filas = COBERTURAS.map((cobertura) => {
+    // Las coberturas principales llevan número romano al inicio (ej. "V. Gastos
+    // Médicos..."); todo lo demás es un sub-límite que depende de la principal
+    // más reciente arriba, y se marca con sangría en vez de negritas.
+    const esPrincipal = /^[IVXLCDM]+\.\s/.test(cobertura.concepto);
     const celdas = cobertura.valores.map((valor, columna) => {
       const nota = cobertura.nota && cobertura.nota[columna]
         ? '<span class="subnota">' + escaparHtml_(cobertura.nota[columna]) + '</span>'
         : '';
       return '<td class="num">' + escaparHtml_(valor) + nota + '</td>';
     }).join('');
-    return '<tr><td>' + escaparHtml_(cobertura.concepto) + '</td>' + celdas + '</tr>';
+    return '<tr class="' + (esPrincipal ? 'principal' : 'sublimite') + '"><td>' +
+      escaparHtml_(cobertura.concepto) + '</td>' + celdas + '</tr>';
   }).join('\n');
 
   const primasTotales = [data.totalMaster, data.totalSmart, data.totalElite, data.totalPremium]
@@ -788,7 +797,6 @@ function bloqueEspecificaciones_() {
       '<li>• <strong>Cobertura:</strong> desde las 00:00 hrs del inicio hasta las 23:59 hrs de la culminación del viaje.</li>\n' +
       '<li>• <strong>Territorialidad:</strong> México y el Extranjero. Excepto: Afganistán, Bielorrusia, Crimea, ' +
       'Zaporizhzhia, Kherson, Donetsk, Luhansk, Irán, Israel, Corea del Norte, Rusia, Siria y Venezuela.</li>\n' +
-      '<li>• <strong>Viajes nacionales no incluyen cobertura COVID-19.</strong></li>\n' +
       '<li>• <strong>No hay deducibles ni coaseguros.</strong></li>\n' +
     '</ul>\n</td></tr>\n</table>\n';
 }
@@ -814,7 +822,7 @@ function bloqueAccionOperativa_() {
       escaparHtml_(CONFIG.URL_FORMULARIO_EMISION) + '</a></p>' +
     '</td>\n' +
     '<td class="celda">' +
-      '<h3>Paso 2. Registro de constancia de situación fiscal</h3>' +
+      '<h3>En caso de requerir factura</h3>' +
       '<p>Si requieres factura, antes de solicitar la emisión es indispensable registrar la situación fiscal ' +
       'enviando un correo a <strong>constanciafiscal@segurosatlas.com.mx</strong> con este formato estricto:</p>' +
       '<ul>' +
@@ -825,8 +833,9 @@ function bloqueAccionOperativa_() {
       '</ul>' +
     '</td>\n' +
     '<td class="celda">' +
-      '<h3>Paso 3. Consideraciones importantes</h3>' +
+      '<h3>Paso 2. Requisitos/consideraciones para emisión</h3>' +
       '<ul>' +
+        '<li>• <strong>Incluir fechas de viaje.</strong></li>' +
         '<li>• <strong>Revisión de datos:</strong> verifica que la información de los asegurados y del contratante ' +
         'sea correcta y legible.</li>' +
         '<li>• <strong>Tiempo de gestión:</strong> el formulario de emisión deberá ser enviado hasta un máximo ' +
@@ -851,10 +860,10 @@ function bloqueObservacionesYQr_() {
     '<td class="cierre-obs">' + bloqueObservaciones_() + '</td>\n' +
     '<td class="cierre-qr">' +
       '<div class="qr-tarjeta">' +
-        '<img alt="Código QR para recotizar" src="' + ASSETS.QR_COTIZAR + '">' +
         '<h3>¿Deseas recotizar tu viaje?</h3>' +
         '<p>Escanea el código QR y solicita una nueva cotización de forma rápida y sencilla.</p>' +
         '<p class="qr-nota">(Máximo 5 días hábiles antes del inicio del viaje)</p>' +
+        '<img alt="Código QR para recotizar" src="' + ASSETS.QR_COTIZAR + '">' +
       '</div>' +
     '</td>\n' +
     '</tr>\n</table>\n';
@@ -865,10 +874,9 @@ function bloqueObservaciones_() {
     '<h3>Observaciones</h3>\n' +
     '<ol>\n' +
     '<li>La presente es únicamente una COTIZACIÓN, POR LO QUE NO SURTE NINGÚN EFECTO LEGAL COMO PÓLIZA DE SEGURO</li>\n' +
-    '<li>La presenta propuesta tiene un máximo de 10 DÍAS NATURALES a partir de la fecha y hora de cotización, ' +
+    '<li>La presente propuesta tiene un máximo de 10 DÍAS NATURALES a partir de la fecha y hora de cotización, ' +
     'en caso de la aceptación de la misma, deberá sujetarse a las condiciones y políticas vigentes de Seguros Atlas.</li>\n' +
     '<li>En caso de existir una cotización anterior o póliza emitida vigente, esta cotización quedará sin efecto alguno.</li>\n' +
-    '<li>Los límites máximos de responsabilidad de la presente cotización son por Asegurado</li>\n' +
     '</ol>\n' +
     '<p>El alcance, términos, condiciones, exclusiones y limitantes de las coberturas cotizadas se encuentran en ' +
     'las condiciones generales que se le entregarán al momento de la contratación de la póliza, las cuales también ' +
