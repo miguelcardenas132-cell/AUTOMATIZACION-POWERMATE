@@ -960,7 +960,7 @@ function encabezadoCorreo_(titulo) {
 
 /** Despedida más la firma corporativa. */
 function pieCorreo_() {
-  return '<p style="margin:0 0 16px 0;">Saludos.</p>' +
+  return '<p style="margin:12px 0 16px 0;">Saludos.</p>' +
     firmaCorreo_();
 }
 
@@ -1024,7 +1024,7 @@ function construirCorreoAprobado_(data) {
       encabezadoCorreo_('Cotización Seguro de Viaje SENIOR +79') +
       '<div style="padding:18px;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
 
-        '<p style="margin:0 0 14px 0;">Estimado(a) ' + escaparHtml_(data.nombreSolicitante) + ':</p>' +
+        '<p style="margin:8px 0 18px 0;">Estimado(a) ' + escaparHtml_(data.nombreSolicitante) + ':</p>' +
         '<p style="margin:0 0 16px 0;">Adjunto encontrará la cotización correspondiente a su solicitud. ' +
         'A continuación el resumen de los datos considerados:</p>' +
 
@@ -1096,7 +1096,7 @@ function construirCorreoRechazo_(data) {
       encabezadoCorreo_('Solicitud de cotización no procesada') +
       '<div style="padding:18px;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
 
-        '<p style="margin:0 0 14px 0;">Estimado(a) ' + escaparHtml_(data.nombreSolicitante) + ':</p>' +
+        '<p style="margin:8px 0 18px 0;">Estimado(a) ' + escaparHtml_(data.nombreSolicitante) + ':</p>' +
 
         '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
         'style="border-collapse:collapse;background-color:' + COLORES.ROJO_FONDO + ';border-left:4px solid ' + COLORES.ROJO_BORDE + ';margin-bottom:18px;">' +
