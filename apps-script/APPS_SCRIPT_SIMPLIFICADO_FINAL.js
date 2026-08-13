@@ -563,11 +563,9 @@ function escaparHtml_(valor) {
  * columna. Las imágenes van como data: URI porque el convertidor tampoco
  * descarga recursos externos.
  *
- * La tabla "marco" ocupa el alto completo de la página: el contenido se
- * alinea arriba y el pie queda anclado al fondo, de modo que el espacio
- * sobrante se acumula como aire visible entre ambos. Si el convertidor
- * ignorara el height:100%, el pie simplemente vuelve a quedar pegado al
- * contenido: se pierde el aire, no la maquetación.
+ * El pie va justo después del contenido (sin forzarlo al fondo de la hoja):
+ * así no se acumula espacio en blanco entre ambos sin importar cuánto
+ * contenido tenga la cotización.
  */
 function generarHtmlCotizacion_(data) {
   return '<!DOCTYPE html>\n' +
@@ -593,11 +591,9 @@ function estilosCotizacion_() {
   return '' +
     '@page { size: letter; margin: 0.3cm; }\n' +
     '* { box-sizing: border-box; margin: 0; padding: 0; }\n' +
-    'html, body { height: 100%; }\n' +
-    // Marco de alto completo: empuja el pie al fondo de la hoja.
-    '.marco { width: 100%; height: 100%; border-collapse: collapse; }\n' +
+    '.marco { width: 100%; border-collapse: collapse; }\n' +
     '.marco-contenido { vertical-align: top; }\n' +
-    '.marco-pie { vertical-align: bottom; height: 1px; }\n' +
+    '.marco-pie { vertical-align: top; }\n' +
     'body { font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #111; line-height: 1.3;\n' +
     '       -webkit-print-color-adjust: exact; print-color-adjust: exact; }\n' +
     'table { border-collapse: collapse; width: 100%; }\n' +
@@ -692,7 +688,7 @@ function estilosCotizacion_() {
     '.obs p { font-size: 8.5px; line-height: 1.26; margin-bottom: 0.5px; }\n' +
 
     // --- 7. Pie ---
-    '.pie { margin-top: 3px; padding-top: 3px; }\n' +
+    '.pie { margin-top: 10px; padding-top: 6px; border-top: 1px solid #d6d6d6; }\n' +
     '.pie td { font-size: 8px; color: #555; vertical-align: middle; text-align: center;\n' +
     '          line-height: 1.35; padding: 0 8px; }\n' +
     '.pie td.sep { border-left: 1px solid #c8c8c8; }\n' +
