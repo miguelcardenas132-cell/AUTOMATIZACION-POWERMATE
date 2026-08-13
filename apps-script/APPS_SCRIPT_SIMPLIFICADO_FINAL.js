@@ -8,8 +8,9 @@
  *
  * FLUJO
  *   1) Trigger "Al enviar el formulario" -> se lee la fila exacta.
- *   2) Se filtran los asegurados elegibles (79-89 años, edad leída directo
- *      de su columna en el Sheet) y se registran los excluidos.
+ *   2) Se filtran los asegurados elegibles (de 79 años 11 meses a 89 años
+ *      11 meses, calculado desde su fecha de nacimiento respecto a la fecha
+ *      de salida del viaje) y se registran los excluidos.
  *   3) Se valida la anticipación mínima (5 días naturales).
  *   4) Si procede, se genera el HTML de la cotización (1 página, tamaño carta)
  *      y se guarda en Drive con codificación UTF-8 explícita.
@@ -19,7 +20,15 @@
  * ESTATUS POSIBLES
  *   APROBADO                 Hay al menos un elegible y se cumple la anticipación.
  *   RECHAZADO_TIEMPO         Menos de 5 días naturales antes de la salida.
- *   RECHAZADO_SIN_ELEGIBLES  Ningún pasajero cae en el rango 79-89.
+ *   RECHAZADO_SIN_ELEGIBLES  Ningún pasajero cae en el rango de edad elegible.
+ *
+ * SOBRE LAS COLUMNAS "Validacion_*", "Estado_Final" y "Motivo_Rechazo" DEL
+ * SHEET: se evaluaron como posible fuente de verdad y se descartaron. En
+ * filas reales aparecen vacías, o —en el caso de Estado_Final— contienen un
+ * residuo de una versión anterior de este mismo script. Cantidad_Asegurados
+ * y Tipo_Solicitud tampoco sirven: cuentan a TODOS los pasajeros capturados,
+ * sin aplicar el filtro de edad. Este script sigue siendo la única fuente
+ * de verdad de la regla de negocio.
  *
  * SOBRE EL ADJUNTO: Apps Script no produce el PDF (por eso se descartó
  * html2pdf.app). Manda `htmlBase64` con el HTML ya renderizado; Power Automate
@@ -49,6 +58,10 @@ const CONFIG = {
   // --- Reglas de negocio ---
   EDAD_MINIMA: 79,
   EDAD_MAXIMA: 89,
+  // El corte real no es en años completos: aplica desde que el asegurado
+  // cumple EDAD_MINIMA años y EDAD_MESES_ADICIONALES meses, hasta que
+  // cumple EDAD_MAXIMA años y EDAD_MESES_ADICIONALES meses (inclusive).
+  EDAD_MESES_ADICIONALES: 11,
   DIAS_ANTICIPACION_MINIMA: 5,
   VIGENCIA_DIAS: 7,
   MAX_ASEGURADOS: 10,
@@ -101,15 +114,16 @@ const CONFIG = {
   /**
    * Resolución de las columnas de cada asegurado.
    *
-   * Los nombres siguen el patrón 'Nombre Asegurado N' y las edades 'Edad_N'.
-   * Las edades YA VIENEN CALCULADAS en su propia columna: el script solo lee
-   * el entero, nunca lo deriva de una fecha de nacimiento.
+   * Los nombres siguen el patrón 'Nombre Asegurado N'; la edad se deriva de
+   * 'Fecha de Nacimiento Asegurado N' (no de la columna Edad_N, que solo
+   * trae años completos y no alcanza la precisión de meses que exige el
+   * corte de negocio).
    *
    * Se prueban los patrones en orden hasta encontrar la columna, así que
    * basta con que el primero coincida. Si algún encabezado se sale del
-   * patrón, fíjalo literalmente por índice en OVERRIDE_NOMBRE u OVERRIDE_EDAD
-   * (ej. { 3: 'Edad tercer asegurado' }). Ejecuta listarEncabezados() para
-   * ver los nombres reales de tu hoja.
+   * patrón, fíjalo literalmente por índice en OVERRIDE_NOMBRE u
+   * OVERRIDE_FECHA_NAC (ej. { 3: 'Fecha nac. tercer asegurado' }). Ejecuta
+   * listarEncabezados() para ver los nombres reales de tu hoja.
    */
   ASEGURADOS: {
     PATRONES_NOMBRE: [
@@ -119,16 +133,14 @@ const CONFIG = {
       'Asegurado {i} Nombre',
       'Asegurado_{i}'
     ],
-    PATRONES_EDAD: [
-      'Edad_{i}',
-      'Edad Asegurado {i}',
-      'Edad asegurado {i}',
-      'EDAD ASEGURADO {i}',
-      'Edad {i}',
-      'Asegurado {i} Edad'
+    PATRONES_FECHA_NAC: [
+      'Fecha de Nacimiento Asegurado {i}',
+      'Fecha de nacimiento asegurado {i}',
+      'Fecha de Nacimiento_{i}',
+      'Fecha Nacimiento Asegurado {i}'
     ],
     OVERRIDE_NOMBRE: {},
-    OVERRIDE_EDAD: {}
+    OVERRIDE_FECHA_NAC: {}
   }
 };
 
@@ -326,7 +338,22 @@ function construirDatosSolicitud_(fila, encabezados, valores) {
   const hoy = new Date();
   const tz = Session.getScriptTimeZone();
 
-  // --- Filtro de edad: solo 79-89 años inclusive ---
+  // --- Fechas del viaje ---
+  // Van primero porque el filtro de edad se calcula respecto a la fecha de
+  // salida (estándar actuarial de seguros de viaje: el asegurado debe estar
+  // dentro del rango de edad el día que inicia su cobertura), no respecto a
+  // la fecha de la solicitud.
+  const inicioRaw = valorObligatorio_(encabezados, valores, CONFIG.COL_FECHA_INICIO);
+  const finRaw = valorObligatorio_(encabezados, valores, CONFIG.COL_FECHA_FIN);
+  const duracionDias = calcularDuracionViaje_(inicioRaw, finRaw);
+  const diasAnticipacion = calcularDiasAnticipacion_(hoy, inicioRaw);
+  const fechaSalida = inicioRaw instanceof Date ? inicioRaw : new Date(inicioRaw);
+
+  // --- Filtro de edad: de EDAD_MINIMA años y EDAD_MESES_ADICIONALES meses,
+  // hasta EDAD_MAXIMA años y EDAD_MESES_ADICIONALES meses (inclusive) ---
+  const mesesMinimo = CONFIG.EDAD_MINIMA * 12 + CONFIG.EDAD_MESES_ADICIONALES;
+  const mesesMaximo = CONFIG.EDAD_MAXIMA * 12 + CONFIG.EDAD_MESES_ADICIONALES;
+
   const asegurados = [];
   const pasajerosExcluidos = [];
   for (let i = 1; i <= CONFIG.MAX_ASEGURADOS; i++) {
@@ -335,23 +362,18 @@ function construirDatosSolicitud_(fila, encabezados, valores) {
     if (nombreCrudo === null || nombreCrudo.toString().trim() === '') continue;
 
     const nombre = nombreCrudo.toString().trim();
-    const edadCruda = valorPorPatron_(
-      encabezados, valores, CONFIG.ASEGURADOS.PATRONES_EDAD, CONFIG.ASEGURADOS.OVERRIDE_EDAD, i);
-    const edadNum = parseInt(edadCruda, 10); // la edad ya viene calculada en la hoja
+    const fechaNacCruda = valorPorPatron_(
+      encabezados, valores, CONFIG.ASEGURADOS.PATRONES_FECHA_NAC, CONFIG.ASEGURADOS.OVERRIDE_FECHA_NAC, i);
+    const mesesEdad = calcularEdadEnMeses_(fechaNacCruda, fechaSalida);
+    const edadNum = mesesEdad === null ? null : Math.floor(mesesEdad / 12);
 
-    if (isNaN(edadNum) || edadNum < CONFIG.EDAD_MINIMA || edadNum > CONFIG.EDAD_MAXIMA) {
-      pasajerosExcluidos.push({ nombre: nombre, edad: isNaN(edadNum) ? null : edadNum });
+    if (mesesEdad === null || mesesEdad < mesesMinimo || mesesEdad > mesesMaximo) {
+      pasajerosExcluidos.push({ nombre: nombre, edad: edadNum });
       continue;
     }
     asegurados.push({ nombre: nombre, edad: edadNum });
   }
   const numAsegurados = asegurados.length;
-
-  // --- Fechas del viaje ---
-  const inicioRaw = valorObligatorio_(encabezados, valores, CONFIG.COL_FECHA_INICIO);
-  const finRaw = valorObligatorio_(encabezados, valores, CONFIG.COL_FECHA_FIN);
-  const duracionDias = calcularDuracionViaje_(inicioRaw, finRaw);
-  const diasAnticipacion = calcularDiasAnticipacion_(hoy, inicioRaw);
 
   const vigenciaDate = new Date(hoy.getTime());
   vigenciaDate.setDate(vigenciaDate.getDate() + CONFIG.VIGENCIA_DIAS);
@@ -437,6 +459,24 @@ function calcularDiasAnticipacion_(hoy, fechaSalida) {
   return Math.round((salidaMedianoche - hoyMedianoche) / (24 * 60 * 60 * 1000));
 }
 
+/**
+ * Edad exacta en meses completos de un asegurado respecto a una fecha de
+ * referencia (la fecha de salida del viaje). Se usa en vez de años enteros
+ * porque el corte de elegibilidad del producto es en años y meses
+ * (79 años 11 meses a 89 años 11 meses), no en años completos.
+ * Devuelve null si la fecha de nacimiento no es válida.
+ */
+function calcularEdadEnMeses_(fechaNacimiento, fechaReferencia) {
+  if (!fechaNacimiento) return null;
+  const nacimiento = fechaNacimiento instanceof Date ? fechaNacimiento : new Date(fechaNacimiento);
+  if (isNaN(nacimiento.getTime())) return null;
+
+  let meses = (fechaReferencia.getFullYear() - nacimiento.getFullYear()) * 12 +
+    (fechaReferencia.getMonth() - nacimiento.getMonth());
+  if (fechaReferencia.getDate() < nacimiento.getDate()) meses -= 1;
+  return meses;
+}
+
 /** Duración del viaje en días, contando inicio y fin (inclusive). */
 function calcularDuracionViaje_(inicio, fin) {
   if (!inicio || !fin) return 0;
@@ -475,6 +515,12 @@ function redondear_(numero) {
 
 function formatearMoneda_(numero) {
   return '$' + numero.toFixed(2);
+}
+
+/** Texto del rango de edad de aceptación, ej. "79 años 11 meses a 89 años 11 meses". */
+function textoRangoEdad_() {
+  return CONFIG.EDAD_MINIMA + ' años ' + CONFIG.EDAD_MESES_ADICIONALES + ' meses a ' +
+    CONFIG.EDAD_MAXIMA + ' años ' + CONFIG.EDAD_MESES_ADICIONALES + ' meses';
 }
 
 function escaparHtml_(valor) {
@@ -717,7 +763,7 @@ function bloqueCoberturas_(data) {
 function bloqueEspecificaciones_() {
   return '<div class="banner">Especificaciones</div>\n' +
     '<table class="espec" role="presentation">\n<tr><td>\n<ul>\n' +
-      '<li>• <strong>Edad de aceptación:</strong> de ' + CONFIG.EDAD_MINIMA + ' hasta ' + CONFIG.EDAD_MAXIMA + ' años.</li>\n' +
+      '<li>• <strong>Edad de aceptación:</strong> de ' + textoRangoEdad_() + '.</li>\n' +
       '<li>• <strong>Asegurados:</strong> mexicanos o extranjeros residiendo en México.</li>\n' +
       '<li>• <strong>Cobertura:</strong> desde las 00:00 hrs del inicio hasta las 23:59 hrs de la culminación del viaje.</li>\n' +
       '<li>• <strong>Territorialidad:</strong> México y el Extranjero. Excepto: Afganistán, Bielorrusia, Crimea, ' +
@@ -1029,8 +1075,7 @@ function motivoRechazoTiempo_(data) {
 function motivoRechazoSinElegibles_(data) {
   return '<p style="margin:0 0 14px 0;">Su solicitud para el destino <strong>' + escaparHtml_(data.destino) + '</strong> ' +
     'no pudo ser procesada porque <strong>ninguno de los pasajeros indicados se encuentra dentro del rango de edad ' +
-    'del Producto Senior</strong>, que aplica exclusivamente para personas de ' + CONFIG.EDAD_MINIMA + ' a ' +
-    CONFIG.EDAD_MAXIMA + ' años.</p>' +
+    'del Producto Senior</strong>, que aplica exclusivamente para personas de ' + textoRangoEdad_() + '.</p>' +
     '<p style="margin:0;">Para cotizar a estos pasajeros, favor de solicitar el <strong>producto de viaje ' +
     'estándar</strong> a través de su Mesa de Control.</p>';
 }
@@ -1052,7 +1097,7 @@ function construirAvisoExcluidos_(pasajerosExcluidos) {
       '<tr><td style="padding:12px 14px;">' +
         '<strong style="color:' + COLORES.AMBAR_TEXTO + ';">Aviso importante</strong><br>' +
         'El/los pasajero(s) <strong>' + nombres + '</strong> no fueron incluidos en esta cotización debido a que el ' +
-        'Producto Senior aplica exclusivamente para personas de ' + CONFIG.EDAD_MINIMA + ' a ' + CONFIG.EDAD_MAXIMA + ' años. ' +
+        'Producto Senior aplica exclusivamente para personas de ' + textoRangoEdad_() + '. ' +
         'Favor de ingresar al portal de agentes donde podrán cotizar y emitir directamente en la siguiente liga: ' +
         '<a href="' + escaparHtml_(CONFIG.URL_PORTAL_AGENTES) + '" style="color:' + COLORES.VERDE + ';">' +
         escaparHtml_(CONFIG.URL_PORTAL_AGENTES) + '</a> o contacte a su ejecutivo.' +
@@ -1200,7 +1245,9 @@ function testearRechazoSinElegibles() {
  * trigger real, sin tocar la hoja de cálculo.
  *
  * @param {number} diasHastaSalida Días naturales entre hoy y la fecha de salida.
- * @param {Array=} pasajeros       Lista {nombre, edad}; por defecto 2 elegibles + 1 excluido.
+ * @param {Array=} pasajeros       Lista {nombre, edad}; edad en años completos exactos
+ *                                 a la fecha de salida (se genera la fecha de nacimiento
+ *                                 correspondiente). Por defecto 2 elegibles + 1 excluido.
  */
 function construirDatosPrueba_(diasHastaSalida, pasajeros) {
   const msPorDia = 24 * 60 * 60 * 1000;
@@ -1241,10 +1288,11 @@ function construirDatosPrueba_(diasHastaSalida, pasajeros) {
   ];
 
   lista.forEach((pasajero, indice) => {
+    const fechaNacimiento = new Date(salida.getFullYear() - pasajero.edad, salida.getMonth(), salida.getDate());
     encabezados.push('Nombre Asegurado ' + (indice + 1));
     valores.push(pasajero.nombre);
-    encabezados.push('Edad Asegurado ' + (indice + 1));
-    valores.push(pasajero.edad);
+    encabezados.push('Fecha de Nacimiento Asegurado ' + (indice + 1));
+    valores.push(fechaNacimiento);
   });
 
   return construirDatosSolicitud_(99, encabezados, valores);
