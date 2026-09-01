@@ -88,7 +88,8 @@ const CONFIG = {
   ESTATUS: {
     APROBADO: 'APROBADO',
     RECHAZADO_TIEMPO: 'RECHAZADO_TIEMPO',
-    RECHAZADO_SIN_ELEGIBLES: 'RECHAZADO_SIN_ELEGIBLES'
+    RECHAZADO_SIN_ELEGIBLES: 'RECHAZADO_SIN_ELEGIBLES',
+    RECHAZADO_FECHAS: 'RECHAZADO_FECHAS'
   },
 
   // --- Mapeo de columnas (fila 1 de la hoja de respuestas) ---
@@ -388,10 +389,13 @@ function construirDatosSolicitud_(fila, encabezados, valores) {
   vigenciaDate.setDate(vigenciaDate.getDate() + CONFIG.VIGENCIA_DIAS);
 
   // --- Estatus ---
-  // La anticipación se evalúa primero: si el viaje ya no cumple el plazo,
-  // no tiene sentido informar además sobre elegibilidad de pasajeros.
+  // Las fechas invertidas se evalúan primero: si la fecha de regreso es
+  // anterior a la de salida, los demás cálculos no tienen sentido.
+  // Luego la anticipación, y al final la elegibilidad de pasajeros.
   let estatus = CONFIG.ESTATUS.APROBADO;
-  if (diasAnticipacion !== null && diasAnticipacion < CONFIG.DIAS_ANTICIPACION_MINIMA) {
+  if (duracionDias <= 0) {
+    estatus = CONFIG.ESTATUS.RECHAZADO_FECHAS;
+  } else if (diasAnticipacion !== null && diasAnticipacion < CONFIG.DIAS_ANTICIPACION_MINIMA) {
     estatus = CONFIG.ESTATUS.RECHAZADO_TIEMPO;
   } else if (numAsegurados === 0) {
     estatus = CONFIG.ESTATUS.RECHAZADO_SIN_ELEGIBLES;
@@ -707,7 +711,7 @@ function bloqueEncabezado_(data) {
   return '<table class="tit-tabla" role="presentation">\n<tr>\n' +
     '<td>' +
       '<div class="titulo">COTIZACIÓN SENIOR +79 AÑOS</div>' +
-      '<div class="sub">Seguro de Viaje · Dirección de Negocios Especiales (DINE)</div>' +
+      '<div class="sub">Seguro de Viaje · Operación de Seguro de Viaje</div>' +
     '</td>\n' +
     '<td class="tit-logo"><img alt="Seguros Atlas" src="' + ASSETS.LOGO_HEADER + '"></td>\n' +
     '</tr>\n</table>\n' +
@@ -818,20 +822,8 @@ function bloqueAccionOperativa_() {
       escaparHtml_(CONFIG.URL_FORMULARIO_EMISION) + '</a></p>' +
     '</td>\n' +
     '<td class="celda">' +
-      '<h3>En caso de requerir factura</h3>' +
-      '<p>Si requieres factura, antes de solicitar la emisión es indispensable registrar la situación fiscal ' +
-      'enviando un correo a <strong>constanciafiscal@segurosatlas.com.mx</strong> con este formato estricto:</p>' +
+      '<h3>Paso 2. Consideraciones importantes</h3>' +
       '<ul>' +
-        '<li>• <strong>Asunto (mayúsculas):</strong> RFC DEL CONTRATANTE.</li>' +
-        '<li>• <strong>Contenido:</strong> completamente en blanco (sin firma, sin texto).</li>' +
-        '<li>• <strong>Archivo adjunto (PDF en mayúsculas):</strong> CONSTANCIA + RFC.</li>' +
-        '<li>• <strong>Confirmación:</strong> recibirás un correo con el estatus "Registro Exitoso".</li>' +
-      '</ul>' +
-    '</td>\n' +
-    '<td class="celda">' +
-      '<h3>Paso 2. Requisitos/consideraciones para emisión</h3>' +
-      '<ul>' +
-        '<li>• <strong>Incluir fechas de viaje.</strong></li>' +
         '<li>• <strong>Revisión de datos:</strong> verifica que la información de los asegurados y del contratante ' +
         'sea correcta y legible.</li>' +
         '<li>• <strong>Tiempo de gestión:</strong> el formulario de emisión deberá ser enviado hasta un máximo ' +
@@ -839,6 +831,17 @@ function bloqueAccionOperativa_() {
         '<li>• <strong>Correcciones:</strong> los cambios por errores u omisiones toman de 3 a 5 días hábiles.</li>' +
         '<li>• <strong>Actualizaciones:</strong> cualquier cambio en los días de viaje requiere re-cotización ' +
         'previa a la emisión.</li>' +
+      '</ul>' +
+    '</td>\n' +
+    '<td class="celda">' +
+      '<h3>En caso de requerir factura</h3>' +
+      '<p>Antes de solicitar la emisión, es indispensable registrar la situación fiscal ' +
+      'enviando un correo a <strong>constanciafiscal@segurosatlas.com.mx</strong> con este formato estricto:</p>' +
+      '<ul>' +
+        '<li>• <strong>Asunto (mayúsculas):</strong> RFC DEL CONTRATANTE.</li>' +
+        '<li>• <strong>Contenido:</strong> completamente en blanco (sin firma, sin texto).</li>' +
+        '<li>• <strong>Archivo adjunto (PDF en mayúsculas):</strong> CONSTANCIA + RFC.</li>' +
+        '<li>• <strong>Confirmación:</strong> recibirás un correo con el estatus "Registro Exitoso".</li>' +
       '</ul>' +
     '</td>\n' +
     '</tr>\n' +
@@ -877,7 +880,7 @@ function bloqueObservaciones_() {
     '<p>El alcance, términos, condiciones, exclusiones y limitantes de las coberturas cotizadas se encuentran en ' +
     'las condiciones generales que se le entregarán al momento de la contratación de la póliza, las cuales también ' +
     'podrá obtener de forma gratuita en nuestra página web ' +
-    '<a href="https://www.segurosatlas.com.mx/Descargas.html">www.segurosatlas.com.mx/Descargas.html</a></p>\n' +
+    '<a href="https://www.segurosatlas.com.mx/descargas.html">www.segurosatlas.com.mx/descargas.html</a></p>\n' +
     '<p>En Seguros Atlas S.A. sus datos están protegidos. Consulte el aviso de privacidad en ' +
     '<a href="https://www.segurosatlas.com.mx">www.segurosatlas.com.mx</a></p>\n' +
     '<p>Nota : El Impuesto al Valor Agregado se calcula de conformidad con el artículo 1 de LIVA.</p>\n' +
@@ -916,7 +919,7 @@ function bloquePie_() {
  */
 function construirNomenclatura_(data) {
   const fechaInicioFormato = data.fechaInicio.replace(/\//g, ''); // dd/MM/yyyy -> ddMMyyyy
-  const diasFormato = String(data.duracionDias).padStart(2, '0') + 'D';
+  const diasFormato = String(Math.max(0, data.duracionDias)).padStart(2, '0') + 'D';
   const destinoFormato = data.destino.toString().trim().substring(0, 3).toUpperCase();
   const fechaEnvioFormato = data.fechaEmision.split(' ')[0].replace(/\//g, ''); // dd/MM/yyyy HH:mm:ss -> ddMMyyyy
 
@@ -953,7 +956,7 @@ function encabezadoCorreo_(titulo) {
         '<div style="font-size:17px;font-weight:bold;color:#ffffff;font-family:\'Aptos Display\',Arial,sans-serif;">' +
           escaparHtml_(titulo) + '</div>' +
         '<div style="font-size:11px;color:#cfe6da;margin-top:3px;font-family:\'Aptos Display\',Arial,sans-serif;">' +
-          'Emitido por Seguro de Viaje - Dirección de Negocios Especiales (DINE)</div>' +
+          'Emitido por Operación de Seguro de Viaje</div>' +
       '</td>' +
       '<td align="right" valign="middle" style="padding:14px 18px 14px 10px;width:130px;">' +
         '<img src="' + escaparHtml_(CONFIG.URL_LOGO_CORREO) + '" alt="Seguros Atlas" width="120" ' +
@@ -984,7 +987,7 @@ function firmaCorreo_() {
       '<div style="font-size:14px;font-weight:bold;color:' + COLORES.AZUL + ';' +
         'font-family:\'Aptos Display\',Arial,sans-serif;">Seguro de Viaje</div>' +
       '<div style="font-size:12px;color:#666666;margin-bottom:8px;' +
-        'font-family:\'Aptos Display\',Arial,sans-serif;">DINE (Dirección de Negocios Especiales)</div>' +
+        'font-family:\'Aptos Display\',Arial,sans-serif;">Operación de Seguro de Viaje</div>' +
       linea('<strong>Tel.</strong> (55) 9177 &ndash; 5000 Ext. 4931') +
       linea('<strong>Correo.</strong> <a href="mailto:segurodeviaje@segurosatlas.com.mx" ' +
         'style="color:' + COLORES.VERDE + ';">segurodeviaje@segurosatlas.com.mx</a>') +
@@ -1121,11 +1124,17 @@ function construirCorreoAprobado_(data) {
  * repetirlo en un segundo bloque es redundante.
  */
 function construirCorreoRechazo_(data) {
-  const motivo = data.estatus === CONFIG.ESTATUS.RECHAZADO_TIEMPO
-    ? motivoRechazoTiempo_(data)
-    : motivoRechazoSinElegibles_(data);
+  let motivo;
+  if (data.estatus === CONFIG.ESTATUS.RECHAZADO_FECHAS) {
+    motivo = motivoRechazoFechas_(data);
+  } else if (data.estatus === CONFIG.ESTATUS.RECHAZADO_TIEMPO) {
+    motivo = motivoRechazoTiempo_(data);
+  } else {
+    motivo = motivoRechazoSinElegibles_(data);
+  }
 
-  const avisoExcluidos = data.estatus === CONFIG.ESTATUS.RECHAZADO_SIN_ELEGIBLES
+  const avisoExcluidos = (data.estatus === CONFIG.ESTATUS.RECHAZADO_SIN_ELEGIBLES ||
+    data.estatus === CONFIG.ESTATUS.RECHAZADO_FECHAS)
     ? ''
     : construirAvisoExcluidos_(data.pasajerosExcluidos);
 
@@ -1152,12 +1161,26 @@ function motivoRechazoTiempo_(data) {
   return '<p style="margin:0 0 14px 0;">Su solicitud para el destino <strong>' + escaparHtml_(data.destino) + '</strong>, ' +
     'con fecha de salida el <strong>' + escaparHtml_(data.fechaInicio) + '</strong>, no pudo ser procesada porque fue ' +
     'recibida con <strong>' + data.diasAnticipacion + ' día(s) de anticipación</strong>.</p>' +
-    '<p style="margin:0 0 14px 0;">Por políticas de la <strong>Dirección de Negocios Especiales (DINE)</strong>, las ' +
+    '<p style="margin:0 0 14px 0;">Por políticas de <strong>Operación de Seguro de Viaje</strong>, las ' +
     'solicitudes de cotización deben realizarse con un mínimo de <strong>' + CONFIG.DIAS_ANTICIPACION_MINIMA + ' días ' +
     'naturales de anticipación</strong> al inicio del viaje. Este plazo permite validar la información, emitir la ' +
     'póliza y entregarla antes de la salida.</p>' +
     '<p style="margin:0;">Si las fechas de su viaje lo permiten, le invitamos a enviar nuevamente su solicitud ' +
     'respetando este plazo.</p>';
+}
+
+/**
+ * Motivo de rechazo por fechas de viaje invertidas (la fecha de regreso
+ * es anterior o igual a la fecha de salida). Por políticas de Operación
+ * de Seguro de Viaje, las fechas deben ser coherentes para poder cotizar.
+ */
+function motivoRechazoFechas_(data) {
+  return '<p style="margin:0 0 14px 0;">Su solicitud para el destino <strong>' + escaparHtml_(data.destino) + '</strong> ' +
+    'no pudo ser procesada porque la <strong>fecha de regreso (' + escaparHtml_(data.fechaFin) + ')</strong> ' +
+    'es anterior a la <strong>fecha de salida (' + escaparHtml_(data.fechaInicio) + ')</strong>.</p>' +
+    '<p style="margin:0 0 14px 0;">Por políticas de <strong>Operación de Seguro de Viaje</strong>, las fechas del ' +
+    'viaje deben ser coherentes para poder generar una cotización.</p>' +
+    '<p style="margin:0;">Le invitamos a verificar las fechas y enviar nuevamente su solicitud.</p>';
 }
 
 /**
