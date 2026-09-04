@@ -606,48 +606,48 @@ function estilosCotizacion_() {
 
     // --- 1. Encabezado: título aislado + contenedor de datos ---
     '.tit-tabla { background-color: ' + COLORES.VERDE + '; }\n' +
-    '.tit-tabla td { padding: 5px 11px; vertical-align: middle; }\n' +
-    '.tit-tabla .titulo { font-size: 15.5px; font-weight: bold; color: #ffffff; letter-spacing: .3px; }\n' +
-    '.tit-tabla .sub { font-size: 9px; color: #cfe6da; margin-top: 2px; }\n' +
+    '.tit-tabla td { padding: 6px 11px; vertical-align: middle; }\n' +
+    '.tit-tabla .titulo { font-size: 16px; font-weight: bold; color: #ffffff; letter-spacing: .3px; }\n' +
+    '.tit-tabla .sub { font-size: 9.3px; color: #cfe6da; margin-top: 2px; }\n' +
     '.tit-logo { text-align: right; width: 27%; }\n' +
-    '.tit-logo img { max-height: 30px; width: auto; }\n' +
+    '.tit-logo img { max-height: 31px; width: auto; }\n' +
     '.meta { background-color: ' + COLORES.VERDE_CLARO + '; border: 1px solid ' + COLORES.VERDE_BORDE + ';\n' +
-    '        border-top: none; margin-bottom: 6px; }\n' +
-    '.meta td { padding: 3px 11px; font-size: 9.5px; color: #222; vertical-align: top; }\n' +
+    '        border-top: none; margin-bottom: 7px; }\n' +
+    '.meta td { padding: 3px 11px; font-size: 9.8px; color: #222; vertical-align: top; }\n' +
     '.meta .et { font-weight: bold; color: ' + COLORES.AZUL + '; }\n' +
     '.meta .der { text-align: right; }\n' +
 
     // --- 2. Información del viaje ---
     '.banner { background-color: ' + COLORES.VERDE + '; color: #ffffff; font-weight: bold;\n' +
-    '          font-size: 9.5px; text-transform: uppercase; padding: 3px 9px;\n' +
-    '          margin: 4px 0 0; letter-spacing: .4px; }\n' +
+    '          font-size: 9.8px; text-transform: uppercase; padding: 3px 9px;\n' +
+    '          margin: 5px 0 0; letter-spacing: .4px; }\n' +
     '.viaje { background-color: ' + COLORES.VERDE_CLARO + '; border: 1px solid ' + COLORES.VERDE_BORDE + '; }\n' +
-    '.viaje td { padding: 3px 9px; font-size: 9.5px; vertical-align: top; }\n' +
+    '.viaje td { padding: 3px 9px; font-size: 9.8px; vertical-align: top; }\n' +
     '.viaje .et { font-weight: bold; color: ' + COLORES.AZUL + '; }\n' +
 
     // --- 3. Tabla de coberturas ---
-    '.cob { font-size: 9.2px; line-height: 1.2; margin-top: 4px; border-top: 1px solid #d6d6d6;\n' +
+    '.cob { font-size: 9.4px; line-height: 1.2; margin-top: 5px; border-top: 1px solid #d6d6d6;\n' +
     '       border-bottom: 1px solid #d6d6d6; }\n' +
     // Solo líneas verticales (columnas): sin borde superior/inferior por celda.
     '.cob th, .cob td { border: none; border-left: 1px solid #d6d6d6; border-right: 1px solid #d6d6d6;\n' +
     '                    padding: 2.3px 5px; text-align: left; }\n' +
     '.cob th.planes { background-color: ' + COLORES.VERDE + '; color: #ffffff; text-align: center;\n' +
-    '                 font-size: 11.5px; font-weight: bold; letter-spacing: .5px; padding: 4px; text-transform: uppercase;\n' +
+    '                 font-size: 12px; font-weight: bold; letter-spacing: .5px; padding: 4px; text-transform: uppercase;\n' +
     '                 border: none; border-bottom: 2px solid #ffffff; }\n' +
     '.cob th.sub { background-color: ' + COLORES.VERDE + '; color: #ffffff; font-weight: bold;\n' +
-    '              text-align: center; font-size: 9.1px; text-transform: uppercase; padding: 2.3px 4px; }\n' +
+    '              text-align: center; font-size: 9.3px; text-transform: uppercase; padding: 2.3px 4px; }\n' +
     '.cob th.sub-izq { text-align: left; }\n' +
-    '.cob th .moneda { display: block; font-weight: normal; font-size: 7.6px; }\n' +
+    '.cob th .moneda { display: block; font-weight: normal; font-size: 7.8px; }\n' +
     '.cob td.num { text-align: center; }\n' +
-    '.cob .subnota { display: block; color: #444; font-size: 7.9px; }\n' +
+    '.cob .subnota { display: block; color: #444; font-size: 8.1px; }\n' +
     // Coberturas principales (con número romano) resaltadas; sub-límites
     // (sin número romano) con sangría para mostrar que dependen de la de arriba.
     '.cob tr.principal td { font-weight: bold; }\n' +
     '.cob tr.sublimite td:first-child { padding-left: 18px; }\n' +
     '.cob tr.total td { background-color: ' + COLORES.TOTAL_FONDO + '; font-weight: bold;\n' +
     '                   border-top: 2px solid ' + COLORES.VERDE + ' !important; border-bottom: none;\n' +
-    '                   font-size: 10.2px; color: ' + COLORES.VERDE + '; padding: 3.5px 5px; }\n' +
-    '.nota-tabla { font-size: 8.2px; color: #555; margin: 2px 0 0; }\n' +
+    '                   font-size: 10.5px; color: ' + COLORES.VERDE + '; padding: 3.5px 5px; }\n' +
+    '.nota-tabla { font-size: 8.4px; color: #555; margin: 2px 0 0; }\n' +
 
     // --- 4. Especificaciones ---
     '.espec { border: 1px solid ' + COLORES.VERDE_BORDE + '; background-color: #ffffff; }\n' +
@@ -657,9 +657,9 @@ function estilosCotizacion_() {
     '.espec strong { color: ' + COLORES.VERDE + '; }\n' +
 
     // --- 5. Recuadros operativos ---
-    '.ops-caja { margin-top: 3px; border: 1px solid #b9b9b9; }\n' +
+    '.ops-caja { margin-top: 4px; border: 1px solid #b9b9b9; }\n' +
     '.ops-banner { background-color: ' + COLORES.VERDE + '; color: #ffffff; text-align: center;\n' +
-    '              font-weight: bold; font-size: 9.5px; text-transform: uppercase;\n' +
+    '              font-weight: bold; font-size: 9.8px; text-transform: uppercase;\n' +
     '              padding: 3px; letter-spacing: .4px; }\n' +
     // border-spacing separa las tarjetas; cellspacing en el HTML cubre el
     // caso de que el convertidor a DOCX ignore la propiedad CSS.
@@ -671,21 +671,21 @@ function estilosCotizacion_() {
     '.ops ul { list-style: none; margin-top: 1px; margin-left: 7px; }\n' +
     '.ops li { font-size: 7.8px; line-height: 1.24; padding-left: 7px; text-indent: -7px; }\n' +
     // Cierre: observaciones a la izquierda, QR esquinado abajo a la derecha.
-    '.cierre { border-collapse: collapse; margin-top: 3px; }\n' +
+    '.cierre { border-collapse: collapse; margin-top: 4px; }\n' +
     '.cierre td { vertical-align: top; }\n' +
     '.cierre-obs { padding-right: 9px; }\n' +
     '.cierre-qr { vertical-align: bottom; }\n' +
     // Sin recuadro: el QR y su texto respiran sobre el blanco de la hoja,
     // junto al bloque de observaciones.
     '.qr-tarjeta { padding: 2px 4px 0; text-align: center; }\n' +
-    '.qr-tarjeta img { width: 76px; height: 76px; display: block; margin: 3px auto 0; }\n' +
+    '.qr-tarjeta img { width: 78px; height: 78px; display: block; margin: 3px auto 0; }\n' +
     '.qr-tarjeta h3 { font-size: 8px; color: ' + COLORES.AZUL + '; margin-bottom: 1px; }\n' +
     '.qr-tarjeta p { font-size: 7px; line-height: 1.22; color: #444; }\n' +
     '.qr-tarjeta p.qr-nota { font-style: italic; margin-top: 2px; }\n' +
 
     // --- 6. Observaciones ---
-    '.obs { margin-top: 3px; }\n' +
-    '.obs h3 { font-size: 10px; color: ' + COLORES.VERDE + '; text-transform: uppercase; margin-bottom: 1px; }\n' +
+    '.obs { margin-top: 4px; }\n' +
+    '.obs h3 { font-size: 10.3px; color: ' + COLORES.VERDE + '; text-transform: uppercase; margin-bottom: 1px; }\n' +
     '.obs ol { margin: 0 0 1.5px 13px; }\n' +
     // Mismo tamaño e interlineado que .espec li, para que ambos bloques de
     // texto corrido se lean homogéneos.
