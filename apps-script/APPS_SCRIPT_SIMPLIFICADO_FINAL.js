@@ -567,9 +567,9 @@ function escaparHtml_(valor) {
  * columna. Las imágenes van como data: URI porque el convertidor tampoco
  * descarga recursos externos.
  *
- * El pie va justo después del contenido (sin forzarlo al fondo de la hoja):
- * así no se acumula espacio en blanco entre ambos sin importar cuánto
- * contenido tenga la cotización.
+ * El pie se ancla al fondo de la hoja (html/body/marco a height:100% y
+ * marco-pie con vertical-align:bottom), para que quede pegado al borde
+ * inferior en vez de flotar justo debajo del contenido.
  */
 function generarHtmlCotizacion_(data) {
   return '<!DOCTYPE html>\n' +
@@ -595,9 +595,10 @@ function estilosCotizacion_() {
   return '' +
     '@page { size: letter; margin: 0.3cm; }\n' +
     '* { box-sizing: border-box; margin: 0; padding: 0; }\n' +
-    '.marco { width: 100%; border-collapse: collapse; }\n' +
+    'html, body { height: 100%; }\n' +
+    '.marco { width: 100%; height: 100%; border-collapse: collapse; }\n' +
     '.marco-contenido { vertical-align: top; }\n' +
-    '.marco-pie { vertical-align: top; }\n' +
+    '.marco-pie { vertical-align: bottom; }\n' +
     'body { font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #111; line-height: 1.3;\n' +
     '       -webkit-print-color-adjust: exact; print-color-adjust: exact; }\n' +
     'table { border-collapse: collapse; width: 100%; }\n' +
@@ -892,7 +893,7 @@ function bloqueObservaciones_() {
  */
 function bloquePie_() {
   return '<div class="pie">\n' +
-    'Seguros Atlas S.A. &mdash; Paseo de los Tamarindos 60 Planta Baja, Col. Bosques de las Lomas<br>\n' +
+    'Seguros Atlas S.A. &mdash; Paseo de los Tamarindos 60 Planta Baja, Col. Bosques de las Lomas, ' +
     'Ciudad de México, C.P. 05120<br>\n' +
     'T. 55 9177-5000 &middot; ' +
     '<a href="https://www.segurosatlas.com.mx/">www.segurosatlas.com.mx</a> &middot; segurodeviaje@segurosatlas.com.mx\n' +
