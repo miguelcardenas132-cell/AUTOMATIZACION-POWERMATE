@@ -692,10 +692,8 @@ function estilosCotizacion_() {
     '.obs p { font-size: 8.5px; line-height: 1.26; margin-bottom: 0.5px; }\n' +
 
     // --- 7. Pie ---
-    '.pie { margin-top: 10px; padding-top: 6px; border-top: 1px solid #d6d6d6; }\n' +
-    '.pie td { font-size: 8px; color: #555; vertical-align: middle; text-align: center;\n' +
-    '          line-height: 1.35; padding: 0 8px; }\n' +
-    '.pie td.sep { border-left: 1px solid #c8c8c8; }\n' +
+    '.pie { margin-top: 10px; padding-top: 6px; border-top: 1px solid #d6d6d6;\n' +
+    '       text-align: center; font-size: 8px; color: #555; line-height: 1.5; }\n' +
     '.pie a { color: ' + COLORES.VERDE + '; text-decoration: underline; }\n';
 }
 
@@ -882,7 +880,7 @@ function bloqueObservaciones_() {
     'podrá obtener de forma gratuita en nuestra página web ' +
     '<a href="https://www.segurosatlas.com.mx/descargas.html">www.segurosatlas.com.mx/descargas.html</a></p>\n' +
     '<p>En Seguros Atlas S.A. sus datos están protegidos. Consulte el aviso de privacidad en ' +
-    '<a href="https://www.segurosatlas.com.mx">www.segurosatlas.com.mx</a></p>\n' +
+    '<a href="https://www.segurosatlas.com.mx/">www.segurosatlas.com.mx</a></p>\n' +
     '<p>Nota : El Impuesto al Valor Agregado se calcula de conformidad con el artículo 1 de LIVA.</p>\n' +
     '</div>\n';
 }
@@ -893,15 +891,12 @@ function bloqueObservaciones_() {
  * space-between sin depender de flexbox.
  */
 function bloquePie_() {
-  return '<table class="pie" role="presentation">\n' +
-    '<colgroup><col style="width:19%"><col style="width:29%"><col style="width:26%"><col style="width:26%"></colgroup>\n' +
-    '<tr>\n' +
-    '<td>Seguros Atlas S.A</td>\n' +
-    '<td class="sep">Paseo de los Tamarindos 60 Planta Baja<br>T. 55 9177-5000</td>\n' +
-    '<td class="sep">Col. Bosques de las Lomas<br>' +
-    '<a href="https://www.segurosatlas.com.mx">www.segurosatlas.com.mx</a></td>\n' +
-    '<td class="sep">Ciudad de México C.P.05120<br>segurodeviaje@segurosatlas.com.mx</td>\n' +
-    '</tr>\n</table>\n';
+  return '<div class="pie">\n' +
+    'Seguros Atlas S.A. &mdash; Paseo de los Tamarindos 60 Planta Baja, Col. Bosques de las Lomas<br>\n' +
+    'Ciudad de México, C.P. 05120<br>\n' +
+    'T. 55 9177-5000 &middot; ' +
+    '<a href="https://www.segurosatlas.com.mx/">www.segurosatlas.com.mx</a> &middot; segurodeviaje@segurosatlas.com.mx\n' +
+    '</div>\n';
 }
 
 // ============================================================================
