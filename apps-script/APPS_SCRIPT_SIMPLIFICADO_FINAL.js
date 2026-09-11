@@ -94,7 +94,7 @@ const CONFIG = {
 
   // --- Mapeo de columnas (fila 1 de la hoja de respuestas) ---
   COL_PERFIL: 'Perfil',
-  COL_AGENTE_INFO: 'Escribe tu clave y Nombre de Agente',
+  COL_AGENTE_INFO: 'Escribe tu Clave y Nombre de Agente Completo',
   COL_NOMBRE_SOLICITANTE: 'Nombre completo de quien solicita',
   COL_EMAIL_CLIENTE: 'Correo electrónico de quien solicita',
   COL_CORREO_CC: 'Quieres enviar tu propuesta a algún otro correo?',
@@ -298,8 +298,8 @@ function letraColumna_(indice) {
 }
 
 function indiceDe_(encabezados, nombre) {
-  const buscado = nombre.toString().trim();
-  return encabezados.findIndex((e) => e.toString().trim() === buscado);
+  const buscado = nombre.toString().trim().toLowerCase();
+  return encabezados.findIndex((e) => e.toString().trim().toLowerCase() === buscado);
 }
 
 /** Devuelve el valor de una columna obligatoria; falla si no existe. */
