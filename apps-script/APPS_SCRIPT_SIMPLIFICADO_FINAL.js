@@ -298,7 +298,8 @@ function letraColumna_(indice) {
 }
 
 function indiceDe_(encabezados, nombre) {
-  return encabezados.indexOf(nombre.toString().trim());
+  const buscado = nombre.toString().trim();
+  return encabezados.findIndex((e) => e.toString().trim() === buscado);
 }
 
 /** Devuelve el valor de una columna obligatoria; falla si no existe. */
@@ -529,7 +530,7 @@ function redondear_(numero) {
 }
 
 function formatearMoneda_(numero) {
-  return '$' + numero.toFixed(2);
+  return '$' + numero.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 /** Texto del rango de edad de aceptación, ej. "79 años 11 meses a 89 años 11 meses". */
@@ -712,7 +713,7 @@ function bloqueEncabezado_(data) {
   return '<table class="tit-tabla" role="presentation">\n<tr>\n' +
     '<td>' +
       '<div class="titulo">COTIZACIÓN SENIOR +79 AÑOS</div>' +
-      '<div class="sub">Seguro de Viaje · Operación de Seguro de Viaje</div>' +
+      '<div class="sub">Seguro de Viaje</div>' +
     '</td>\n' +
     '<td class="tit-logo"><img alt="Seguros Atlas" src="' + ASSETS.LOGO_HEADER + '"></td>\n' +
     '</tr>\n</table>\n' +
@@ -720,7 +721,7 @@ function bloqueEncabezado_(data) {
     '<table class="meta" role="presentation">\n' +
     '<colgroup><col style="width:58%"><col style="width:42%"></colgroup>\n<tr>\n' +
     '<td>' +
-      '<div><span class="et">No. Cotización:</span> ' + escaparHtml_(data.folio) + '</div>' +
+      '<div><span class="et">Folio:</span> ' + escaparHtml_(data.folio) + '</div>' +
       '<div><span class="et">Solicitante:</span> ' + escaparHtml_(data.nombreSolicitante) + '</div>' +
     '</td>\n' +
     '<td class="der">' +
@@ -797,7 +798,8 @@ function bloqueEspecificaciones_() {
       '<li>• <strong>Asegurados:</strong> mexicanos o extranjeros residiendo en México.</li>\n' +
       '<li>• <strong>Cobertura:</strong> desde las 00:00 hrs del inicio hasta las 23:59 hrs de la culminación del viaje.</li>\n' +
       '<li>• <strong>Territorialidad:</strong> México y el Extranjero. Excepto: Afganistán, Bielorrusia, Crimea, ' +
-      'Zaporizhzhia, Kherson, Donetsk, Luhansk, Irán, Israel, Corea del Norte, Rusia, Siria y Venezuela.</li>\n' +
+      'Zaporizhzhia, Kherson, Donetsk, Luhansk, Irán, Israel, Corea del Norte, Rusia, Siria y Venezuela, o cualquier ' +
+      'país que se encuentre en conflicto al momento de solicitar la cotización.</li>\n' +
       '<li>• <strong>No hay deducibles ni coaseguros.</strong></li>\n' +
     '</ul>\n</td></tr>\n</table>\n';
 }
@@ -836,7 +838,7 @@ function bloqueAccionOperativa_() {
     '</td>\n' +
     '<td class="celda">' +
       '<h3>En caso de requerir factura</h3>' +
-      '<p>Antes de solicitar la emisión, es indispensable registrar la situación fiscal ' +
+      '<p>Antes de solicitar la emisión, es indispensable registrar la Constancia de Situación Fiscal (CSF) ' +
       'enviando un correo a <strong>constanciafiscal@segurosatlas.com.mx</strong> con este formato estricto:</p>' +
       '<ul>' +
         '<li>• <strong>Asunto (mayúsculas):</strong> RFC DEL CONTRATANTE.</li>' +
@@ -957,7 +959,7 @@ function encabezadoCorreo_(titulo) {
         '<div style="font-size:17px;font-weight:bold;color:#ffffff;font-family:\'Aptos Display\',Arial,sans-serif;">' +
           escaparHtml_(titulo) + '</div>' +
         '<div style="font-size:11px;color:#cfe6da;margin-top:3px;font-family:\'Aptos Display\',Arial,sans-serif;">' +
-          'Emitido por Operación de Seguro de Viaje</div>' +
+          'Seguro de Viaje</div>' +
       '</td>' +
       '<td align="right" valign="middle" style="padding:14px 18px 14px 10px;width:130px;">' +
         '<img src="' + escaparHtml_(CONFIG.URL_LOGO_CORREO) + '" alt="Seguros Atlas" width="120" ' +
@@ -1094,7 +1096,7 @@ function construirCorreoAprobado_(data) {
         filaPlan('Master Premium', data.totalPremium) +
       '</table>' +
       '<p style="margin:0 0 18px 0;font-size:11px;color:#666;font-style:italic;">Importes en dólares americanos (USD) ' +
-      'para ' + data.numAsegurados + ' asegurado(s). Primas netas, sin IVA ni derecho de póliza.</p>' +
+      'para ' + data.numAsegurados + ' asegurado(s). Primas netas, sin IVA.</p>' +
 
       construirAvisoExcluidos_(data.pasajerosExcluidos) +
 
