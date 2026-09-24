@@ -656,6 +656,7 @@ function estilosCotizacion_() {
     '.espec ul { list-style: none; }\n' +
     '.espec li { font-size: 8.5px; line-height: 1.26; padding-left: 8px; text-indent: -8px; }\n' +
     '.espec strong { color: ' + COLORES.VERDE + '; }\n' +
+    '.espec .excepcion { font-style: italic; color: #555; }\n' +
 
     // --- 5. Recuadros operativos ---
     '.ops-caja { margin-top: 4px; border: 1px solid #b9b9b9; }\n' +
@@ -797,9 +798,10 @@ function bloqueEspecificaciones_() {
       '<li>• <strong>Edad de aceptación:</strong> de ' + textoRangoEdad_() + '.</li>\n' +
       '<li>• <strong>Asegurados:</strong> mexicanos o extranjeros residiendo en México.</li>\n' +
       '<li>• <strong>Cobertura:</strong> desde las 00:00 hrs del inicio hasta las 23:59 hrs de la culminación del viaje.</li>\n' +
-      '<li>• <strong>Territorialidad:</strong> México y el Extranjero. Excepto: Afganistán, Bielorrusia, Crimea, ' +
-      'Zaporizhzhia, Kherson, Donetsk, Luhansk, Irán, Israel, Corea del Norte, Rusia, Siria y Venezuela, o cualquier ' +
-      'país que se encuentre en conflicto al momento de solicitar la cotización.</li>\n' +
+      '<li>• <strong>Territorialidad:</strong> México y el Extranjero. ' +
+      '<span class="excepcion">Excepto: Afganistán, Bielorrusia, Crimea, Zaporizhzhia, Kherson, Donetsk, Luhansk, ' +
+      'Irán, Israel, Corea del Norte, Rusia, Siria y Venezuela, o cualquier país que se encuentre en conflicto al ' +
+      'momento de solicitar la cotización.</span></li>\n' +
       '<li>• <strong>No hay deducibles ni coaseguros.</strong></li>\n' +
     '</ul>\n</td></tr>\n</table>\n';
 }
