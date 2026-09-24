@@ -583,8 +583,8 @@ function generarHtmlCotizacion_(data) {
       bloqueInfoViaje_(data) +
       bloqueCoberturas_(data) +
       bloqueEspecificaciones_() +
-      bloqueAccionOperativa_() +
       bloqueObservacionesYQr_() +
+      bloqueAccionOperativa_() +
     '</td></tr>\n' +
     '<tr><td class="marco-pie">\n' +
       bloquePie_() +
