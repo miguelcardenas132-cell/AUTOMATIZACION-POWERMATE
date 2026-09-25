@@ -960,6 +960,8 @@ function encabezadoCorreo_(titulo) {
       '<td align="left" valign="middle" style="padding:14px 10px 14px 18px;">' +
         '<div style="font-size:21px;font-weight:bold;color:#ffffff;font-family:\'Aptos Display\',Arial,sans-serif;">' +
           escaparHtml_(titulo) + '</div>' +
+        '<div style="font-size:11px;color:#cfe6da;margin-top:3px;font-family:\'Aptos Display\',Arial,sans-serif;">' +
+          'Seguro de Viaje</div>' +
       '</td>' +
       '<td align="right" valign="middle" style="padding:14px 18px 14px 10px;width:130px;">' +
         '<img src="' + escaparHtml_(CONFIG.URL_LOGO_CORREO) + '" alt="Seguros Atlas" width="120" ' +
@@ -987,6 +989,8 @@ function firmaCorreo_() {
   return '<table role="presentation" cellpadding="0" cellspacing="0" ' +
     'style="border-collapse:collapse;border-top:1px solid ' + COLORES.BORDE + ';padding-top:12px;">' +
     '<tr><td style="padding:12px 0 0 0;">' +
+      '<div style="font-size:14px;font-weight:bold;color:' + COLORES.AZUL + ';margin-bottom:8px;' +
+        'font-family:\'Aptos Display\',Arial,sans-serif;">Seguro de Viaje</div>' +
       linea('<strong>Tel.</strong> (55) 9177 &ndash; 5000 Ext. 4931') +
       linea('<strong>Correo.</strong> <a href="mailto:segurodeviaje@segurosatlas.com.mx" ' +
         'style="color:' + COLORES.VERDE + ';">segurodeviaje@segurosatlas.com.mx</a>') +
