@@ -1185,8 +1185,8 @@ function motivoRechazoFechas_(data) {
   return '<p style="margin:0 0 14px 0;">Su solicitud para el destino <strong>' + escaparHtml_(data.destino) + '</strong> ' +
     'no pudo ser procesada porque la <strong>fecha de regreso (' + escaparHtml_(data.fechaFin) + ')</strong> ' +
     'es anterior a la <strong>fecha de salida (' + escaparHtml_(data.fechaInicio) + ')</strong>.</p>' +
-    '<p style="margin:0 0 14px 0;">Por políticas de <strong>Seguro de Viaje</strong>, las fechas del ' +
-    'viaje deben ser coherentes para poder generar una propuesta.</p>' +
+    '<p style="margin:0 0 14px 0;">Por políticas de <strong>Seguro de Viaje</strong>, la fecha de regreso debe ' +
+    'ser posterior a la fecha de salida para poder generar una propuesta.</p>' +
     '<p style="margin:0;">Le invitamos a verificar las fechas y enviar nuevamente su solicitud.</p>';
 }
 
