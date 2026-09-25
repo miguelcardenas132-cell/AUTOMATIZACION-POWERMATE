@@ -575,7 +575,7 @@ function escaparHtml_(valor) {
 function generarHtmlCotizacion_(data) {
   return '<!DOCTYPE html>\n' +
     '<html lang="es">\n<head>\n<meta charset="UTF-8">\n' +
-    '<title>Cotización ' + escaparHtml_(data.folio) + '</title>\n' +
+    '<title>Propuesta de Seguro ' + escaparHtml_(data.folio) + '</title>\n' +
     '<style>\n' + estilosCotizacion_() + '</style>\n</head>\n<body>\n' +
     '<table class="marco" role="presentation">\n' +
     '<tr><td class="marco-contenido">\n' +
@@ -713,7 +713,7 @@ function bloqueEncabezado_(data) {
 
   return '<table class="tit-tabla" role="presentation">\n<tr>\n' +
     '<td>' +
-      '<div class="titulo">COTIZACIÓN SENIOR +79 AÑOS</div>' +
+      '<div class="titulo">PROPUESTA DE SEGURO SENIOR +79 AÑOS</div>' +
       '<div class="sub">Seguro de Viaje</div>' +
     '</td>\n' +
     '<td class="tit-logo"><img alt="Seguros Atlas" src="' + ASSETS.LOGO_HEADER + '"></td>\n' +
@@ -746,7 +746,7 @@ function bloqueInfoViaje_(data) {
     '</tr>\n<tr>' +
       celda('Duración del viaje', data.duracionDias + ' días') +
       celda('Cantidad de Asegurados', String(data.numAsegurados)) +
-      celda('Vigencia de la cotización', data.vigenciaCotizacion) +
+      celda('Vigencia de la propuesta', data.vigenciaCotizacion) +
     '</tr>\n</table>\n';
 }
 
@@ -801,7 +801,7 @@ function bloqueEspecificaciones_() {
       '<li>• <strong>Territorialidad:</strong> México y el Extranjero. ' +
       '<span class="excepcion">Excepto: Afganistán, Bielorrusia, Crimea, Zaporizhzhia, Kherson, Donetsk, Luhansk, ' +
       'Irán, Israel, Corea del Norte, Rusia, Siria y Venezuela, o cualquier país que se encuentre en conflicto al ' +
-      'momento de solicitar la cotización.</span></li>\n' +
+      'momento de solicitar la propuesta.</span></li>\n' +
       '<li>• <strong>No hay deducibles ni coaseguros.</strong></li>\n' +
     '</ul>\n</td></tr>\n</table>\n';
 }
@@ -834,8 +834,8 @@ function bloqueAccionOperativa_() {
         '<li>• <strong>Tiempo de gestión:</strong> el formulario de emisión deberá ser enviado hasta un máximo ' +
         'de 4 días hábiles antes de iniciar tu viaje.</li>' +
         '<li>• <strong>Correcciones:</strong> los cambios por errores u omisiones toman de 3 a 5 días hábiles.</li>' +
-        '<li>• <strong>Actualizaciones:</strong> cualquier cambio en los días de viaje requiere re-cotización ' +
-        'previa a la emisión.</li>' +
+        '<li>• <strong>Actualizaciones:</strong> cualquier cambio en los días de viaje requiere una nueva ' +
+        'propuesta previa a la emisión.</li>' +
       '</ul>' +
     '</td>\n' +
     '<td class="celda">' +
@@ -864,10 +864,10 @@ function bloqueObservacionesYQr_() {
     '<td class="cierre-obs">' + bloqueObservaciones_() + '</td>\n' +
     '<td class="cierre-qr">' +
       '<div class="qr-tarjeta">' +
-        '<h3>¿Deseas recotizar tu viaje?</h3>' +
-        '<p>Escanea el código QR y solicita una nueva cotización de forma rápida y sencilla.</p>' +
+        '<h3>¿Deseas una nueva propuesta para tu viaje?</h3>' +
+        '<p>Escanea el código QR y solicita una nueva propuesta de forma rápida y sencilla.</p>' +
         '<p class="qr-nota">(Máximo 5 días hábiles antes del inicio del viaje)</p>' +
-        '<img alt="Código QR para recotizar" src="' + ASSETS.QR_COTIZAR + '">' +
+        '<img alt="Código QR para nueva propuesta" src="' + ASSETS.QR_COTIZAR + '">' +
       '</div>' +
     '</td>\n' +
     '</tr>\n</table>\n';
@@ -877,10 +877,10 @@ function bloqueObservaciones_() {
   return '<div class="obs">\n' +
     '<h3>Observaciones</h3>\n' +
     '<ol>\n' +
-    '<li>La presente es únicamente una COTIZACIÓN, POR LO QUE NO SURTE NINGÚN EFECTO LEGAL COMO PÓLIZA DE SEGURO</li>\n' +
-    '<li>La presente propuesta tiene un máximo de 10 DÍAS NATURALES a partir de la fecha y hora de cotización, ' +
+    '<li>La presente es únicamente una PROPUESTA DE SEGURO, POR LO QUE NO SURTE NINGÚN EFECTO LEGAL COMO PÓLIZA DE SEGURO</li>\n' +
+    '<li>La presente propuesta tiene un máximo de 10 DÍAS NATURALES a partir de la fecha y hora de la propuesta, ' +
     'en caso de la aceptación de la misma, deberá sujetarse a las condiciones y políticas vigentes de Seguros Atlas.</li>\n' +
-    '<li>En caso de existir una cotización anterior o póliza emitida vigente, esta cotización quedará sin efecto alguno.</li>\n' +
+    '<li>En caso de existir una propuesta anterior o póliza emitida vigente, esta propuesta quedará sin efecto alguno.</li>\n' +
     '</ol>\n' +
     '<p>El alcance, términos, condiciones, exclusiones y limitantes de las coberturas cotizadas se encuentran en ' +
     'las condiciones generales que se le entregarán al momento de la contratación de la póliza, las cuales también ' +
@@ -918,9 +918,9 @@ function bloquePie_() {
 /**
  * Etiqueta de nomenclatura para el asunto del correo y el nombre del PDF
  * adjunto (solo en solicitudes aprobadas):
- * "Cotización Seguro de Viaje Senior +79 - <fecha de salida> // <días del
+ * "Propuesta Seguro de Viaje Senior +79 - <fecha de salida> // <días del
  * viaje>D, <destino> <fecha de envío>"
- * Ej.: "Cotización Seguro de Viaje Senior +79 - 25082026 // 011D, BRA 13082026"
+ * Ej.: "Propuesta Seguro de Viaje Senior +79 - 25082026 // 011D, BRA 13082026"
  */
 function construirNomenclatura_(data) {
   const fechaInicioFormato = data.fechaInicio.replace(/\//g, ''); // dd/MM/yyyy -> ddMMyyyy
@@ -928,7 +928,7 @@ function construirNomenclatura_(data) {
   const destinoFormato = data.destino.toString().trim().substring(0, 3).toUpperCase();
   const fechaEnvioFormato = data.fechaEmision.split(' ')[0].replace(/\//g, ''); // dd/MM/yyyy HH:mm:ss -> ddMMyyyy
 
-  return 'Cotización Seguro de Viaje Senior +79 - ' + fechaInicioFormato + ' // ' +
+  return 'Propuesta Seguro de Viaje Senior +79 - ' + fechaInicioFormato + ' // ' +
     diasFormato + ', ' + destinoFormato + ' ' + fechaEnvioFormato;
 }
 
@@ -945,7 +945,7 @@ function construirAsunto_(data) {
   if (data.estatus === CONFIG.ESTATUS.APROBADO) {
     return construirNomenclatura_(data);
   }
-  return 'Solicitud de cotización no procesada';
+  return 'Solicitud de Propuesta de Seguro no procesada';
 }
 
 /**
@@ -989,10 +989,8 @@ function firmaCorreo_() {
   return '<table role="presentation" cellpadding="0" cellspacing="0" ' +
     'style="border-collapse:collapse;border-top:1px solid ' + COLORES.BORDE + ';padding-top:12px;">' +
     '<tr><td style="padding:12px 0 0 0;">' +
-      '<div style="font-size:14px;font-weight:bold;color:' + COLORES.AZUL + ';' +
+      '<div style="font-size:14px;font-weight:bold;color:' + COLORES.AZUL + ';margin-bottom:8px;' +
         'font-family:\'Aptos Display\',Arial,sans-serif;">Seguro de Viaje</div>' +
-      '<div style="font-size:12px;color:#666666;margin-bottom:8px;' +
-        'font-family:\'Aptos Display\',Arial,sans-serif;">Operación de Seguro de Viaje</div>' +
       linea('<strong>Tel.</strong> (55) 9177 &ndash; 5000 Ext. 4931') +
       linea('<strong>Correo.</strong> <a href="mailto:segurodeviaje@segurosatlas.com.mx" ' +
         'style="color:' + COLORES.VERDE + ';">segurodeviaje@segurosatlas.com.mx</a>') +
@@ -1061,7 +1059,7 @@ function construirCorreoAprobado_(data) {
     '</tr>';
 
   return envolverCorreo_(
-    encabezadoCorreo_('Cotización Seguro de Viaje SENIOR +79') +
+    encabezadoCorreo_('Propuesta Seguro de Viaje SENIOR +79') +
     // Tabla, no <div>: un <div> con borde y sin ancho explícito puede
     // desalinearse por debajo del ancho de la fila 100% del encabezado en
     // clientes con soporte de CSS irregular (ver envolverCorreo_). Usando
@@ -1070,7 +1068,7 @@ function construirCorreoAprobado_(data) {
     '<tr><td style="padding:18px;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
 
       '<p style="margin:8px 0 18px 0;">Estimado(a) ' + escaparHtml_(data.nombreSolicitante) + ':</p>' +
-      '<p style="margin:0 0 16px 0;">Adjunto encontraras la cotización correspondiente en tu solicitud. ' +
+      '<p style="margin:0 0 16px 0;">Adjunto encontraras la propuesta correspondiente en tu solicitud. ' +
       'A continuación el resumen</p>' +
 
       '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
@@ -1080,7 +1078,7 @@ function construirCorreoAprobado_(data) {
         filaResumen_('Fechas del viaje', data.fechaInicio + ' al ' + data.fechaFin) +
         filaResumen_('Duración del viaje', data.duracionDias + ' días') +
         filaResumen_('Asegurados', String(data.numAsegurados) + ' — ' + data.listaAsegurados) +
-        filaResumen_('Vigencia de esta cotización', data.vigenciaCotizacion) +
+        filaResumen_('Vigencia de esta propuesta', data.vigenciaCotizacion) +
       '</table>' +
 
       // Separador explícito: dos tablas distintas (resumen de la solicitud
@@ -1111,7 +1109,7 @@ function construirCorreoAprobado_(data) {
         '<tr><td style="padding:12px 14px;">' +
           '<strong style="color:' + COLORES.VERDE + ';">Revisión obligatoria del documento adjunto</strong><br>' +
           'El detalle completo de <strong>coberturas, sumas aseguradas, especificaciones y requisitos de emisión</strong> ' +
-          'se encuentra únicamente en la cotización en PDF adjunta a este correo. Le solicitamos revisarla en su ' +
+          'se encuentra únicamente en la propuesta en PDF adjunta a este correo. Le solicitamos revisarla en su ' +
           'totalidad antes de aceptar cualquier plan.' +
         '</td></tr>' +
       '</table>' +
@@ -1148,7 +1146,7 @@ function construirCorreoRechazo_(data) {
     : construirAvisoExcluidos_(data.pasajerosExcluidos);
 
   return envolverCorreo_(
-    encabezadoCorreo_('Solicitud de cotización no procesada') +
+    encabezadoCorreo_('Solicitud de Propuesta de Seguro no procesada') +
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">' +
     '<tr><td style="padding:18px;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
 
@@ -1171,7 +1169,7 @@ function motivoRechazoTiempo_(data) {
     'con fecha de salida el <strong>' + escaparHtml_(data.fechaInicio) + '</strong>, no pudo ser procesada porque fue ' +
     'recibida con <strong>' + data.diasAnticipacion + ' día(s) de anticipación</strong>.</p>' +
     '<p style="margin:0 0 14px 0;">Por políticas de <strong>Seguro de Viaje</strong>, las ' +
-    'solicitudes de cotización deben realizarse con un mínimo de <strong>' + CONFIG.DIAS_ANTICIPACION_MINIMA + ' días ' +
+    'solicitudes de propuesta deben realizarse con un mínimo de <strong>' + CONFIG.DIAS_ANTICIPACION_MINIMA + ' días ' +
     'naturales de anticipación</strong> al inicio del viaje. Este plazo permite validar la información, emitir la ' +
     'póliza y entregarla antes de la salida.</p>' +
     '<p style="margin:0;">Si las fechas de su viaje lo permiten, le invitamos a enviar nuevamente su solicitud ' +
@@ -1188,7 +1186,7 @@ function motivoRechazoFechas_(data) {
     'no pudo ser procesada porque la <strong>fecha de regreso (' + escaparHtml_(data.fechaFin) + ')</strong> ' +
     'es anterior a la <strong>fecha de salida (' + escaparHtml_(data.fechaInicio) + ')</strong>.</p>' +
     '<p style="margin:0 0 14px 0;">Por políticas de <strong>Seguro de Viaje</strong>, las fechas del ' +
-    'viaje deben ser coherentes para poder generar una cotización.</p>' +
+    'viaje deben ser coherentes para poder generar una propuesta.</p>' +
     '<p style="margin:0;">Le invitamos a verificar las fechas y enviar nuevamente su solicitud.</p>';
 }
 
