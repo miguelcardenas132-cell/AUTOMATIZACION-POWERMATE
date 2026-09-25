@@ -1026,12 +1026,16 @@ function espaciador_(altura) {
 }
 
 /**
- * Envoltura del correo, pegada a la izquierda con ancho fijo. El atributo
- * HTML align="left" (no solo el CSS) evita que algún cliente la centre por
- * cuenta propia, igual que en el ajuste anterior con align="center".
+ * Envoltura del correo, pegada a la izquierda con ancho fijo. Sin el
+ * atributo HTML align (ni "left" ni "center"): en el motor de Word que
+ * usa Outlook, align="left"/"right" en una tabla se comporta como
+ * float, así que cualquier contenido posterior (p. ej. un disclaimer
+ * legal que agregue el propio Outlook/Exchange) se recorre a un costado
+ * en vez de quedar debajo. El ancho fijo en CSS ya deja la tabla pegada
+ * a la izquierda por default, sin necesidad de forzarlo con align.
  */
 function envolverCorreo_(contenidoHtml) {
-  return '<table role="presentation" align="left" width="600" cellpadding="0" cellspacing="0" border="0" ' +
+  return '<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" ' +
     'style="width:600px;max-width:600px;margin:0;">' +
     '<tr><td style="font-family:\'Aptos Display\',Arial,sans-serif;font-size:11pt;color:#222;">' +
       contenidoHtml +
@@ -1166,7 +1170,7 @@ function motivoRechazoTiempo_(data) {
   return '<p style="margin:0 0 14px 0;">Su solicitud para el destino <strong>' + escaparHtml_(data.destino) + '</strong>, ' +
     'con fecha de salida el <strong>' + escaparHtml_(data.fechaInicio) + '</strong>, no pudo ser procesada porque fue ' +
     'recibida con <strong>' + data.diasAnticipacion + ' día(s) de anticipación</strong>.</p>' +
-    '<p style="margin:0 0 14px 0;">Por políticas de <strong>Operación de Seguro de Viaje</strong>, las ' +
+    '<p style="margin:0 0 14px 0;">Por políticas de <strong>Seguro de Viaje</strong>, las ' +
     'solicitudes de cotización deben realizarse con un mínimo de <strong>' + CONFIG.DIAS_ANTICIPACION_MINIMA + ' días ' +
     'naturales de anticipación</strong> al inicio del viaje. Este plazo permite validar la información, emitir la ' +
     'póliza y entregarla antes de la salida.</p>' +
@@ -1176,14 +1180,14 @@ function motivoRechazoTiempo_(data) {
 
 /**
  * Motivo de rechazo por fechas de viaje invertidas (la fecha de regreso
- * es anterior o igual a la fecha de salida). Por políticas de Operación
- * de Seguro de Viaje, las fechas deben ser coherentes para poder cotizar.
+ * es anterior o igual a la fecha de salida). Por políticas de Seguro de
+ * Viaje, las fechas deben ser coherentes para poder cotizar.
  */
 function motivoRechazoFechas_(data) {
   return '<p style="margin:0 0 14px 0;">Su solicitud para el destino <strong>' + escaparHtml_(data.destino) + '</strong> ' +
     'no pudo ser procesada porque la <strong>fecha de regreso (' + escaparHtml_(data.fechaFin) + ')</strong> ' +
     'es anterior a la <strong>fecha de salida (' + escaparHtml_(data.fechaInicio) + ')</strong>.</p>' +
-    '<p style="margin:0 0 14px 0;">Por políticas de <strong>Operación de Seguro de Viaje</strong>, las fechas del ' +
+    '<p style="margin:0 0 14px 0;">Por políticas de <strong>Seguro de Viaje</strong>, las fechas del ' +
     'viaje deben ser coherentes para poder generar una cotización.</p>' +
     '<p style="margin:0;">Le invitamos a verificar las fechas y enviar nuevamente su solicitud.</p>';
 }
