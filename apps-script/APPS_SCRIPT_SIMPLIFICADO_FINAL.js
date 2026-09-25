@@ -958,10 +958,8 @@ function encabezadoCorreo_(titulo) {
     'style="background-color:' + COLORES.VERDE + ';border-collapse:collapse;">' +
     '<tr>' +
       '<td align="left" valign="middle" style="padding:14px 10px 14px 18px;">' +
-        '<div style="font-size:17px;font-weight:bold;color:#ffffff;font-family:\'Aptos Display\',Arial,sans-serif;">' +
+        '<div style="font-size:21px;font-weight:bold;color:#ffffff;font-family:\'Aptos Display\',Arial,sans-serif;">' +
           escaparHtml_(titulo) + '</div>' +
-        '<div style="font-size:11px;color:#cfe6da;margin-top:3px;font-family:\'Aptos Display\',Arial,sans-serif;">' +
-          'Seguro de Viaje</div>' +
       '</td>' +
       '<td align="right" valign="middle" style="padding:14px 18px 14px 10px;width:130px;">' +
         '<img src="' + escaparHtml_(CONFIG.URL_LOGO_CORREO) + '" alt="Seguros Atlas" width="120" ' +
@@ -1043,9 +1041,11 @@ function envolverCorreo_(contenidoHtml) {
 /** Fila etiqueta/valor de las tablas resumen (verde claro) del correo. */
 function filaResumen_(etiqueta, valor) {
   return '<tr>' +
-    '<td style="padding:5px 10px;border-bottom:1px solid ' + COLORES.BORDE + ';font-weight:bold;color:' + COLORES.AZUL + ';width:42%;">' +
+    '<td style="padding:5px 10px;border-bottom:1px solid ' + COLORES.BORDE + ';font-weight:bold;color:' + COLORES.AZUL + ';' +
+      'width:42%;font-size:11pt;font-family:\'Aptos Display\',Arial,sans-serif;">' +
       escaparHtml_(etiqueta) + '</td>' +
-    '<td style="padding:5px 10px;border-bottom:1px solid ' + COLORES.BORDE + ';color:#333;">' +
+    '<td style="padding:5px 10px;border-bottom:1px solid ' + COLORES.BORDE + ';color:#333;' +
+      'font-size:11pt;font-family:\'Aptos Display\',Arial,sans-serif;">' +
       escaparHtml_(valor) + '</td>' +
     '</tr>';
 }
@@ -1053,8 +1053,10 @@ function filaResumen_(etiqueta, valor) {
 function construirCorreoAprobado_(data) {
   const filaPlan = (plan, total) =>
     '<tr>' +
-    '<td style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';color:#333;">' + escaparHtml_(plan) + '</td>' +
-    '<td style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';text-align:right;font-weight:bold;color:#333;">' +
+    '<td style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';color:#333;' +
+      'font-size:11pt;font-family:\'Aptos Display\',Arial,sans-serif;">' + escaparHtml_(plan) + '</td>' +
+    '<td style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';text-align:right;font-weight:bold;color:#333;' +
+      'font-size:11pt;font-family:\'Aptos Display\',Arial,sans-serif;">' +
       formatearMoneda_(total) + ' USD</td>' +
     '</tr>';
 
