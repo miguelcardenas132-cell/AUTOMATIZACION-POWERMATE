@@ -620,7 +620,7 @@ function estilosCotizacion_() {
 
     // --- 2. Información del viaje ---
     '.banner { background-color: ' + COLORES.VERDE + '; color: #ffffff; font-weight: bold;\n' +
-    '          font-size: 9.8px; text-transform: uppercase; padding: 3px 9px;\n' +
+    '          font-size: 9.8px; text-transform: uppercase; padding: 3px 9px; text-align: center;\n' +
     '          margin: 5px 0 0; letter-spacing: .4px; }\n' +
     '.viaje { background-color: ' + COLORES.VERDE_CLARO + '; border: 1px solid ' + COLORES.VERDE_BORDE + '; }\n' +
     '.viaje td { padding: 3px 9px; font-size: 9.8px; vertical-align: top; }\n' +
