@@ -160,7 +160,8 @@ const COLORES = {
   AMBAR_BORDE: '#f0ad4e',
   AMBAR_TEXTO: '#8a6d3b',
   ROJO_FONDO: '#fdecea',
-  ROJO_BORDE: '#d9534f'
+  ROJO_BORDE: '#d9534f',
+  FONDO_CORREO: '#f3f4f3'
 };
 
 /**
@@ -1024,19 +1025,23 @@ function espaciador_(altura) {
 }
 
 /**
- * Envoltura del correo, pegada a la izquierda con ancho fijo. Sin el
- * atributo HTML align (ni "left" ni "center"): en el motor de Word que
- * usa Outlook, align="left"/"right" en una tabla se comporta como
- * float, así que cualquier contenido posterior (p. ej. un disclaimer
- * legal que agregue el propio Outlook/Exchange) se recorre a un costado
- * en vez de quedar debajo. El ancho fijo en CSS ya deja la tabla pegada
- * a la izquierda por default, sin necesidad de forzarlo con align.
+ * Envoltura del correo: fondo gris a todo lo ancho con la tarjeta de
+ * 600px centrada encima. El centrado lo hace la celda de una tabla
+ * externa al 100% (bloque completo), no align en la tabla del correo:
+ * en el motor de Word de Outlook, align en una tabla actúa como float y
+ * empuja al costado lo que Outlook/Exchange agregue después (p. ej. el
+ * disclaimer legal). bgcolor como atributo porque Outlook ignora a veces
+ * el background-color en CSS.
  */
 function envolverCorreo_(contenidoHtml) {
-  return '<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" ' +
-    'style="width:600px;max-width:600px;margin:0;">' +
-    '<tr><td style="font-family:\'Aptos Display\',Arial,sans-serif;font-size:11pt;color:#222;">' +
-      contenidoHtml +
+  return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" ' +
+    'bgcolor="' + COLORES.FONDO_CORREO + '" style="width:100%;background-color:' + COLORES.FONDO_CORREO + ';">' +
+    '<tr><td align="center" style="padding:24px 12px;">' +
+      '<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" ' +
+      'style="width:600px;max-width:600px;margin:0 auto;">' +
+      '<tr><td align="left" style="font-family:\'Aptos Display\',Arial,sans-serif;font-size:11pt;color:#222;">' +
+        contenidoHtml +
+      '</td></tr></table>' +
     '</td></tr></table>';
 }
 
@@ -1069,7 +1074,7 @@ function construirCorreoAprobado_(data) {
     // clientes con soporte de CSS irregular (ver envolverCorreo_). Usando
     // tabla en ambos, el ancho de las dos secciones queda garantizado igual.
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">' +
-    '<tr><td style="padding:18px;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
+    '<tr><td bgcolor="#ffffff" style="padding:18px;background-color:#ffffff;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
 
       '<p style="margin:8px 0 18px 0;">Estimado(a) ' + escaparHtml_(data.nombreSolicitante) + ':</p>' +
       '<p style="margin:0 0 16px 0;">Adjunto encontraras la propuesta correspondiente en tu solicitud. ' +
@@ -1152,7 +1157,7 @@ function construirCorreoRechazo_(data) {
   return envolverCorreo_(
     encabezadoCorreo_('Solicitud de Propuesta de Seguro no procesada') +
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">' +
-    '<tr><td style="padding:18px;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
+    '<tr><td bgcolor="#ffffff" style="padding:18px;background-color:#ffffff;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
 
       '<p style="margin:8px 0 18px 0;">Estimado(a) ' + escaparHtml_(data.nombreSolicitante) + ':</p>' +
 
