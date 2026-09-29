@@ -66,9 +66,6 @@ const CONFIG = {
   VIGENCIA_DIAS: 7,
   MAX_ASEGURADOS: 10,
 
-  // Formulario que el cliente llena para solicitar la emisión (Paso 1 del PDF).
-  URL_FORMULARIO_EMISION: 'https://forms.gle/P2iiskLHtBALa9F36',
-
   // Enlaces del cuerpo del correo.
   URL_PORTAL_AGENTES: 'https://www.atlasconmigo.com.mx/login',
   URL_AVISO_PRIVACIDAD: 'https://www.segurosatlas.com.mx/aviso-de-privacidad',
@@ -823,16 +820,21 @@ function bloqueAccionOperativa_() {
     '<tr>\n' +
     '<td class="celda">' +
       '<h3>Paso 1. Requisitos para iniciar tu proceso</h3>' +
-      '<p>En caso de aceptar la propuesta, completa el siguiente formulario para el envío de tu póliza: ' +
-      '<a href="' + escaparHtml_(CONFIG.URL_FORMULARIO_EMISION) + '">' +
-      escaparHtml_(CONFIG.URL_FORMULARIO_EMISION) + '</a></p>' +
+      '<p>En caso de aceptar la propuesta, envía la siguiente documentación al correo ' +
+      '<strong>segurodeviaje@segurosatlas.com.mx</strong>:</p>' +
+      '<ul>' +
+        '<li>• Formato de emisión debidamente llenado.</li>' +
+        '<li>• Propuesta aceptada.</li>' +
+        '<li>• TCC y TCI (solicítalos a tu Mesa de Control).</li>' +
+        '<li>• Constancia de Situación Fiscal (CSF) actualizada.</li>' +
+      '</ul>' +
     '</td>\n' +
     '<td class="celda">' +
       '<h3>Paso 2. Consideraciones importantes</h3>' +
       '<ul>' +
         '<li>• <strong>Revisión de datos:</strong> verifica que la información de los asegurados y del contratante ' +
         'sea correcta y legible.</li>' +
-        '<li>• <strong>Tiempo de gestión:</strong> el formulario de emisión deberá ser enviado hasta un máximo ' +
+        '<li>• <strong>Tiempo de gestión:</strong> la solicitud de emisión deberá ser enviada hasta un máximo ' +
         'de 4 días hábiles antes de iniciar tu viaje.</li>' +
         '<li>• <strong>Correcciones:</strong> los cambios por errores u omisiones toman de 3 a 5 días hábiles.</li>' +
         '<li>• <strong>Actualizaciones:</strong> cualquier cambio en los días de viaje requiere una nueva ' +
