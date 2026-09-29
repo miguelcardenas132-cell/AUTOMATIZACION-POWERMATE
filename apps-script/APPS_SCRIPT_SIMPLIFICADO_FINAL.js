@@ -11,7 +11,7 @@
  *   2) Se filtran los asegurados elegibles (de 79 años 11 meses a 89 años
  *      11 meses, calculado desde su fecha de nacimiento respecto a la fecha
  *      de salida del viaje) y se registran los excluidos.
- *   3) Se valida la anticipación mínima (5 días naturales).
+ *   3) Se valida la anticipación mínima (5 días hábiles).
  *   4) Si procede, se genera el HTML de la cotización (1 página, tamaño carta)
  *      y se guarda en Drive con codificación UTF-8 explícita.
  *   5) Se construye el cuerpo HTML del correo (aprobación o rechazo).
@@ -19,7 +19,7 @@
  *
  * ESTATUS POSIBLES
  *   APROBADO                 Hay al menos un elegible y se cumple la anticipación.
- *   RECHAZADO_TIEMPO         Menos de 5 días naturales antes de la salida.
+ *   RECHAZADO_TIEMPO         Menos de 5 días hábiles antes de la salida.
  *   RECHAZADO_SIN_ELEGIBLES  Ningún pasajero cae en el rango de edad elegible.
  *
  * SOBRE LAS COLUMNAS "Validacion_*", "Estado_Final" y "Motivo_Rechazo" DEL
@@ -461,11 +461,13 @@ function construirDatosSolicitud_(fila, encabezados, valores) {
 }
 
 /**
- * Días naturales entre hoy y la fecha de salida.
+ * Días hábiles (lunes a viernes, sin contemplar festivos) entre hoy y la
+ * fecha de salida: cuenta los días hábiles posteriores a hoy hasta el día
+ * de salida inclusive. Ej.: solicitud el lunes con salida el lunes
+ * siguiente = 5 días hábiles.
  * Ambas fechas se normalizan a medianoche para que la hora de envío del
- * formulario no altere la cuenta: un viaje que sale en 5 días cumple el
- * plazo tanto si el formulario se envía a las 08:00 como a las 23:00.
- * Devuelve null si no hay fecha de salida válida.
+ * formulario no altere la cuenta. Negativo si la salida ya pasó; null si
+ * no hay fecha de salida válida.
  */
 function calcularDiasAnticipacion_(hoy, fechaSalida) {
   if (!fechaSalida) return null;
@@ -474,7 +476,18 @@ function calcularDiasAnticipacion_(hoy, fechaSalida) {
 
   const hoyMedianoche = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
   const salidaMedianoche = new Date(salida.getFullYear(), salida.getMonth(), salida.getDate());
-  return Math.round((salidaMedianoche - hoyMedianoche) / (24 * 60 * 60 * 1000));
+  const signo = salidaMedianoche >= hoyMedianoche ? 1 : -1;
+  const desde = signo === 1 ? hoyMedianoche : salidaMedianoche;
+  const hasta = signo === 1 ? salidaMedianoche : hoyMedianoche;
+
+  let habiles = 0;
+  const dia = new Date(desde.getTime());
+  while (dia < hasta) {
+    dia.setDate(dia.getDate() + 1);
+    const diaSemana = dia.getDay();
+    if (diaSemana !== 0 && diaSemana !== 6) habiles++;
+  }
+  return signo * habiles;
 }
 
 /**
@@ -838,8 +851,8 @@ function bloqueAccionOperativa_() {
       '<ul>' +
         '<li>• <strong>Revisión de datos:</strong> verifica que la información de los asegurados y del contratante ' +
         'sea correcta y legible.</li>' +
-        '<li>• <strong>Tiempo de gestión:</strong> la solicitud de emisión deberá ser enviada de 24 hasta ' +
-        '72 horas antes de iniciar tu viaje.</li>' +
+        '<li>• <strong>Tiempo de gestión:</strong> la solicitud de emisión deberá ser enviada hasta ' +
+        '72 horas hábiles antes de iniciar tu viaje.</li>' +
         '<li>• <strong>Correcciones:</strong> los cambios por errores u omisiones toman de 3 a 5 días hábiles.</li>' +
         '<li>• <strong>Actualizaciones:</strong> cualquier cambio en los días de viaje requiere una nueva ' +
         'propuesta previa a la emisión.</li>' +
@@ -1186,7 +1199,7 @@ function construirCorreoAprobado_(data) {
         listaCorreo_([
           '<strong>Revisión de datos:</strong> verifica que la información de los asegurados y del contratante ' +
             'sea correcta y legible.',
-          '<strong>Tiempo de emisión:</strong> la solicitud debe enviarse de <strong>24 hasta 72 horas</strong> ' +
+          '<strong>Tiempo de emisión:</strong> la solicitud debe enviarse hasta <strong>72 horas hábiles</strong> ' +
             'antes del inicio del viaje.',
           '<strong>Correcciones:</strong> los cambios por errores u omisiones en la solicitud inicial toman de ' +
             '<strong>3 a 5 días hábiles</strong>.',
@@ -1274,10 +1287,10 @@ function construirCorreoRechazo_(data) {
 function motivoRechazoTiempo_(data) {
   return '<p style="margin:0 0 14px 0;">Su solicitud para el destino <strong>' + escaparHtml_(data.destino) + '</strong>, ' +
     'con fecha de salida el <strong>' + escaparHtml_(data.fechaInicio) + '</strong>, no pudo ser procesada porque fue ' +
-    'recibida con <strong>' + data.diasAnticipacion + ' día(s) de anticipación</strong>.</p>' +
+    'recibida con <strong>' + data.diasAnticipacion + ' día(s) hábil(es) de anticipación</strong>.</p>' +
     '<p style="margin:0 0 14px 0;">Por políticas de <strong>Seguro de Viaje</strong>, las ' +
     'solicitudes de propuesta deben realizarse con un mínimo de <strong>' + CONFIG.DIAS_ANTICIPACION_MINIMA + ' días ' +
-    'naturales de anticipación</strong> al inicio del viaje. Este plazo permite validar la información, emitir la ' +
+    'hábiles de anticipación</strong> al inicio del viaje. Este plazo permite validar la información, emitir la ' +
     'póliza y entregarla antes de la salida.</p>' +
     '<p style="margin:0;">Si las fechas de su viaje lo permiten, le invitamos a enviar nuevamente su solicitud ' +
     'respetando este plazo.</p>';
