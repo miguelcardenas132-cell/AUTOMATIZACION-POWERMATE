@@ -9,6 +9,8 @@
         "tipoProducto": { "type": "string" },
         "htmlBase64": { "type": "string" },
         "nombreArchivo": { "type": "string" },
+        "formatoEmisionRuta": { "type": "string" },
+        "formatoEmisionNombre": { "type": "string" },
         "folio": { "type": "string" },
         "htmlFileId": { "type": "string" },
         "fechaGeneracion": { "type": "string" }

@@ -21,6 +21,7 @@
  *   APROBADO                 Hay al menos un elegible y se cumple la anticipación.
  *   RECHAZADO_TIEMPO         Menos de 5 días hábiles antes de la salida.
  *   RECHAZADO_SIN_ELEGIBLES  Ningún pasajero cae en el rango de edad elegible.
+ *   RECHAZADO_EXCESO_ASEGURADOS  Más de 5 asegurados elegibles en una solicitud.
  *
  * SOBRE LAS COLUMNAS "Validacion_*", "Estado_Final" y "Motivo_Rechazo" DEL
  * SHEET: se evaluaron como posible fuente de verdad y se descartaron. En
@@ -68,7 +69,25 @@ const CONFIG = {
   // de la salida, equivalente a 72 horas hábiles), lo que ocurra primero.
   VIGENCIA_DIAS_HABILES: 5,
   DIAS_HABILES_LIMITE_EMISION: 3,
-  MAX_ASEGURADOS: 10,
+  // Posiciones de asegurado que se leen del formulario, y máximo de
+  // asegurados elegibles por propuesta (el formato de emisión grupal solo
+  // tiene lugar para 5). Se leen todas las posiciones para poder rechazar
+  // una solicitud con más de 5 en vez de cortarla en silencio.
+  COLUMNAS_ASEGURADOS: 10,
+  MAX_ASEGURADOS: 5,
+
+  // Formatos de solicitud de emisión que Power Automate adjunta al correo
+  // aprobado, tomándolos de OneDrive con la ruta que manda este script:
+  // el individual si hay 1 asegurado, el grupal si hay de 2 a MAX_ASEGURADOS.
+  CARPETA_FORMATOS_EMISION: '/Cotizaciones Plantilla',
+  FORMATO_EMISION_INDIVIDUAL: {
+    archivo: 'SOLICITUD_EMISION_INDIVIDUAL.pdf',
+    nombreAdjunto: 'Solicitud de emisión individual.pdf'
+  },
+  FORMATO_EMISION_GRUPAL: {
+    archivo: 'SOLICITUD_DE_SEGURO_DE_VIAJE_GRUPAL_v2.pdf',
+    nombreAdjunto: 'Solicitud de emisión grupal.pdf'
+  },
 
   // Enlaces del cuerpo del correo.
   URL_PORTAL_AGENTES: 'https://www.atlasconmigo.com.mx/login',
@@ -90,7 +109,8 @@ const CONFIG = {
     APROBADO: 'APROBADO',
     RECHAZADO_TIEMPO: 'RECHAZADO_TIEMPO',
     RECHAZADO_SIN_ELEGIBLES: 'RECHAZADO_SIN_ELEGIBLES',
-    RECHAZADO_FECHAS: 'RECHAZADO_FECHAS'
+    RECHAZADO_FECHAS: 'RECHAZADO_FECHAS',
+    RECHAZADO_EXCESO_ASEGURADOS: 'RECHAZADO_EXCESO_ASEGURADOS'
   },
 
   // --- Mapeo de columnas (fila 1 de la hoja de respuestas) ---
@@ -373,7 +393,7 @@ function construirDatosSolicitud_(fila, encabezados, valores) {
 
   const asegurados = [];
   const pasajerosExcluidos = [];
-  for (let i = 1; i <= CONFIG.MAX_ASEGURADOS; i++) {
+  for (let i = 1; i <= CONFIG.COLUMNAS_ASEGURADOS; i++) {
     const nombreCrudo = valorPorPatron_(
       encabezados, valores, CONFIG.ASEGURADOS.PATRONES_NOMBRE, CONFIG.ASEGURADOS.OVERRIDE_NOMBRE, i);
     if (nombreCrudo === null || nombreCrudo.toString().trim() === '') continue;
@@ -405,7 +425,8 @@ function construirDatosSolicitud_(fila, encabezados, valores) {
   // --- Estatus ---
   // Las fechas invertidas se evalúan primero: si la fecha de regreso es
   // anterior a la de salida, los demás cálculos no tienen sentido.
-  // Luego la anticipación, y al final la elegibilidad de pasajeros.
+  // Luego la anticipación, la elegibilidad de pasajeros y, al final, el
+  // máximo de asegurados por propuesta.
   let estatus = CONFIG.ESTATUS.APROBADO;
   if (duracionDias <= 0) {
     estatus = CONFIG.ESTATUS.RECHAZADO_FECHAS;
@@ -413,6 +434,8 @@ function construirDatosSolicitud_(fila, encabezados, valores) {
     estatus = CONFIG.ESTATUS.RECHAZADO_TIEMPO;
   } else if (numAsegurados === 0) {
     estatus = CONFIG.ESTATUS.RECHAZADO_SIN_ELEGIBLES;
+  } else if (numAsegurados > CONFIG.MAX_ASEGURADOS) {
+    estatus = CONFIG.ESTATUS.RECHAZADO_EXCESO_ASEGURADOS;
   }
   const aprobado = estatus === CONFIG.ESTATUS.APROBADO;
 
@@ -1312,6 +1335,8 @@ function construirCorreoRechazo_(data) {
     motivo = motivoRechazoFechas_(data);
   } else if (data.estatus === CONFIG.ESTATUS.RECHAZADO_TIEMPO) {
     motivo = motivoRechazoTiempo_(data);
+  } else if (data.estatus === CONFIG.ESTATUS.RECHAZADO_EXCESO_ASEGURADOS) {
+    motivo = motivoRechazoExcesoAsegurados_(data);
   } else {
     motivo = motivoRechazoSinElegibles_(data);
   }
@@ -1351,6 +1376,20 @@ function motivoRechazoTiempo_(data) {
     'póliza y entregarla antes de la salida.</p>' +
     '<p style="margin:0;">Si las fechas de tu viaje lo permiten, te invitamos a enviar nuevamente tu solicitud ' +
     'respetando este plazo.</p>';
+}
+
+/**
+ * Motivo de rechazo por exceso de asegurados: el formato de emisión grupal
+ * admite hasta MAX_ASEGURADOS, así que se pide dividir la solicitud.
+ */
+function motivoRechazoExcesoAsegurados_(data) {
+  return '<p style="margin:0 0 14px 0;">Tu solicitud para el destino <strong>' + escaparHtml_(data.destino) + '</strong> ' +
+    'no pudo ser procesada porque incluye <strong>' + data.numAsegurados + ' asegurados</strong> dentro del rango ' +
+    'de edad del <strong>Producto Senior</strong>.</p>' +
+    '<p style="margin:0 0 14px 0;">Por políticas de <strong>Seguro de Viaje</strong>, cada propuesta admite un máximo ' +
+    'de <strong>' + CONFIG.MAX_ASEGURADOS + ' asegurados</strong>.</p>' +
+    '<p style="margin:0;">Te invitamos a dividir tu solicitud en grupos de hasta ' + CONFIG.MAX_ASEGURADOS + ' asegurados ' +
+    'y enviar una solicitud por cada grupo.</p>';
 }
 
 /**
@@ -1463,6 +1502,15 @@ function guardarHtmlEnDrive_(htmlContenido, nombreArchivo) {
  * @param {Object}    data           Solicitud completa (incluye cuerpoCorreoHtml).
  * @param {string}    htmlCotizacion HTML renderizado; se envía en base64. '' si fue rechazada.
  */
+/** Formato de emisión que corresponde: individual con 1 asegurado, grupal con 2 o más. */
+function formatoEmision_(data) {
+  const formato = data.numAsegurados > 1 ? CONFIG.FORMATO_EMISION_GRUPAL : CONFIG.FORMATO_EMISION_INDIVIDUAL;
+  return {
+    ruta: CONFIG.CARPETA_FORMATOS_EMISION + '/' + formato.archivo,
+    nombreAdjunto: formato.nombreAdjunto
+  };
+}
+
 function enviarWebhookPowerAutomate_(archivoHtml, data, htmlCotizacion) {
   const aprobado = data.estatus === CONFIG.ESTATUS.APROBADO;
 
@@ -1484,6 +1532,12 @@ function enviarWebhookPowerAutomate_(archivoHtml, data, htmlCotizacion) {
     // Nombre del PDF que recibe el cliente (misma nomenclatura que el
     // asunto, sin '/'); no confundir con nombreArchivoDrive, el respaldo interno.
     nombreArchivo: aprobado ? construirNombreArchivoPdf_(data) : '',
+
+    // Formato de solicitud de emisión que Power Automate adjunta como
+    // segundo archivo (solo aprobadas): ruta en OneDrive para "Get file
+    // content using path" y nombre con el que llega al cliente.
+    formatoEmisionRuta: aprobado ? formatoEmision_(data).ruta : '',
+    formatoEmisionNombre: aprobado ? formatoEmision_(data).nombreAdjunto : '',
 
     folio: data.folio,
     htmlFileId: archivoHtml ? archivoHtml.getId() : '',
