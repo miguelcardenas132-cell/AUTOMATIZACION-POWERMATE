@@ -1319,7 +1319,7 @@ function construirCorreoRechazo_(data) {
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">' +
     '<tr><td bgcolor="#ffffff" style="padding:18px;background-color:#ffffff;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
 
-      '<p style="margin:8px 0 18px 0;">Estimado(a) ' + escaparHtml_(data.nombreSolicitante) + ':</p>' +
+      '<p style="margin:8px 0 16px 0;font-weight:bold;">¡Hola ' + escaparHtml_(data.nombreSolicitante) + ', buen día!</p>' +
 
       '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
       'style="border-collapse:collapse;background-color:' + COLORES.ROJO_FONDO + ';border-left:4px solid ' + COLORES.ROJO_BORDE + ';margin-bottom:18px;">' +
@@ -1335,14 +1335,14 @@ function construirCorreoRechazo_(data) {
 }
 
 function motivoRechazoTiempo_(data) {
-  return '<p style="margin:0 0 14px 0;">Su solicitud para el destino <strong>' + escaparHtml_(data.destino) + '</strong>, ' +
+  return '<p style="margin:0 0 14px 0;">Tu solicitud para el destino <strong>' + escaparHtml_(data.destino) + '</strong>, ' +
     'con fecha de salida el <strong>' + escaparHtml_(data.fechaInicio) + '</strong>, no pudo ser procesada porque fue ' +
     'recibida con <strong>' + data.diasAnticipacion + ' día(s) hábil(es) de anticipación</strong>.</p>' +
     '<p style="margin:0 0 14px 0;">Por políticas de <strong>Seguro de Viaje</strong>, las ' +
     'solicitudes de propuesta deben realizarse con un mínimo de <strong>' + CONFIG.DIAS_ANTICIPACION_MINIMA + ' días ' +
     'hábiles de anticipación</strong> al inicio del viaje. Este plazo permite validar la información, emitir la ' +
     'póliza y entregarla antes de la salida.</p>' +
-    '<p style="margin:0;">Si las fechas de su viaje lo permiten, le invitamos a enviar nuevamente su solicitud ' +
+    '<p style="margin:0;">Si las fechas de tu viaje lo permiten, te invitamos a enviar nuevamente tu solicitud ' +
     'respetando este plazo.</p>';
 }
 
@@ -1352,12 +1352,12 @@ function motivoRechazoTiempo_(data) {
  * Viaje, las fechas deben ser coherentes para poder cotizar.
  */
 function motivoRechazoFechas_(data) {
-  return '<p style="margin:0 0 14px 0;">Su solicitud para el destino <strong>' + escaparHtml_(data.destino) + '</strong> ' +
+  return '<p style="margin:0 0 14px 0;">Tu solicitud para el destino <strong>' + escaparHtml_(data.destino) + '</strong> ' +
     'no pudo ser procesada porque la <strong>fecha de regreso (' + escaparHtml_(data.fechaFin) + ')</strong> ' +
     'es anterior a la <strong>fecha de salida (' + escaparHtml_(data.fechaInicio) + ')</strong>.</p>' +
     '<p style="margin:0 0 14px 0;">Por políticas de <strong>Seguro de Viaje</strong>, la fecha de regreso debe ' +
     'ser posterior a la fecha de salida para poder generar una propuesta.</p>' +
-    '<p style="margin:0;">Le invitamos a verificar las fechas y enviar nuevamente su solicitud.</p>';
+    '<p style="margin:0;">Te invitamos a verificar las fechas y enviar nuevamente tu solicitud.</p>';
 }
 
 /**
@@ -1367,7 +1367,7 @@ function motivoRechazoFechas_(data) {
  * ámbar redundante en este caso), tiene que bastarse solo.
  */
 function motivoRechazoSinElegibles_(data) {
-  return '<p style="margin:0 0 10px 0;">Su solicitud para el destino <strong>' + escaparHtml_(data.destino) + '</strong> ' +
+  return '<p style="margin:0 0 10px 0;">Tu solicitud para el destino <strong>' + escaparHtml_(data.destino) + '</strong> ' +
     'no pudo ser procesada porque ningún pasajero indicado se encuentra dentro del rango de edad del ' +
     '<strong>Producto Senior</strong> (' + textoRangoEdad_() + ').</p>' +
     textoExcluidosPorEdad_(data.pasajerosExcluidos);
@@ -1406,7 +1406,7 @@ function textoExcluidosPorEdad_(pasajerosExcluidos) {
       '</strong>, menores a ' + textoEdadMinima_() + ': favor de ingresar al portal de agentes donde podrán ' +
       'cotizar y emitir directamente en la siguiente liga: ' +
       '<a href="' + escaparHtml_(CONFIG.URL_PORTAL_AGENTES) + '" style="color:' + COLORES.VERDE + ';">' +
-      escaparHtml_(CONFIG.URL_PORTAL_AGENTES) + '</a> o contacte a su ejecutivo.</p>';
+      escaparHtml_(CONFIG.URL_PORTAL_AGENTES) + '</a> o contacta a tu ejecutivo.</p>';
   }
 
   if (grupos.mayores.length > 0) {
@@ -1417,7 +1417,7 @@ function textoExcluidosPorEdad_(pasajerosExcluidos) {
 
   if (grupos.sinDato.length > 0) {
     texto += '<p style="margin:0;">No fue posible validar la edad de <strong>' + listaPasajerosTexto_(grupos.sinDato) +
-      '</strong>: verifique la fecha de nacimiento capturada.</p>';
+      '</strong>: verifica la fecha de nacimiento capturada.</p>';
   }
 
   return texto;
