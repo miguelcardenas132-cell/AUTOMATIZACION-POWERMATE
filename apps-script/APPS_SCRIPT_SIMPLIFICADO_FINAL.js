@@ -1031,7 +1031,8 @@ function encabezadoCorreo_(titulo) {
 
 /** Despedida más la firma corporativa. */
 function pieCorreo_() {
-  return '<p style="margin:20px 0 14px 0;">Saludos.</p>' +
+  return '<p style="margin:20px 0 0 0;">Saludos.</p>' +
+    espaciador_(32) +
     firmaCorreo_();
 }
 
