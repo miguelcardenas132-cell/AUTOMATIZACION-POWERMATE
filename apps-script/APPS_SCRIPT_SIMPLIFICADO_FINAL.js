@@ -169,6 +169,10 @@ const COLORES = {
 // atributos style="..." (comillas dobles).
 const FUENTE_CORREO = "'Aptos Display',Arial,sans-serif";
 
+// Ancho máximo de la tarjeta del correo en computadora, en px. En pantallas
+// más angostas (teléfono) la tarjeta se ajusta al ancho disponible.
+const ANCHO_CORREO = 800;
+
 /**
  * Tabla de coberturas y sumas aseguradas.
  * Orden de columnas: [concepto, Master, Master Smart, Master Elite, Master Premium].
@@ -1125,23 +1129,34 @@ function espaciador_(altura) {
 }
 
 /**
- * Envoltura del correo: fondo gris a todo lo ancho con la tarjeta de
- * 600px centrada encima. El centrado lo hace la celda de una tabla
- * externa al 100% (bloque completo), no align en la tabla del correo:
- * en el motor de Word de Outlook, align en una tabla actúa como float y
- * empuja al costado lo que Outlook/Exchange agregue después (p. ej. el
- * disclaimer legal). bgcolor como atributo porque Outlook ignora a veces
+ * Envoltura del correo: fondo gris a todo lo ancho con la tarjeta centrada
+ * encima. La tarjeta es fluida (width 100% con max-width ANCHO_CORREO):
+ * en computadora mide ANCHO_CORREO y en el teléfono se ajusta al ancho de
+ * la pantalla.
+ *
+ * Outlook de escritorio (motor de Word) ignora max-width y estiraría la
+ * tarjeta a toda la ventana, así que para él va una tabla "fantasma" de
+ * ancho fijo dentro de comentarios condicionales [if mso], que solo
+ * Outlook interpreta.
+ *
+ * El centrado lo hace la celda de la tabla externa al 100%, no align en la
+ * tabla del correo: en el motor de Word, align en una tabla actúa como
+ * float y empuja al costado lo que Outlook/Exchange agregue después (p. ej.
+ * el disclaimer legal). bgcolor como atributo porque Outlook ignora a veces
  * el background-color en CSS.
  */
 function envolverCorreo_(contenidoHtml) {
   return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" ' +
     'bgcolor="' + COLORES.FONDO_CORREO + '" style="width:100%;background-color:' + COLORES.FONDO_CORREO + ';">' +
-    '<tr><td align="center" style="padding:24px 12px;">' +
-      '<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" ' +
-      'style="width:600px;max-width:600px;margin:0 auto;">' +
-      '<tr><td align="left" style="font-family:\'Aptos Display\',Arial,sans-serif;font-size:11pt;color:#222;">' +
+    '<tr><td align="center" style="padding:24px 10px;">' +
+      '<!--[if mso]><table role="presentation" width="' + ANCHO_CORREO + '" cellpadding="0" cellspacing="0" border="0">' +
+      '<tr><td><![endif]-->' +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" ' +
+      'style="width:100%;max-width:' + ANCHO_CORREO + 'px;margin:0 auto;">' +
+      '<tr><td align="left" style="font-family:' + FUENTE_CORREO + ';font-size:11pt;color:#222;">' +
         contenidoHtml +
       '</td></tr></table>' +
+      '<!--[if mso]></td></tr></table><![endif]-->' +
     '</td></tr></table>';
 }
 
