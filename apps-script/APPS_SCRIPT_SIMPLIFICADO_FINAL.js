@@ -63,7 +63,11 @@ const CONFIG = {
   // cumple EDAD_MAXIMA años y EDAD_MESES_ADICIONALES meses (inclusive).
   EDAD_MESES_ADICIONALES: 11,
   DIAS_ANTICIPACION_MINIMA: 5,
-  VIGENCIA_DIAS: 7,
+  // Vigencia de la propuesta: la fecha de envío + VIGENCIA_DIAS_HABILES, o
+  // el último día para pedir la emisión (DIAS_HABILES_LIMITE_EMISION antes
+  // de la salida, equivalente a 72 horas hábiles), lo que ocurra primero.
+  VIGENCIA_DIAS_HABILES: 5,
+  DIAS_HABILES_LIMITE_EMISION: 3,
   MAX_ASEGURADOS: 10,
 
   // Enlaces del cuerpo del correo.
@@ -388,8 +392,7 @@ function construirDatosSolicitud_(fila, encabezados, valores) {
   }
   const numAsegurados = asegurados.length;
 
-  const vigenciaDate = new Date(hoy.getTime());
-  vigenciaDate.setDate(vigenciaDate.getDate() + CONFIG.VIGENCIA_DIAS);
+  const vigenciaDate = calcularVigencia_(hoy, inicioRaw);
 
   // --- Estatus ---
   // Las fechas invertidas se evalúan primero: si la fecha de regreso es
@@ -488,6 +491,38 @@ function calcularDiasAnticipacion_(hoy, fechaSalida) {
     if (diaSemana !== 0 && diaSemana !== 6) habiles++;
   }
   return signo * habiles;
+}
+
+/**
+ * Mueve una fecha n días hábiles (lunes a viernes, sin contemplar
+ * festivos) hacia adelante (n > 0) o hacia atrás (n < 0). Devuelve la
+ * fecha resultante a medianoche.
+ */
+function sumarDiasHabiles_(fecha, n) {
+  const resultado = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
+  const paso = n >= 0 ? 1 : -1;
+  let restantes = Math.abs(n);
+  while (restantes > 0) {
+    resultado.setDate(resultado.getDate() + paso);
+    const diaSemana = resultado.getDay();
+    if (diaSemana !== 0 && diaSemana !== 6) restantes--;
+  }
+  return resultado;
+}
+
+/**
+ * Vigencia de la propuesta: fecha de envío + VIGENCIA_DIAS_HABILES, pero
+ * nunca después del último día para solicitar la emisión
+ * (DIAS_HABILES_LIMITE_EMISION días hábiles antes de la salida). Si la
+ * fecha de salida no es válida, se usa solo la cuenta desde el envío.
+ */
+function calcularVigencia_(hoy, fechaSalida) {
+  const porEnvio = sumarDiasHabiles_(hoy, CONFIG.VIGENCIA_DIAS_HABILES);
+  const salida = fechaSalida instanceof Date ? fechaSalida : new Date(fechaSalida);
+  if (!fechaSalida || isNaN(salida.getTime())) return porEnvio;
+
+  const limiteEmision = sumarDiasHabiles_(salida, -CONFIG.DIAS_HABILES_LIMITE_EMISION);
+  return limiteEmision < porEnvio ? limiteEmision : porEnvio;
 }
 
 /**
@@ -598,7 +633,7 @@ function generarHtmlCotizacion_(data) {
       bloqueInfoViaje_(data) +
       bloqueCoberturas_(data) +
       bloqueEspecificaciones_() +
-      bloqueObservacionesYQr_() +
+      bloqueObservacionesYQr_(data) +
       bloqueAccionOperativa_() +
     '</td></tr>\n' +
     '<tr><td class="marco-pie">\n' +
@@ -878,10 +913,10 @@ function bloqueAccionOperativa_() {
  * en una misma fila: el texto legal aprovecha el ancho que antes quedaba
  * muerto junto al QR, y el QR cierra la hoja como llamada a la acción.
  */
-function bloqueObservacionesYQr_() {
+function bloqueObservacionesYQr_(data) {
   return '<table class="cierre" role="presentation">\n' +
     '<colgroup><col style="width:79%"><col style="width:21%"></colgroup>\n<tr>\n' +
-    '<td class="cierre-obs">' + bloqueObservaciones_() + '</td>\n' +
+    '<td class="cierre-obs">' + bloqueObservaciones_(data) + '</td>\n' +
     '<td class="cierre-qr">' +
       '<div class="qr-tarjeta">' +
         '<h3>¿Deseas una nueva propuesta para tu viaje?</h3>' +
@@ -893,12 +928,12 @@ function bloqueObservacionesYQr_() {
     '</tr>\n</table>\n';
 }
 
-function bloqueObservaciones_() {
+function bloqueObservaciones_(data) {
   return '<div class="obs">\n' +
     '<h3>Observaciones</h3>\n' +
     '<ol>\n' +
     '<li>La presente es únicamente una PROPUESTA DE SEGURO, POR LO QUE NO SURTE NINGÚN EFECTO LEGAL COMO PÓLIZA DE SEGURO</li>\n' +
-    '<li>La presente propuesta tiene un máximo de 10 DÍAS NATURALES a partir de la fecha y hora de la propuesta, ' +
+    '<li>La presente propuesta tiene VIGENCIA HASTA EL ' + escaparHtml_(data.vigenciaCotizacion) + ' A LAS 12:00 HRS; ' +
     'en caso de la aceptación de la misma, deberá sujetarse a las condiciones y políticas vigentes de Seguros Atlas.</li>\n' +
     '<li>En caso de existir una propuesta anterior o póliza emitida vigente, esta propuesta quedará sin efecto alguno.</li>\n' +
     '</ol>\n' +
