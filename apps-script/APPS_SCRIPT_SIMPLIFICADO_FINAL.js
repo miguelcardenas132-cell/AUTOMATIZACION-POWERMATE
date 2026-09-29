@@ -171,7 +171,7 @@ const FUENTE_CORREO = "'Aptos Display',Arial,sans-serif";
 
 // Ancho máximo de la tarjeta del correo en computadora, en px. En pantallas
 // más angostas (teléfono) la tarjeta se ajusta al ancho disponible.
-const ANCHO_CORREO = 800;
+const ANCHO_CORREO = 850;
 
 /**
  * Tabla de coberturas y sumas aseguradas.
