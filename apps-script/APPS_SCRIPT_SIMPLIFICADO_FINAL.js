@@ -161,6 +161,10 @@ const COLORES = {
   FONDO_CORREO: '#f3f4f3'
 };
 
+// Fuente de los correos. Entre comillas simples porque va dentro de
+// atributos style="..." (comillas dobles).
+const FUENTE_CORREO = "'Aptos Display',Arial,sans-serif";
+
 /**
  * Tabla de coberturas y sumas aseguradas.
  * Orden de columnas: [concepto, Master, Master Smart, Master Elite, Master Premium].
@@ -834,8 +838,8 @@ function bloqueAccionOperativa_() {
       '<ul>' +
         '<li>• <strong>Revisión de datos:</strong> verifica que la información de los asegurados y del contratante ' +
         'sea correcta y legible.</li>' +
-        '<li>• <strong>Tiempo de gestión:</strong> la solicitud de emisión deberá ser enviada hasta un máximo ' +
-        'de 4 días hábiles antes de iniciar tu viaje.</li>' +
+        '<li>• <strong>Tiempo de gestión:</strong> la solicitud de emisión deberá ser enviada de 24 hasta ' +
+        '72 horas antes de iniciar tu viaje.</li>' +
         '<li>• <strong>Correcciones:</strong> los cambios por errores u omisiones toman de 3 a 5 días hábiles.</li>' +
         '<li>• <strong>Actualizaciones:</strong> cualquier cambio en los días de viaje requiere una nueva ' +
         'propuesta previa a la emisión.</li>' +
@@ -975,7 +979,7 @@ function encabezadoCorreo_(titulo) {
 
 /** Despedida más la firma corporativa. */
 function pieCorreo_() {
-  return '<p style="margin:12px 0 16px 0;">Saludos.</p>' +
+  return '<p style="margin:20px 0 14px 0;">Saludos.</p>' +
     firmaCorreo_();
 }
 
@@ -986,21 +990,68 @@ function pieCorreo_() {
  */
 function firmaCorreo_() {
   const linea = (contenido) =>
-    '<div style="font-size:12px;line-height:1.45;color:#333333;' +
-    'font-family:\'Aptos Display\',Arial,sans-serif;">' + contenido + '</div>';
+    '<div style="font-size:10pt;line-height:1.5;color:#222222;font-family:' + FUENTE_CORREO + ';">' +
+    contenido + '</div>';
 
-  return '<table role="presentation" cellpadding="0" cellspacing="0" ' +
-    'style="border-collapse:collapse;border-top:1px solid ' + COLORES.BORDE + ';padding-top:12px;">' +
-    '<tr><td style="padding:12px 0 0 0;">' +
-      '<div style="font-size:14px;font-weight:bold;color:' + COLORES.AZUL + ';margin-bottom:8px;' +
-        'font-family:\'Aptos Display\',Arial,sans-serif;">Seguro de Viaje</div>' +
-      linea('<strong>Tel.</strong> (55) 9177 &ndash; 5000 Ext. 4931') +
-      linea('<strong>Correo.</strong> <a href="mailto:segurodeviaje@segurosatlas.com.mx" ' +
+  return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">' +
+    '<tr><td bgcolor="' + COLORES.GRIS_TABLA + '" style="padding:14px 18px;background-color:' + COLORES.GRIS_TABLA + ';">' +
+      '<div style="font-size:12pt;font-weight:bold;color:' + COLORES.VERDE + ';font-family:' + FUENTE_CORREO + ';">' +
+        'Seguro de Viaje</div>' +
+      '<div style="font-size:10pt;color:#222222;margin-bottom:14px;font-family:' + FUENTE_CORREO + ';">' +
+        'DINE (Dirección de Negocios Especiales)</div>' +
+      linea('<strong>Tel.</strong> (55) 9177 &ndash; 5000 Ext. 5114') +
+      linea('<strong>Cel:</strong> 55 1322 6276') +
+      linea('<strong>Correo:</strong> <a href="mailto:segurodeviaje@segurosatlas.com.mx" ' +
         'style="color:' + COLORES.VERDE + ';">segurodeviaje@segurosatlas.com.mx</a>') +
-      linea('AV. Paseo de los Tamarindos No. 60 INT. PB, C.P. 05120') +
-      linea('Col. Bosques de las Lomas, Ciudad de México') +
-      '<img src="' + escaparHtml_(CONFIG.URL_FIRMA_CORREO) + '" alt="85 Aniversario Seguros Atlas" ' +
-      'width="260" style="display:block;width:260px;max-width:100%;height:auto;border:0;margin-top:12px;">' +
+    '</td></tr></table>' +
+    '<div style="padding:10px 0 0 16px;font-size:9pt;line-height:1.4;color:#8a8a8a;font-family:' + FUENTE_CORREO + ';">' +
+      'Av. Paseo de los Tamarindos No. 60 INT. PB, C.P. 05120<br>Col. Bosques de las Lomas, Ciudad de México</div>' +
+    '<img src="' + escaparHtml_(CONFIG.URL_FIRMA_CORREO) + '" alt="85 Aniversario Seguros Atlas" ' +
+    'width="260" style="display:block;width:260px;max-width:100%;height:auto;border:0;margin-top:6px;">';
+}
+
+/** Barra verde de cierre dentro de la tarjeta, debajo del contenido. */
+function barraPieCorreo_() {
+  return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">' +
+    '<tr><td bgcolor="' + COLORES.VERDE + '" align="center" style="padding:14px 18px;background-color:' + COLORES.VERDE + ';' +
+      'color:#ffffff;font-size:9pt;line-height:1.5;text-align:center;font-family:' + FUENTE_CORREO + ';">' +
+      'Este correo es enviado por Seguro de Viaje de Seguros Atlas.<br>' +
+      'Si tienes alguna duda contacta con tu ejecutivo asignado.' +
+    '</td></tr></table>';
+}
+
+/**
+ * Lista con viñetas o numerada armada con tabla (una fila por elemento):
+ * Outlook desktop aplica sangrías impredecibles a <ul>/<ol>, y así la
+ * sangría francesa queda igual en todos los clientes.
+ */
+function listaCorreo_(elementos, numerada) {
+  return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">' +
+    elementos.map((elemento, i) =>
+      '<tr>' +
+        '<td valign="top" style="width:28px;padding:2px 0 2px 12px;font-size:10.5pt;line-height:1.4;color:#222222;' +
+          'font-family:' + FUENTE_CORREO + ';">' + (numerada ? (i + 1) + '.' : '&bull;') + '</td>' +
+        '<td valign="top" style="padding:2px 0;font-size:10.5pt;line-height:1.4;color:#222222;' +
+          'font-family:' + FUENTE_CORREO + ';">' + elemento + '</td>' +
+      '</tr>'
+    ).join('') +
+    '</table>';
+}
+
+/**
+ * Recuadro de instrucciones: título con ícono, texto y lista. Con borde
+ * izquierdo de color si se indica; si no, borde fino alrededor.
+ */
+function recuadroCorreo_(icono, titulo, contenidoHtml, fondo, bordeIzquierdo) {
+  const borde = bordeIzquierdo
+    ? 'border-left:4px solid ' + bordeIzquierdo + ';'
+    : 'border:1px solid ' + COLORES.BORDE + ';';
+  return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">' +
+    '<tr><td bgcolor="' + fondo + '" style="padding:14px 16px;background-color:' + fondo + ';' + borde +
+      'font-size:10.5pt;line-height:1.4;color:#222222;font-family:' + FUENTE_CORREO + ';">' +
+      '<div style="font-size:11pt;font-weight:bold;margin-bottom:4px;font-family:' + FUENTE_CORREO + ';">' +
+        icono + '&nbsp; ' + titulo + '</div>' +
+      contenidoHtml +
     '</td></tr></table>';
 }
 
@@ -1078,9 +1129,9 @@ function construirCorreoAprobado_(data) {
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">' +
     '<tr><td bgcolor="#ffffff" style="padding:18px;background-color:#ffffff;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
 
-      '<p style="margin:8px 0 18px 0;">Estimado(a) ' + escaparHtml_(data.nombreSolicitante) + ':</p>' +
-      '<p style="margin:0 0 16px 0;">Adjunto encontraras la propuesta correspondiente en tu solicitud. ' +
-      'A continuación el resumen</p>' +
+      '<p style="margin:8px 0 16px 0;font-weight:bold;">¡Hola ' + escaparHtml_(data.nombreSolicitante) + ', buen día!</p>' +
+      '<p style="margin:0 0 16px 0;">En adjunto encontrarás la <strong>propuesta solicitada</strong> y el ' +
+      '<strong>formato de emisión</strong>. A continuación, el resumen:</p>' +
 
       '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
       'style="border-collapse:collapse;background-color:' + COLORES.VERDE_CLARO + ';">' +
@@ -1115,18 +1166,63 @@ function construirCorreoAprobado_(data) {
 
       construirAvisoExcluidos_(data.pasajerosExcluidos) +
 
-      '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
-      'style="border-collapse:collapse;background-color:' + COLORES.VERDE_CLARO + ';border-left:4px solid ' + COLORES.VERDE + ';margin-bottom:18px;">' +
-        '<tr><td style="padding:12px 14px;">' +
-          '<strong style="color:' + COLORES.VERDE + ';">Revisión obligatoria del documento adjunto</strong><br>' +
-          'El detalle completo de <strong>coberturas, sumas aseguradas, especificaciones y requisitos de emisión</strong> ' +
-          'se encuentra únicamente en la propuesta en PDF adjunta a este correo. Le solicitamos revisarla en su ' +
-          'totalidad antes de aceptar cualquier plan.' +
-        '</td></tr>' +
-      '</table>' +
+      '<p style="margin:0 0 16px 0;">En caso de aceptación de la propuesta, para proceder con la generación de la ' +
+      'póliza, te agradecemos seguir estas indicaciones:</p>' +
+
+      recuadroCorreo_('&#128196;', 'Solicitud de Emisión',
+        '<div>Favor de enviar la siguiente documentación al correo ' +
+        '<a href="mailto:segurodeviaje@segurosatlas.com.mx" style="color:' + COLORES.VERDE + ';">' +
+        'segurodeviaje@segurosatlas.com.mx</a>:</div>' +
+        listaCorreo_([
+          '<strong>Formato de emisión</strong> debidamente llenado.',
+          '<strong>Propuesta aceptada.</strong>',
+          '<strong>TCC y TCI</strong> (solicítalos a tu Mesa de Control).',
+          '<strong>Constancia de Situación Fiscal (CSF)</strong> actualizada.'
+        ]),
+        COLORES.GRIS_TABLA, COLORES.AZUL) +
+      espaciador_(16) +
+
+      recuadroCorreo_('&#9888;&#65039;', 'Consideraciones Importantes',
+        '<div>Para garantizar un proceso sin contratiempos, te pedimos tomar en cuenta lo siguiente:</div>' +
+        listaCorreo_([
+          '<strong>Revisión de datos:</strong> verifica que la información de los asegurados y del contratante ' +
+            'sea correcta y legible.',
+          '<strong>Tiempo de emisión:</strong> la solicitud debe enviarse de <strong>24 hasta 72 horas</strong> ' +
+            'antes del inicio del viaje.',
+          '<strong>Correcciones:</strong> los cambios por errores u omisiones en la solicitud inicial toman de ' +
+            '<strong>3 a 5 días hábiles</strong>.',
+          '<strong>Actualizaciones:</strong> cualquier cambio en los días de viaje requiere una ' +
+            '<strong>nueva propuesta</strong> previa a la emisión.'
+        ]),
+        COLORES.AMBAR_FONDO, COLORES.AMBAR_BORDE) +
+      espaciador_(16) +
+
+      '<div style="font-size:11pt;font-weight:bold;">&#128197;&nbsp; Vigencia de la Propuesta</div>' +
+      '<div style="padding:4px 0 0 28px;">Límite: ' +
+        '<span style="background-color:#ffff00;mso-highlight:yellow;font-weight:bold;">' +
+        escaparHtml_(data.vigenciaCotizacion) + ' antes de las 12:00 hrs.</span></div>' +
+      '<div style="padding:4px 0 0 28px;font-size:10.5pt;"><strong><em>¡¡Importante!!:</em></strong> ' +
+        'si no se recibe la documentación completa antes de esta fecha y hora, incluyendo el TCC y el TCI, ' +
+        'la póliza no será entregada.</div>' +
+      espaciador_(16) +
+
+      recuadroCorreo_('&#128195;', 'Registro de Constancia Fiscal',
+        '<div>En caso de requerir factura, antes de solicitar la emisión es indispensable registrar la ' +
+        'Constancia de Situación Fiscal (CSF) enviando un correo a ' +
+        '<a href="mailto:constanciafiscal@segurosatlas.com.mx" style="color:' + COLORES.VERDE + ';">' +
+        'constanciafiscal@segurosatlas.com.mx</a> con este formato estricto:</div>' +
+        listaCorreo_([
+          '<strong>Asunto (mayúsculas):</strong> RFC DEL CONTRATANTE.',
+          '<strong>Contenido:</strong> completamente en blanco (sin firma, sin texto).',
+          '<strong>Archivo adjunto (PDF en mayúsculas):</strong> CONSTANCIA + RFC.',
+          '<strong>Confirmación:</strong> deberás recibir un correo de vuelta con el estatus de ' +
+            '<strong>"Registro Exitoso"</strong>.'
+        ], true),
+        COLORES.GRIS_FILA) +
 
       pieCorreo_() +
     '</td></tr></table>' +
+    barraPieCorreo_() +
     avisoPrivacidadCorreo_()
   );
 }
@@ -1171,6 +1267,7 @@ function construirCorreoRechazo_(data) {
       avisoExcluidos +
       pieCorreo_() +
     '</td></tr></table>' +
+    barraPieCorreo_() +
     avisoPrivacidadCorreo_()
   );
 }
