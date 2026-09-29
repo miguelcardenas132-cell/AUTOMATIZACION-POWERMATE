@@ -173,6 +173,10 @@ const FUENTE_CORREO = "'Aptos Display',Arial,sans-serif";
 // más angostas (teléfono) la tarjeta se ajusta al ancho disponible.
 const ANCHO_CORREO = 850;
 
+// Distancia del borde exterior de cualquier recuadro o tabla del correo al
+// inicio del texto, en px. Una sola medida para que todo quede alineado.
+const SANGRIA_RECUADRO = 14;
+
 /**
  * Tabla de coberturas y sumas aseguradas.
  * Orden de columnas: [concepto, Master, Master Smart, Master Elite, Master Premium].
@@ -1016,7 +1020,7 @@ function encabezadoCorreo_(titulo) {
   return '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
     'style="background-color:' + COLORES.VERDE + ';border-collapse:collapse;">' +
     '<tr>' +
-      '<td align="left" valign="middle" style="padding:14px 10px 14px 18px;">' +
+      '<td align="left" valign="middle" style="padding:14px 10px 14px 19px;">' +
         '<div style="font-size:21px;font-weight:bold;color:#ffffff;font-family:\'Aptos Display\',Arial,sans-serif;">' +
           escaparHtml_(titulo) + '</div>' +
         '<div style="font-size:11px;color:#cfe6da;margin-top:3px;font-family:\'Aptos Display\',Arial,sans-serif;">' +
@@ -1047,7 +1051,7 @@ function firmaCorreo_() {
     contenido + '</div>';
 
   return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">' +
-    '<tr><td bgcolor="' + COLORES.GRIS_TABLA + '" style="padding:14px 18px;background-color:' + COLORES.GRIS_TABLA + ';">' +
+    '<tr><td bgcolor="' + COLORES.GRIS_TABLA + '" style="padding:14px 16px 14px 14px;background-color:' + COLORES.GRIS_TABLA + ';">' +
       '<div style="font-size:12pt;font-weight:bold;color:' + COLORES.VERDE + ';font-family:' + FUENTE_CORREO + ';">' +
         'Seguro de Viaje</div>' +
       '<div style="font-size:10pt;color:#222222;margin-bottom:14px;font-family:' + FUENTE_CORREO + ';">' +
@@ -1056,7 +1060,7 @@ function firmaCorreo_() {
       linea('<strong>Correo:</strong> <a href="mailto:segurodeviaje@segurosatlas.com.mx" ' +
         'style="color:' + COLORES.VERDE + ';">segurodeviaje@segurosatlas.com.mx</a>') +
     '</td></tr></table>' +
-    '<div style="padding:10px 0 0 16px;font-size:9pt;line-height:1.4;color:#8a8a8a;font-family:' + FUENTE_CORREO + ';">' +
+    '<div style="padding:10px 0 0 0;font-size:9pt;line-height:1.4;color:#8a8a8a;font-family:' + FUENTE_CORREO + ';">' +
       'Av. Paseo de los Tamarindos No. 60 INT. PB, C.P. 05120<br>Col. Bosques de las Lomas, Ciudad de México</div>' +
     '<img src="' + escaparHtml_(CONFIG.URL_FIRMA_CORREO) + '" alt="85 Aniversario Seguros Atlas" ' +
     'width="260" style="display:block;width:260px;max-width:100%;height:auto;border:0;margin-top:6px;">';
@@ -1081,7 +1085,7 @@ function listaCorreo_(elementos, numerada) {
   return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">' +
     elementos.map((elemento, i) =>
       '<tr>' +
-        '<td valign="top" style="width:28px;padding:2px 0 2px 12px;font-size:10.5pt;line-height:1.4;color:#222222;' +
+        '<td valign="top" style="width:18px;padding:2px 0;font-size:10.5pt;line-height:1.4;color:#222222;' +
           'font-family:' + FUENTE_CORREO + ';">' + (numerada ? (i + 1) + '.' : '&bull;') + '</td>' +
         '<td valign="top" style="padding:2px 0;font-size:10.5pt;line-height:1.4;color:#222222;' +
           'font-family:' + FUENTE_CORREO + ';">' + elemento + '</td>' +
@@ -1095,9 +1099,11 @@ function listaCorreo_(elementos, numerada) {
  * izquierdo de color si se indica; si no, borde fino alrededor.
  */
 function recuadroCorreo_(icono, titulo, contenidoHtml, fondo, bordeIzquierdo) {
+  // El texto queda siempre a SANGRIA_RECUADRO del borde exterior, tenga
+  // franja de color de 4px o borde fino de 1px.
   const borde = bordeIzquierdo
-    ? 'border-left:4px solid ' + bordeIzquierdo + ';'
-    : 'border:1px solid ' + COLORES.BORDE + ';';
+    ? 'border-left:4px solid ' + bordeIzquierdo + ';padding-left:' + (SANGRIA_RECUADRO - 4) + 'px;'
+    : 'border:1px solid ' + COLORES.BORDE + ';padding-left:' + (SANGRIA_RECUADRO - 1) + 'px;';
   return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">' +
     '<tr><td bgcolor="' + fondo + '" style="padding:14px 16px;background-color:' + fondo + ';' + borde +
       'font-size:10.5pt;line-height:1.4;color:#222222;font-family:' + FUENTE_CORREO + ';">' +
@@ -1164,10 +1170,10 @@ function envolverCorreo_(contenidoHtml) {
 /** Fila etiqueta/valor de las tablas resumen (verde claro) del correo. */
 function filaResumen_(etiqueta, valor) {
   return '<tr>' +
-    '<td style="padding:5px 10px;border-bottom:1px solid ' + COLORES.BORDE + ';font-weight:bold;color:' + COLORES.AZUL + ';' +
+    '<td style="padding:5px 14px;border-bottom:1px solid ' + COLORES.BORDE + ';font-weight:bold;color:' + COLORES.AZUL + ';' +
       'width:42%;font-size:11pt;font-family:\'Aptos Display\',Arial,sans-serif;">' +
       escaparHtml_(etiqueta) + '</td>' +
-    '<td style="padding:5px 10px;border-bottom:1px solid ' + COLORES.BORDE + ';color:#333;' +
+    '<td style="padding:5px 14px;border-bottom:1px solid ' + COLORES.BORDE + ';color:#333;' +
       'font-size:11pt;font-family:\'Aptos Display\',Arial,sans-serif;">' +
       escaparHtml_(valor) + '</td>' +
     '</tr>';
@@ -1176,9 +1182,9 @@ function filaResumen_(etiqueta, valor) {
 function construirCorreoAprobado_(data) {
   const filaPlan = (plan, total) =>
     '<tr>' +
-    '<td style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';color:#333;' +
+    '<td style="padding:7px 14px 7px ' + (SANGRIA_RECUADRO - 1) + 'px;border:1px solid ' + COLORES.BORDE + ';color:#333;' +
       'font-size:11pt;font-family:\'Aptos Display\',Arial,sans-serif;">' + escaparHtml_(plan) + '</td>' +
-    '<td style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';text-align:right;font-weight:bold;color:#333;' +
+    '<td style="padding:7px 14px;border:1px solid ' + COLORES.BORDE + ';text-align:right;font-weight:bold;color:#333;' +
       'font-size:11pt;font-family:\'Aptos Display\',Arial,sans-serif;">' +
       formatearMoneda_(total) + ' USD</td>' +
     '</tr>';
@@ -1212,8 +1218,8 @@ function construirCorreoAprobado_(data) {
 
       '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:8px;">' +
         '<tr>' +
-          '<th style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';background-color:' + COLORES.VERDE + ';color:#ffffff;text-align:left;font-size:11pt;">Plan</th>' +
-          '<th style="padding:7px 10px;border:1px solid ' + COLORES.BORDE + ';background-color:' + COLORES.VERDE + ';color:#ffffff;text-align:right;font-size:11pt;">' +
+          '<th style="padding:7px 14px 7px ' + (SANGRIA_RECUADRO - 1) + 'px;border:1px solid ' + COLORES.BORDE + ';background-color:' + COLORES.VERDE + ';color:#ffffff;text-align:left;font-size:11pt;">Plan</th>' +
+          '<th style="padding:7px 14px;border:1px solid ' + COLORES.BORDE + ';background-color:' + COLORES.VERDE + ';color:#ffffff;text-align:right;font-size:11pt;">' +
             '<span style="font-weight:normal;font-size:9pt;color:#e3f1ef;">Prima Neta por (' +
             data.numAsegurados + ' ' + (data.numAsegurados === 1 ? 'asegurado' : 'asegurados') + ') + IVA en USD</span>' +
             '<br>Prima total' +
@@ -1261,10 +1267,10 @@ function construirCorreoAprobado_(data) {
       espaciador_(16) +
 
       '<div style="font-size:11pt;font-weight:bold;">&#128197;&nbsp; Vigencia de la Propuesta</div>' +
-      '<div style="padding:4px 0 0 28px;">Límite: ' +
+      '<div style="padding:4px 0 0 0;">Límite: ' +
         '<span style="background-color:#ffff00;mso-highlight:yellow;font-weight:bold;">' +
         escaparHtml_(data.vigenciaCotizacion) + ' antes de las 12:00 hrs.</span></div>' +
-      '<div style="padding:4px 0 0 28px;font-size:10.5pt;"><strong><em>¡¡Importante!!:</em></strong> ' +
+      '<div style="padding:4px 0 0 0;font-size:10.5pt;"><strong><em>¡¡Importante!!:</em></strong> ' +
         'si no se recibe la documentación completa antes de esta fecha y hora, incluyendo el TCC y el TCI, ' +
         'la póliza no será entregada.</div>' +
       espaciador_(16) +
@@ -1324,7 +1330,7 @@ function construirCorreoRechazo_(data) {
 
       '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
       'style="border-collapse:collapse;background-color:' + COLORES.ROJO_FONDO + ';border-left:4px solid ' + COLORES.ROJO_BORDE + ';margin-bottom:18px;">' +
-        '<tr><td style="padding:12px 14px;">' + motivo + '</td></tr>' +
+        '<tr><td style="padding:12px 16px 12px ' + (SANGRIA_RECUADRO - 4) + 'px;">' + motivo + '</td></tr>' +
       '</table>' +
 
       avisoExcluidos +
@@ -1435,7 +1441,7 @@ function construirAvisoExcluidos_(pasajerosExcluidos) {
   return '' +
     '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
     'style="border-collapse:collapse;background-color:' + COLORES.AMBAR_FONDO + ';border-left:4px solid ' + COLORES.AMBAR_BORDE + ';margin-bottom:18px;">' +
-      '<tr><td style="padding:12px 14px;">' +
+      '<tr><td style="padding:12px 16px 12px ' + (SANGRIA_RECUADRO - 4) + 'px;">' +
         '<strong style="color:' + COLORES.AMBAR_TEXTO + ';">Aviso importante</strong><br>' +
         textoExcluidosPorEdad_(pasajerosExcluidos) +
       '</td></tr>' +
