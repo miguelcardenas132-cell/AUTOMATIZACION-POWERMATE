@@ -77,15 +77,17 @@ const CONFIG = {
   MAX_ASEGURADOS: 5,
 
   // Formatos de solicitud de emisión que Power Automate adjunta al correo
-  // aprobado, tomándolos de OneDrive con la ruta que manda este script:
-  // el individual si hay 1 asegurado, el grupal si hay de 2 a MAX_ASEGURADOS.
-  CARPETA_FORMATOS_EMISION: '/Cotizaciones Plantilla',
+  // aprobado, tomándolos de Google Drive (Mi unidad) con la ruta que manda
+  // este script: el individual si hay 1 asegurado, el grupal si hay de 2 a
+  // MAX_ASEGURADOS. Si se mueven o renombran en Drive, hay que actualizar
+  // aquí la carpeta o el nombre exacto.
+  CARPETA_FORMATOS_EMISION: '/COTIZACIONES',
   FORMATO_EMISION_INDIVIDUAL: {
-    archivo: 'SOLICITUD_EMISION_INDIVIDUAL.pdf',
+    archivo: 'SOLICITUD EMISION INDIVIDUAL.pdf',
     nombreAdjunto: 'Solicitud de emisión individual.pdf'
   },
   FORMATO_EMISION_GRUPAL: {
-    archivo: 'SOLICITUD_DE_SEGURO_DE_VIAJE_GRUPAL_v2.pdf',
+    archivo: 'SOLICITUD DE SEGURO DE VIAJE_GRUPAL v2.pdf',
     nombreAdjunto: 'Solicitud de emisión grupal.pdf'
   },
 
@@ -1534,7 +1536,7 @@ function enviarWebhookPowerAutomate_(archivoHtml, data, htmlCotizacion) {
     nombreArchivo: aprobado ? construirNombreArchivoPdf_(data) : '',
 
     // Formato de solicitud de emisión que Power Automate adjunta como
-    // segundo archivo (solo aprobadas): ruta en OneDrive para "Get file
+    // segundo archivo (solo aprobadas): ruta en Google Drive para "Get file
     // content using path" y nombre con el que llega al cliente.
     formatoEmisionRuta: aprobado ? formatoEmision_(data).ruta : '',
     formatoEmisionNombre: aprobado ? formatoEmision_(data).nombreAdjunto : '',
