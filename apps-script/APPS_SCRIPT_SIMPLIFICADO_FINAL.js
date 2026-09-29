@@ -1000,7 +1000,6 @@ function firmaCorreo_() {
       '<div style="font-size:10pt;color:#222222;margin-bottom:14px;font-family:' + FUENTE_CORREO + ';">' +
         'DINE (Dirección de Negocios Especiales)</div>' +
       linea('<strong>Tel.</strong> (55) 9177 &ndash; 5000 Ext. 5114') +
-      linea('<strong>Cel:</strong> 55 1322 6276') +
       linea('<strong>Correo:</strong> <a href="mailto:segurodeviaje@segurosatlas.com.mx" ' +
         'style="color:' + COLORES.VERDE + ';">segurodeviaje@segurosatlas.com.mx</a>') +
     '</td></tr></table>' +
