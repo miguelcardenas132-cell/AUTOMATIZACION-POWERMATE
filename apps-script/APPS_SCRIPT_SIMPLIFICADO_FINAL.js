@@ -915,7 +915,8 @@ function bloqueAccionOperativa_() {
       '<ul>' +
         '<li>• Formato de emisión debidamente llenado.</li>' +
         '<li>• Propuesta aceptada.</li>' +
-        '<li>• Constancia de Situación Fiscal (CSF) actualizada.</li>' +
+        '<li>• <strong>Obligatorio del contratante:</strong> Constancia de Situación Fiscal (CSF) ' +
+          'actualizada e INE o pasaporte.</li>' +
       '</ul>' +
     '</td>\n' +
     '<td class="celda">' +
@@ -970,7 +971,7 @@ function bloqueObservaciones_(data) {
     '<h3>Observaciones</h3>\n' +
     '<ol>\n' +
     '<li>La presente es únicamente una PROPUESTA DE SEGURO, POR LO QUE NO SURTE NINGÚN EFECTO LEGAL COMO PÓLIZA DE SEGURO</li>\n' +
-    '<li>La presente propuesta tiene VIGENCIA HASTA EL ' + escaparHtml_(data.vigenciaCotizacion) + ' A LAS 12:00 HRS; ' +
+    '<li>La presente propuesta tiene VIGENCIA HASTA EL ' + escaparHtml_(data.vigenciaCotizacion) + '; ' +
     'en caso de la aceptación de la misma, deberá sujetarse a las condiciones y políticas vigentes de Seguros Atlas.</li>\n' +
     '<li>En caso de existir una propuesta anterior o póliza emitida vigente, esta propuesta quedará sin efecto alguno.</li>\n' +
     '</ol>\n' +
@@ -1283,7 +1284,8 @@ function construirCorreoAprobado_(data) {
         listaCorreo_([
           '<strong>Formato de emisión</strong> debidamente llenado.',
           '<strong>Propuesta aceptada.</strong>',
-          '<strong>Constancia de Situación Fiscal (CSF)</strong> actualizada.'
+          '<strong>Obligatorio del contratante:</strong> Constancia de Situación Fiscal (CSF) actualizada e ' +
+            'INE o pasaporte.'
         ], COLORES.GRIS_TABLA),
         COLORES.GRIS_TABLA, COLORES.AZUL) +
       espaciador_(16) +
