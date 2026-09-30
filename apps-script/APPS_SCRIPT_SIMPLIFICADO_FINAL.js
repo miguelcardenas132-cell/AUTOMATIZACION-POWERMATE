@@ -195,6 +195,11 @@ const FUENTE_CORREO = "'Aptos Display',Arial,sans-serif";
 // más angostas (teléfono) la tarjeta se ajusta al ancho disponible.
 const ANCHO_CORREO = 850;
 
+// Letra del texto corrido del correo después del resumen (avisos,
+// indicaciones, recuadros, "Saludos."). El saludo, la introducción y las
+// tablas de resumen y primas se quedan en 11pt.
+const TEXTO_CUERPO_CORREO = 'font-size:10.5pt;line-height:1.4;font-family:' + FUENTE_CORREO + ';';
+
 // Distancia del borde exterior de cualquier recuadro o tabla del correo al
 // inicio del texto, en px. Una sola medida para que todo quede alineado.
 const SANGRIA_RECUADRO = 14;
@@ -910,7 +915,6 @@ function bloqueAccionOperativa_() {
       '<ul>' +
         '<li>• Formato de emisión debidamente llenado.</li>' +
         '<li>• Propuesta aceptada.</li>' +
-        '<li>• TCC y TCI (solicítalos a tu Mesa de Control).</li>' +
         '<li>• Constancia de Situación Fiscal (CSF) actualizada.</li>' +
       '</ul>' +
     '</td>\n' +
@@ -1060,7 +1064,7 @@ function encabezadoCorreo_(titulo) {
 
 /** Despedida más la firma corporativa. */
 function pieCorreo_() {
-  return '<p style="margin:20px 0 0 0;">Saludos.</p>' +
+  return '<p style="margin:20px 0 0 0;' + TEXTO_CUERPO_CORREO + '">Saludos.</p>' +
     espaciador_(32) +
     firmaCorreo_();
 }
@@ -1105,15 +1109,21 @@ function barraPieCorreo_() {
  * Lista con viñetas o numerada armada con tabla (una fila por elemento):
  * Outlook desktop aplica sangrías impredecibles a <ul>/<ol>, y así la
  * sangría francesa queda igual en todos los clientes.
+ *
+ * La tabla y sus celdas llevan el mismo fondo que el recuadro que la
+ * contiene, y el interlineado va en px exactos: con pantallas escaladas
+ * (125%, 150%) Outlook deja ver líneas blancas entre filas si no.
  */
-function listaCorreo_(elementos, numerada) {
-  return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">' +
+function listaCorreo_(elementos, fondo, numerada) {
+  const celda = 'padding:2px 0;font-size:10.5pt;mso-line-height-rule:exactly;line-height:20px;color:#222222;' +
+    'background-color:' + fondo + ';font-family:' + FUENTE_CORREO + ';';
+  return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" bgcolor="' + fondo + '" ' +
+    'style="border-collapse:collapse;background-color:' + fondo + ';">' +
     elementos.map((elemento, i) =>
       '<tr>' +
-        '<td valign="top" style="width:18px;padding:2px 0;font-size:10.5pt;line-height:1.4;color:#222222;' +
-          'font-family:' + FUENTE_CORREO + ';">' + (numerada ? (i + 1) + '.' : '&bull;') + '</td>' +
-        '<td valign="top" style="padding:2px 0;font-size:10.5pt;line-height:1.4;color:#222222;' +
-          'font-family:' + FUENTE_CORREO + ';">' + elemento + '</td>' +
+        '<td valign="top" bgcolor="' + fondo + '" style="width:18px;' + celda + '">' +
+          (numerada ? (i + 1) + '.' : '&bull;') + '</td>' +
+        '<td valign="top" bgcolor="' + fondo + '" style="' + celda + '">' + elemento + '</td>' +
       '</tr>'
     ).join('') +
     '</table>';
@@ -1260,8 +1270,11 @@ function construirCorreoAprobado_(data) {
 
       construirAvisoExcluidos_(data.pasajerosExcluidos) +
 
-      '<p style="margin:0 0 16px 0;">En caso de aceptación de la propuesta, para proceder con la generación de la ' +
-      'póliza, te agradecemos seguir estas indicaciones:</p>' +
+      '<p style="margin:0 0 8px 0;' + TEXTO_CUERPO_CORREO + '">En caso de aceptación de la propuesta, para proceder ' +
+      'con la generación de la póliza, te agradecemos seguir estas indicaciones:</p>' +
+      '<p style="margin:0;' + TEXTO_CUERPO_CORREO + '"><strong><em>¡¡Importante!!:</em></strong> si no se recibe la ' +
+      'documentación completa antes de la fecha límite, la póliza no será entregada.</p>' +
+      espaciador_(16) +
 
       recuadroCorreo_('&#128196;', 'Solicitud de Emisión',
         '<div>Favor de enviar la siguiente documentación al correo ' +
@@ -1270,9 +1283,8 @@ function construirCorreoAprobado_(data) {
         listaCorreo_([
           '<strong>Formato de emisión</strong> debidamente llenado.',
           '<strong>Propuesta aceptada.</strong>',
-          '<strong>TCC y TCI</strong> (solicítalos a tu Mesa de Control).',
           '<strong>Constancia de Situación Fiscal (CSF)</strong> actualizada.'
-        ]),
+        ], COLORES.GRIS_TABLA),
         COLORES.GRIS_TABLA, COLORES.AZUL) +
       espaciador_(16) +
 
@@ -1287,17 +1299,8 @@ function construirCorreoAprobado_(data) {
             '<strong>3 a 5 días hábiles</strong>.',
           '<strong>Actualizaciones:</strong> cualquier cambio en los días de viaje requiere una ' +
             '<strong>nueva propuesta</strong> previa a la emisión.'
-        ]),
+        ], COLORES.AMBAR_FONDO),
         COLORES.AMBAR_FONDO, COLORES.AMBAR_BORDE) +
-      espaciador_(16) +
-
-      '<div style="font-size:11pt;font-weight:bold;">&#128197;&nbsp; Vigencia de la Propuesta</div>' +
-      '<div style="padding:4px 0 0 0;">Límite: ' +
-        '<span style="background-color:#ffff00;mso-highlight:yellow;font-weight:bold;">' +
-        escaparHtml_(data.vigenciaCotizacion) + ' antes de las 12:00 hrs.</span></div>' +
-      '<div style="padding:4px 0 0 0;font-size:10.5pt;"><strong><em>¡¡Importante!!:</em></strong> ' +
-        'si no se recibe la documentación completa antes de esta fecha y hora, incluyendo el TCC y el TCI, ' +
-        'la póliza no será entregada.</div>' +
       espaciador_(16) +
 
       recuadroCorreo_('&#128195;', 'Registro de Constancia Fiscal',
@@ -1311,7 +1314,7 @@ function construirCorreoAprobado_(data) {
           '<strong>Archivo adjunto (PDF en mayúsculas):</strong> CONSTANCIA + RFC.',
           '<strong>Confirmación:</strong> deberás recibir un correo de vuelta con el estatus de ' +
             '<strong>"Registro Exitoso"</strong>.'
-        ], true),
+        ], COLORES.GRIS_FILA, true),
         COLORES.GRIS_FILA) +
 
       pieCorreo_() +
@@ -1356,9 +1359,10 @@ function construirCorreoRechazo_(data) {
       '<p style="margin:8px 0 16px 0;font-weight:bold;">¡Hola ' + escaparHtml_(data.nombreSolicitante) + ', buen día!</p>' +
 
       '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
-      'style="border-collapse:collapse;background-color:' + COLORES.ROJO_FONDO + ';border-left:4px solid ' + COLORES.ROJO_BORDE + ';margin-bottom:18px;">' +
-        '<tr><td style="padding:12px 16px 12px ' + (SANGRIA_RECUADRO - 4) + 'px;">' + motivo + '</td></tr>' +
+      'style="border-collapse:collapse;background-color:' + COLORES.ROJO_FONDO + ';border-left:4px solid ' + COLORES.ROJO_BORDE + ';">' +
+        '<tr><td style="padding:12px 16px 12px ' + (SANGRIA_RECUADRO - 4) + 'px;' + TEXTO_CUERPO_CORREO + '">' + motivo + '</td></tr>' +
       '</table>' +
+      espaciador_(20) +
 
       avisoExcluidos +
       pieCorreo_() +
@@ -1481,12 +1485,14 @@ function construirAvisoExcluidos_(pasajerosExcluidos) {
 
   return '' +
     '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
-    'style="border-collapse:collapse;background-color:' + COLORES.AMBAR_FONDO + ';border-left:4px solid ' + COLORES.AMBAR_BORDE + ';margin-bottom:18px;">' +
-      '<tr><td style="padding:12px 16px 12px ' + (SANGRIA_RECUADRO - 4) + 'px;">' +
-        '<strong style="color:' + COLORES.AMBAR_TEXTO + ';">Aviso importante</strong><br>' +
+    'style="border-collapse:collapse;background-color:' + COLORES.AMBAR_FONDO + ';border-left:4px solid ' + COLORES.AMBAR_BORDE + ';">' +
+      '<tr><td style="padding:12px 16px 12px ' + (SANGRIA_RECUADRO - 4) + 'px;' + TEXTO_CUERPO_CORREO + '">' +
+        '<div style="font-size:12pt;font-weight:bold;color:' + COLORES.AMBAR_TEXTO + ';margin-bottom:6px;' +
+          'font-family:' + FUENTE_CORREO + ';">Aviso importante</div>' +
         textoExcluidosPorEdad_(pasajerosExcluidos) +
       '</td></tr>' +
-    '</table>';
+    '</table>' +
+    espaciador_(20);
 }
 
 // ============================================================================
