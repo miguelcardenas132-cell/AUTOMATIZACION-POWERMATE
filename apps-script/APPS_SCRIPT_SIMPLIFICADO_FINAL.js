@@ -915,7 +915,7 @@ function bloqueAccionOperativa_() {
       '<ul>' +
         '<li>• Formato de emisión debidamente llenado.</li>' +
         '<li>• Propuesta aceptada.</li>' +
-        '<li>• <strong>Obligatorio del contratante:</strong> Constancia de Situación Fiscal (CSF) ' +
+        '<li>• Obligatorio del contratante: Constancia de Situación Fiscal (CSF) ' +
           'actualizada e INE o pasaporte.</li>' +
       '</ul>' +
     '</td>\n' +
