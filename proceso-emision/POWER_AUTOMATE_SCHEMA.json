@@ -1,0 +1,29 @@
+{
+    "type": "object",
+    "properties": {
+        "folio": { "type": "string" },
+        "correos": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "tipo": { "type": "string" },
+                    "para": { "type": "string" },
+                    "cc": { "type": "string" },
+                    "asunto": { "type": "string" },
+                    "cuerpoHtml": { "type": "string" },
+                    "adjuntos": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "nombre": { "type": "string" },
+                                "contenidoBase64": { "type": "string" }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

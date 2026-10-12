@@ -32,7 +32,7 @@ convierte el HTML a PDF, toma el formato de emisión de Drive y envía el correo
 | `apps-script/test_webhook.py` | Envía al flujo un payload de prueba igual al de producción, sin pasar por el formulario. |
 | `herramientas/generar_ejemplos.js` | Regenera `ejemplos/` con el código real (datos ficticios). |
 | `ejemplos/` | Propuesta (HTML y PDF), correo aprobado y un correo por cada motivo de rechazo. |
-| `proceso-emision/` | Módulo anterior del formulario "Solicitud de Emisión" (traído del repo `Cotizaciones_2026-TCI-s`). **Pausado**: no forma parte del flujo actual; ver su README antes de reutilizarlo. |
+| `proceso-emision/` | Siguiente fase: script del formulario "Solicitud de Emisión" que manda en automático las solicitudes de TCI, TCC y la emisión completa a Seguro de Viaje. **En construcción**; ver su README. |
 
 ## Reglas de negocio
 
