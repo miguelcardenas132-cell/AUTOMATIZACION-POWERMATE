@@ -72,7 +72,7 @@ const CONFIG_EMISION = {
     CLAVE_AGENTE: ['Clave de Agente'],
     CLAVE_EJECUTIVO: ['Clave de tu Ejecutivo', 'Clave del Ejecutivo'],
     NOMBRE_EJECUTIVO: ['Nombre de tu Ejecutivo', 'Nombre del Ejecutivo'],
-    SUCURSAL: ['Sucursal', 'Clave de Sucursal'],
+    SUCURSAL: ['Clave de Sucursal', 'Sucursal'],
     CONTRATANTE: ['Nombre Completo del Contratante'],
     DOMICILIO: ['Domicilio del Contratante (Calle, No. Ext y/o Int, Colonia, Municipio o Delegación, C.P.)',
       'Domicilio del Contratante'],
@@ -95,7 +95,7 @@ const CONFIG_EMISION = {
     {
       titulo: 'Información para emisión',
       preguntas: ['Nombre de Agente', 'Clave de Agente', 'Clave de tu Ejecutivo', 'Nombre de tu Ejecutivo',
-        'Sucursal', 'Producto Elegido', 'Costo en USD', 'Adjunta la cotización recibida',
+        'Clave de Sucursal', 'Sucursal', 'Producto Elegido', 'Costo en USD', 'Adjunta la cotización recibida',
         'Adjunta la propuesta recibida', 'Adjunta tu CSF (Constancia de Situación Fiscal)',
         'Adjunta tu INE o pasaporte',
         'Adjunta tu CSF (Constancia de Situación Fiscal) o INE o Identificación Migratoria de residencia mexicana']
@@ -201,10 +201,15 @@ function esPersonaMoral_(rfc) {
   return String(rfc || '').replace(/[\s-]/g, '').length === 12;
 }
 
-/** "G00 - Guadalajara" -> "G00". Si no trae clave, se deja como lo escribieron. */
+/**
+ * Clave de sucursal de 3 caracteres (G00, E82, M20, DF4, MSJ, ML0...), en
+ * mayúsculas y sin espacios. Si escriben "g00 - Guadalajara" se toma "G00";
+ * si no empieza con una clave, se deja como lo escribieron.
+ */
 function claveSucursal_(texto) {
-  const clave = String(texto || '').toUpperCase().match(/\b[A-Z]\d{2}\b/);
-  return clave ? clave[0] : String(texto || '').trim();
+  const limpio = String(texto || '').trim().toUpperCase();
+  const clave = limpio.match(/^[A-Z][A-Z0-9]{2}(?![A-Z0-9])/);
+  return clave ? clave[0] : limpio;
 }
 
 /**
@@ -470,7 +475,7 @@ function probarCorreosEmision() {
   const respuestas = [
     ['Nombre de Agente', 'OML, Agente de Seguros y de Fianzas SA de CV'], ['Clave de Agente', '13991'],
     ['Clave de tu Ejecutivo', '570'], ['Nombre de tu Ejecutivo', 'Lucero Guadalupe Borbón Nieblas'],
-    ['Sucursal', 'G00'], ['Producto Elegido', 'Master Elite'], ['Costo en USD', '159.41'],
+    ['Clave de Sucursal', 'G00'], ['Producto Elegido', 'Master Elite'], ['Costo en USD', '159.41'],
     ['Destino', 'Francia'], ['Fecha de Salida', '2026-12-01'], ['Fecha de Regreso', '2026-12-15'],
     ['Nombre Completo del Contratante', 'Omnilife de México S.A. de C.V.'],
     ['Domicilio del Contratante (Calle, No. Ext y/o Int, Colonia, Municipio o Delegación, C.P.)',

@@ -29,7 +29,7 @@ Los tres llevan siempre en copia a equintanar@ (Eloisa Quintanar) y mhidalgo@ (M
 | Nombre y clave del agente | *Nombre de Agente* + *Clave de Agente*, como `NOMBRE \|\| CLAVE` |
 | Moneda | Fijo: **USD** |
 | Giro | Fijo: **Seguro de Viaje (Sector: 24, Subsector: 145, Giro: 1)** |
-| Clave de Sucursal | *Sucursal* (si escriben "G00 - Guadalajara" se toma `G00`) |
+| Clave de Sucursal | *Clave de Sucursal* (también va en el asunto). Se pasa a mayúsculas; si escriben "g00 - Guadalajara" se toma `G00` |
 | RFC | *RFC* |
 | CURP / Ocupación | Del formulario; **N/A** si es persona moral |
 | Domicilio | *Domicilio del Contratante*, en mayúsculas |
@@ -42,6 +42,16 @@ Los tres llevan siempre en copia a equintanar@ (Eloisa Quintanar) y mhidalgo@ (M
 
 ## Cambios necesarios en el formulario
 
+- [ ] Agregar **Clave de Sucursal** (sección "Información para emisión"):
+  - respuesta corta y obligatoria;
+  - validación: *Expresión regular* → *Coincide con* → `^[A-Za-z][A-Za-z0-9]{2}$`, con el
+    mensaje "Escribe la clave de 3 caracteres de tu sucursal, por ejemplo G00, E82 o M20";
+  - no conviene una lista desplegable: las sucursales no son fijas y una que falte
+    bloquearía la solicitud.
+  - Claves vistas en las emisiones de 2026: C00, C01, C16, D00, D70, DF4, E59, E82, F02,
+    F04, F10, F19, F20, G00, G05, G11, G15, G22, H00, H02, L00, L01, L06, L07, M00, M05,
+    M14, M20, M25, MC1, MC7, MCA, MCC, ML0, MS1, MS5, MSJ, P00, P01, P06, P07, P09, P12,
+    Q00, Q02, T00, T02, T03, Y00, Y01, Y02, Y10, Y15, Y17.
 - [ ] Agregar **Clave de tu Ejecutivo** como pregunta obligatoria, y hacer obligatoria
       **Nombre de tu Ejecutivo**.
 - [ ] Recomendado: separar la pregunta de archivos en dos, ambas obligatorias:
