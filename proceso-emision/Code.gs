@@ -496,3 +496,63 @@ function probarCorreosEmision() {
   enviarAPowerAutomate_(payload);
   Logger.log('✅ Enviados ' + payload.correos.length + ' correos de prueba a ' + CONFIG_EMISION.CORREO_PRUEBAS);
 }
+
+// ============================================================================
+// 7. DIAGNÓSTICO DEL FORMULARIO
+// ============================================================================
+
+/**
+ * Revisa el formulario contra lo que espera este script, sin enviar nada.
+ * Ejecútala desde el editor y copia el Registro de ejecución:
+ *  - ✅/❌ por cada dato que necesitan el TCI y el TCC.
+ *  - Lista de todas las preguntas (tipo y si es obligatoria), marcando con
+ *    "→ Otros" las que no están en SECCIONES (igual salen en el correo a
+ *    Seguro de Viaje, pero al final).
+ */
+function revisarFormulario() {
+  const items = FormApp.getActiveForm().getItems().filter(function (item) {
+    return [FormApp.ItemType.SECTION_HEADER, FormApp.ItemType.PAGE_BREAK, FormApp.ItemType.IMAGE,
+      FormApp.ItemType.VIDEO].indexOf(item.getType()) === -1;
+  });
+  const titulos = items.map(function (item) { return normalizar_(item.getTitle()); });
+  const existe = function (opciones) {
+    return opciones.some(function (t) { return titulos.indexOf(normalizar_(t)) !== -1; });
+  };
+
+  Logger.log('=== DATOS QUE USA EL TCI / TCC ===');
+  let faltantes = 0;
+  Object.keys(CONFIG_EMISION.PREGUNTAS).forEach(function (clave) {
+    const ok = existe(CONFIG_EMISION.PREGUNTAS[clave]);
+    if (!ok) faltantes++;
+    Logger.log((ok ? '✅ ' : '❌ ') + clave + ' — se busca como: "' + CONFIG_EMISION.PREGUNTAS[clave].join('" o "') + '"');
+  });
+
+  const enSecciones = [].concat.apply([], CONFIG_EMISION.SECCIONES.map(function (s) { return s.preguntas; }))
+    .map(normalizar_);
+  Logger.log('=== TODAS LAS PREGUNTAS DEL FORMULARIO (' + items.length + ') ===');
+  items.forEach(function (item, i) {
+    const omitida = CONFIG_EMISION.OMITIR.some(function (re) { return re.test(item.getTitle()); });
+    const nota = omitida ? '' : (enSecciones.indexOf(normalizar_(item.getTitle())) === -1 ? '   → Otros' : '');
+    // Apps Script no deja leer si una carga de archivos es obligatoria.
+    const obligatoria = item.getType() === FormApp.ItemType.FILE_UPLOAD ? ', revisar a mano si es obligatoria'
+      : (esObligatoria_(item) ? ', obligatoria' : '');
+    Logger.log((i + 1) + '. "' + item.getTitle() + '" [' + item.getType() + obligatoria + ']' + nota);
+  });
+  Logger.log(faltantes ? '⚠️ Faltan ' + faltantes + ' datos para el TCI/TCC (ver ❌ arriba).' : '✅ El formulario tiene todo lo que necesita el TCI/TCC.');
+}
+
+function esObligatoria_(item) {
+  const T = FormApp.ItemType;
+  const conversion = {};
+  conversion[T.TEXT] = 'asTextItem'; conversion[T.PARAGRAPH_TEXT] = 'asParagraphTextItem';
+  conversion[T.LIST] = 'asListItem'; conversion[T.MULTIPLE_CHOICE] = 'asMultipleChoiceItem';
+  conversion[T.CHECKBOX] = 'asCheckboxItem'; conversion[T.DATE] = 'asDateItem';
+  conversion[T.SCALE] = 'asScaleItem'; conversion[T.TIME] = 'asTimeItem';
+  conversion[T.DATETIME] = 'asDateTimeItem'; conversion[T.GRID] = 'asGridItem';
+  const metodo = conversion[item.getType()];
+  try {
+    return metodo ? item[metodo]().isRequired() : false;
+  } catch (e) {
+    return false;
+  }
+}

@@ -61,6 +61,8 @@ Los tres llevan siempre en copia a equintanar@ (Eloisa Quintanar) y mhidalgo@ (M
 - [ ] Renombrar "Adjunta la cotización recibida" a **"Adjunta la propuesta recibida"**. El
       script acepta los dos títulos.
 
+Después de editar el formulario, ejecuta **`revisarFormulario()`** en su Apps Script: no envía nada, marca con ✅/❌ cada dato que necesitan el TCI y el TCC y lista todas las preguntas.
+
 Los títulos de las preguntas se comparan sin distinguir mayúsculas, acentos ni espacios. Si
 se renombra una pregunta, agrega el nuevo título en `CONFIG_EMISION.PREGUNTAS` o
 `CONFIG_EMISION.SECCIONES`. Si una pregunta no aparece en `SECCIONES`, sale igual en el
