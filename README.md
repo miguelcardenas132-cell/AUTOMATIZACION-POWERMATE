@@ -2,6 +2,8 @@
 
 Seguros Atlas · Seguro de Viaje (DINE — Dirección de Negocios Especiales)
 
+Proyecto de Apps Script: **Cotizaciones 2026** (ID `1LpY-U8AGMcjErPLIhX4B50I7NUx7BUu4yFqYIX8VYL3AA15_ETAeHDZF`), con los archivos `Main.gs` y `ASSETS_BASE64.gs`.
+
 Un agente o cliente llena un Google Form. En menos de un minuto recibe, desde el buzón
 compartido **segurodeviaje@segurosatlas.com.mx**, una de dos respuestas:
 
@@ -24,7 +26,7 @@ convierte el HTML a PDF, toma el formato de emisión de Drive y envía el correo
 
 | Archivo | Qué es |
 |---|---|
-| `apps-script/APPS_SCRIPT_SIMPLIFICADO_FINAL.js` | Script principal: se pega completo en el proyecto de Apps Script del Sheet (en el editor se llama `Cotizaciones_2026.gs`). |
+| `apps-script/APPS_SCRIPT_SIMPLIFICADO_FINAL.js` | Script principal: se pega completo en `Main.gs` del proyecto de Apps Script **Cotizaciones 2026**. |
 | `apps-script/ASSETS_BASE64.gs` | Logos y QR del PDF en base64. Va como segundo archivo `.gs` del mismo proyecto. |
 | `apps-script/POWER_AUTOMATE_SCHEMA.json` | Esquema JSON del disparador HTTP de Power Automate. |
 | `apps-script/test_webhook.py` | Envía al flujo un payload de prueba igual al de producción, sin pasar por el formulario. |
@@ -80,7 +82,7 @@ El PDF se llama igual, pero con ` - ` en lugar de ` // `.
 
 ### 2. Apps Script (Extensiones › Apps Script, desde el Sheet)
 
-1. Pega `APPS_SCRIPT_SIMPLIFICADO_FINAL.js` completo en `Cotizaciones_2026.gs`.
+1. Pega `APPS_SCRIPT_SIMPLIFICADO_FINAL.js` completo en `Main.gs` (proyecto **Cotizaciones 2026**).
 2. Crea un segundo archivo `ASSETS_BASE64.gs` y pega ahí su contenido.
 3. Ejecuta **una vez** `configurarPropiedades()`. Guarda en Script Properties la carpeta de
    Drive donde se respaldan las propuestas (`CARPETA_SALIDA_ID`) y la URL del webhook
