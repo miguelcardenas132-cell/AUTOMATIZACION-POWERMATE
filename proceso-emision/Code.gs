@@ -50,8 +50,18 @@ const CONFIG_EMISION = {
     'equintanar@segurosatlas.com.mx' // Eloisa Quintanar Curiel
   ],
 
-  // Único destinatario de probarCorreosEmision(), para no molestar a nadie más.
-  CORREO_PRUEBAS: 'mhidalgo@segurosatlas.com.mx',
+  /**
+   * MODO PRUEBAS. Mientras esté en true, los tres correos de cada envío real
+   * del formulario (TCI, TCC y solicitud general) llegan SOLO a
+   * CORREOS_PRUEBAS, con [PRUEBA] en el asunto y un aviso arriba que dice a
+   * quién iría en producción. Nunca llegan a Mesa Control ni a Cotizaciones.
+   * Para pasar a producción: cambiar a false y guardar.
+   */
+  MODO_PRUEBAS: true,
+  CORREOS_PRUEBAS: [
+    'mhidalgo@segurosatlas.com.mx'
+    // , 'equintanar@segurosatlas.com.mx'  // descomentar para que Eloisa también reciba las pruebas
+  ],
 
   // Datos fijos de la solicitud de TCI/TCC.
   FIJOS: {
@@ -139,7 +149,31 @@ function onFormSubmitSolicitudEmision(e) {
     return;
   }
   const solicitud = leerRespuestas_(e.response.getItemResponses());
-  enviarAPowerAutomate_(construirCorreos_(solicitud));
+  const payload = construirCorreos_(solicitud);
+  if (CONFIG_EMISION.MODO_PRUEBAS) desviarAPruebas_(payload);
+  enviarAPowerAutomate_(payload);
+}
+
+/**
+ * Manda los correos solo a CORREOS_PRUEBAS, sin copias. Cada correo lleva
+ * [PRUEBA] en el asunto y una franja con los destinatarios reales, para
+ * revisar que en producción irían a donde deben.
+ */
+function desviarAPruebas_(payload) {
+  const pruebas = CONFIG_EMISION.CORREOS_PRUEBAS.filter(function (c) { return c; }).join(';');
+  payload.correos.forEach(function (correo) {
+    const aviso = '<div style="background-color:#fff4e5;border:1px solid #e0a800;padding:8px 12px;margin-bottom:14px;' +
+      'font-family:' + FUENTE_EMISION + ';font-size:10pt;color:#7a5b00;">' +
+      '<strong>CORREO DE PRUEBA</strong> (' + escapar_(correo.tipo) + '). En producción iría a: <strong>' +
+      escapar_(correo.para) + '</strong>' + (correo.cc ? ' · CC: ' + escapar_(correo.cc) : '') +
+      ' · Adjuntos: ' + (correo.adjuntos.length ? escapar_(correo.adjuntos.map(function (a) { return a.nombre; }).join(', ')) : 'ninguno') +
+      '</div>';
+    correo.asunto = '[PRUEBA] ' + correo.asunto;
+    correo.cuerpoHtml = aviso + correo.cuerpoHtml;
+    correo.para = pruebas;
+    correo.cc = '';
+  });
+  return pruebas;
 }
 
 // ============================================================================
@@ -472,8 +506,8 @@ function enviarAPowerAutomate_(payload) {
 
 /**
  * Manda los tres correos con datos ficticios (sin adjuntos), para probar el
- * flujo sin llenar el formulario. Los asuntos llevan [PRUEBA] y TODOS los
- * correos van solo a CORREO_PRUEBAS, nunca a Mesa Control ni a Cotizaciones.
+ * flujo sin llenar el formulario. Siempre van solo a CORREOS_PRUEBAS, aunque
+ * MODO_PRUEBAS esté en false.
  */
 function probarCorreosEmision() {
   const respuestas = [
@@ -492,13 +526,9 @@ function probarCorreosEmision() {
   ].map(function (r) { return { titulo: r[0], texto: r[1], archivos: [] }; });
 
   const payload = construirCorreos_({ respuestas: respuestas, archivos: [], folio: '', fecha: new Date() });
-  payload.correos.forEach(function (correo) {
-    correo.asunto = '[PRUEBA] ' + correo.asunto;
-    correo.para = CONFIG_EMISION.CORREO_PRUEBAS;
-    correo.cc = '';
-  });
+  const pruebas = desviarAPruebas_(payload);
   enviarAPowerAutomate_(payload);
-  Logger.log('✅ Enviados ' + payload.correos.length + ' correos de prueba a ' + CONFIG_EMISION.CORREO_PRUEBAS);
+  Logger.log('✅ Enviados ' + payload.correos.length + ' correos de prueba a ' + pruebas);
 }
 
 // ============================================================================

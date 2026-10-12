@@ -82,7 +82,13 @@ correo de Seguro de Viaje dentro de "Otros".
    - evento *Al enviarse el formulario*
 5. Prueba con `probarCorreosEmision()`:
    - manda los tres correos con datos ficticios y `[PRUEBA]` en el asunto;
-   - solo llegan a `CORREO_PRUEBAS` (mhidalgo@), nunca a Mesa Control, Cotizaciones ni Eloisa.
+   - solo llegan a `CORREOS_PRUEBAS` (mhidalgo@), nunca a Mesa Control ni a Cotizaciones.
+6. **Modo pruebas** (`MODO_PRUEBAS: true`, como viene): los envíos reales del formulario
+   también llegan solo a `CORREOS_PRUEBAS`, los tres (TCI, TCC y solicitud general), con
+   `[PRUEBA]` en el asunto y una franja amarilla que dice a quién irían en producción y con
+   qué adjuntos. Para que Eloisa también los reciba, descomenta su correo en
+   `CORREOS_PRUEBAS`.
+7. **Paso a producción:** cambia `MODO_PRUEBAS` a `false` y guarda.
 
 ### Power Automate (flujo nuevo, separado del de la propuesta)
 
