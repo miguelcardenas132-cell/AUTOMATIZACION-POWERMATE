@@ -283,7 +283,11 @@ function construirCorreos_(solicitud) {
 function datosContratante_(solicitud) {
   const rfc = valor_(solicitud, 'RFC').toUpperCase();
   const moral = esPersonaMoral_(rfc);
-  const oNA = function (texto) { return String(texto || '').trim() || 'N/A'; };
+  // Vacío, "NA", "n/a" o "No aplica" (el formulario pide escribir NA) -> "N/A".
+  const oNA = function (texto) {
+    const limpio = String(texto || '').trim();
+    return !limpio || /^(n\s*\/?\s*a|no aplica)\.?$/i.test(limpio) ? 'N/A' : limpio;
+  };
   const ejecutivo = [valor_(solicitud, 'CLAVE_EJECUTIVO'), valor_(solicitud, 'NOMBRE_EJECUTIVO')]
     .filter(function (v) { return v; }).join(' ');
 
