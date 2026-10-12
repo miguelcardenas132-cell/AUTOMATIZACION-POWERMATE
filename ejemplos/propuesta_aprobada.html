@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Propuesta de Seguro SEGURO_VIAJE_+79-EJEMPLO</title>
+<style>
+@page { size: letter; margin: 0.3cm; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+.marco { width: 100%; height: 100%; border-collapse: collapse; }
+.marco-contenido { vertical-align: top; }
+.marco-pie { vertical-align: bottom; }
+body { font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #111; line-height: 1.3;
+       -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+table { border-collapse: collapse; width: 100%; }
+a { color: #027370; text-decoration: underline; }
+.tit-tabla { background-color: #027370; }
+.tit-tabla td { padding: 6px 11px; vertical-align: middle; }
+.tit-tabla .titulo { font-size: 16px; font-weight: bold; color: #ffffff; letter-spacing: .3px; }
+.tit-tabla .sub { font-size: 9.3px; color: #cfe6da; margin-top: 2px; }
+.tit-logo { text-align: right; width: 27%; }
+.tit-logo img { max-height: 31px; width: auto; }
+.meta { background-color: #eef4f1; border: 1px solid #bcd5c9;
+        border-top: none; margin-bottom: 7px; }
+.meta td { padding: 3px 11px; font-size: 9.8px; color: #222; vertical-align: top; }
+.meta .et { font-weight: bold; color: #0f2b48; }
+.meta .der { text-align: right; }
+.banner { background-color: #027370; color: #ffffff; font-weight: bold;
+          font-size: 9.8px; text-transform: uppercase; padding: 3px 9px; text-align: center;
+          margin: 5px 0 0; letter-spacing: .4px; }
+.viaje { background-color: #eef4f1; border: 1px solid #bcd5c9; }
+.viaje td { padding: 3px 9px; font-size: 9.8px; vertical-align: top; }
+.viaje .et { font-weight: bold; color: #0f2b48; }
+.cob { font-size: 9.4px; line-height: 1.2; margin-top: 5px; border-top: 1px solid #d6d6d6;
+       border-bottom: 1px solid #d6d6d6; }
+.cob th, .cob td { border: none; border-left: 1px solid #d6d6d6; border-right: 1px solid #d6d6d6;
+                    padding: 2.3px 5px; text-align: left; }
+.cob th.planes { background-color: #027370; color: #ffffff; text-align: center;
+                 font-size: 12px; font-weight: bold; letter-spacing: .5px; padding: 4px; text-transform: uppercase;
+                 border: none; border-bottom: 2px solid #ffffff; }
+.cob th.sub { background-color: #027370; color: #ffffff; font-weight: bold;
+              text-align: center; font-size: 9.3px; text-transform: uppercase; padding: 2.3px 4px; }
+.cob th.sub-izq { text-align: left; }
+.cob th .moneda { display: block; font-weight: normal; font-size: 7.8px; }
+.cob td.num { text-align: center; }
+.cob .subnota { display: block; color: #444; font-size: 8.1px; }
+.cob tr.principal td { font-weight: bold; }
+.cob tr.sublimite td:first-child { padding-left: 18px; }
+.cob tr.total td { background-color: #d1e7dd; font-weight: bold;
+                   border-top: 2px solid #027370 !important; border-bottom: none;
+                   font-size: 10.5px; color: #027370; padding: 3.5px 5px; }
+.nota-tabla { font-size: 8.4px; color: #555; margin: 2px 0 0; }
+.espec { border: 1px solid #bcd5c9; background-color: #ffffff; }
+.espec td { padding: 3px 10px; }
+.espec ul { list-style: none; }
+.espec li { font-size: 8.5px; line-height: 1.26; padding-left: 8px; text-indent: -8px; }
+.espec strong { color: #027370; }
+.espec .excepcion { font-style: italic; color: #555; }
+.ops-caja { margin-top: 4px; border: 1px solid #b9b9b9; }
+.ops-banner { background-color: #027370; color: #ffffff; text-align: center;
+              font-weight: bold; font-size: 9.8px; text-transform: uppercase;
+              padding: 3px; letter-spacing: .4px; }
+.ops { border-collapse: separate; border-spacing: 3px; }
+.ops td.celda { border: 1px solid #d5d5d5; border-radius: 6px; background-color: #ffffff;
+                padding: 3px 7px; vertical-align: top; }
+.ops h3 { font-size: 8.5px; color: #0f2b48; margin-bottom: 2px; }
+.ops p { font-size: 7.8px; line-height: 1.24; }
+.ops ul { list-style: none; margin-top: 1px; margin-left: 7px; }
+.ops li { font-size: 7.8px; line-height: 1.24; padding-left: 7px; text-indent: -7px; }
+.cierre { border-collapse: collapse; margin-top: 4px; }
+.cierre td { vertical-align: top; }
+.cierre-obs { padding-right: 9px; }
+.cierre-qr { vertical-align: bottom; }
+.qr-tarjeta { padding: 2px 4px 0; text-align: center; }
+.qr-tarjeta img { width: 78px; height: 78px; display: block; margin: 3px auto 0; }
+.qr-tarjeta h3 { font-size: 8px; color: #0f2b48; margin-bottom: 1px; }
+.qr-tarjeta p { font-size: 7px; line-height: 1.22; color: #444; }
+.qr-tarjeta p.qr-nota { font-style: italic; margin-top: 2px; }
+.obs { margin-top: 4px; }
+.obs h3 { font-size: 10.3px; color: #027370; text-transform: uppercase; margin-bottom: 1px; }
+.obs ol { margin: 0 0 1.5px 13px; }
+.obs li { font-size: 8.5px; line-height: 1.26; }
+.obs p { font-size: 8.5px; line-height: 1.26; margin-bottom: 0.5px; }
+.pie { margin-top: 10px; padding-top: 6px; border-top: 1px solid #d6d6d6; }
+.pie td { font-size: 8px; color: #555; vertical-align: middle; text-align: center;
+          line-height: 1.35; padding: 0 8px; }
+.pie td.sep { border-left: 1px solid #c8c8c8; }
+.pie a { color: #027370; text-decoration: underline; }
+</style>
+</head>
+<body>
+<table class="marco" role="presentation">
+<tr><td class="marco-contenido">
+<table class="tit-tabla" role="presentation">
+<tr>
+<td><div class="titulo">PROPUESTA DE SEGURO SENIOR +79 AÑOS</div><div class="sub">Seguro de Viaje</div></td>
+<td class="tit-logo"><img alt="Seguros Atlas" src="data:image/png;base64,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"></td>
+</tr>
+</table>
+<table class="meta" role="presentation">
+<colgroup><col style="width:58%"><col style="width:42%"></colgroup>
+<tr>
+<td><div><span class="et">Folio:</span> SEGURO_VIAJE_+79-EJEMPLO</div><div><span class="et">Solicitante:</span> Nombre de Ejemplo</div></td>
+<td class="der"><div><span class="et">Agente:</span> A-0000 Agente de Ejemplo</div><div><span class="et">Fecha y hora de emisión:</span> 12/10/2026 20:38:00</div></td>
+</tr>
+</table>
+<div class="banner">Información del viaje</div>
+<table class="viaje" role="presentation">
+<colgroup><col style="width:34%"><col style="width:33%"><col style="width:33%"></colgroup>
+<tr><td><span class="et">Destino:</span> Francia</td><td><span class="et">Fecha de Inicio:</span> 01/11/2026</td><td><span class="et">Fecha de Regreso:</span> 15/11/2026</td></tr>
+<tr><td><span class="et">Duración del viaje:</span> 15 días</td><td><span class="et">Cantidad de Asegurados:</span> 3</td><td><span class="et">Vigencia de la propuesta:</span> 19/10/2026</td></tr>
+</table>
+<table class="cob">
+<colgroup><col style="width:40%"><col style="width:15%"><col style="width:15%"><col style="width:15%"><col style="width:15%"></colgroup>
+<thead>
+<tr><th class="planes" colspan="5">Planes disponibles</th></tr>
+<tr><th class="sub sub-izq">Coberturas</th><th class="sub">Master<span class="moneda">(USD)</span></th><th class="sub">Master Smart<span class="moneda">(USD)</span></th><th class="sub">Master Elite<span class="moneda">(USD)</span></th><th class="sub">Master Premium<span class="moneda">(USD)</span></th></tr>
+</thead>
+<tbody>
+<tr class="principal"><td>I. Cancelación de Viaje</td><td class="num">2,000</td><td class="num">2,500</td><td class="num">5,000</td><td class="num">7,500</td></tr>
+<tr class="principal"><td>II. Interrupción de Viaje</td><td class="num">2,000</td><td class="num">2,500</td><td class="num">5,000</td><td class="num">7,500</td></tr>
+<tr class="principal"><td>III. Equipaje</td><td class="num">1,400</td><td class="num">1,500</td><td class="num">3,000</td><td class="num">4,500</td></tr>
+<tr class="sublimite"><td>Pérdida o Daño de Equipaje</td><td class="num">1,000</td><td class="num">1,000</td><td class="num">2,000</td><td class="num">3,000</td></tr>
+<tr class="sublimite"><td>Demora de Equipaje</td><td class="num">400</td><td class="num">500</td><td class="num">1,000</td><td class="num">1,500</td></tr>
+<tr class="principal"><td>V. Gastos Médicos por Accidente o Enfermedad</td><td class="num">30,000</td><td class="num">50,000</td><td class="num">100,000</td><td class="num">150,000</td></tr>
+<tr class="sublimite"><td>Medicamentos Recetados y Vendajes</td><td class="num">1,000</td><td class="num">2,000</td><td class="num">3,000</td><td class="num">3,500</td></tr>
+<tr class="sublimite"><td>Aparatos de Ayuda</td><td class="num">1,000</td><td class="num">2,000</td><td class="num">3,000</td><td class="num">3,500</td></tr>
+<tr class="sublimite"><td>Traslado Médico</td><td class="num">Incluido</td><td class="num">Incluido</td><td class="num">Incluido</td><td class="num">Incluido</td></tr>
+<tr class="sublimite"><td>Atención Odontológica</td><td class="num">1,000</td><td class="num">2,000</td><td class="num">3,000</td><td class="num">3,500</td></tr>
+<tr class="sublimite"><td>Traslado y Estancia de un Acompañante</td><td class="num">7 días<span class="subnota">200 USD diarios</span></td><td class="num">7 días<span class="subnota">200 USD diarios</span></td><td class="num">10 días<span class="subnota">200 USD diarios</span></td><td class="num">10 días<span class="subnota">200 USD diarios</span></td></tr>
+<tr class="sublimite"><td>Traslado y Acompañamiento de Menores</td><td class="num">Incluido<span class="subnota">hasta 10,000</span></td><td class="num">Incluido</td><td class="num">Incluido</td><td class="num">Incluido</td></tr>
+<tr class="sublimite"><td>Gastos de Hotel por Convalecencia</td><td class="num">10 días<span class="subnota">200 USD diarios</span></td><td class="num">10 días<span class="subnota">200 USD diarios</span></td><td class="num">10 días<span class="subnota">200 USD diarios</span></td><td class="num">10 días<span class="subnota">200 USD diarios</span></td></tr>
+<tr class="sublimite"><td>Repatriación y/o Servicios por Muerte Accidental</td><td class="num">30,000</td><td class="num">50,000</td><td class="num">100,000</td><td class="num">150,000</td></tr>
+<tr class="sublimite"><td>Repatriación o Evacuación Médica</td><td class="num">30,000</td><td class="num">50,000</td><td class="num">100,000</td><td class="num">150,000</td></tr>
+<tr class="sublimite"><td>Asistencia Médica por Enfermedad Preexistente</td><td class="num">—</td><td class="num">—</td><td class="num">500</td><td class="num">500</td></tr>
+<tr class="principal"><td>VII. Demora de Viaje</td><td class="num">500</td><td class="num">1,000</td><td class="num">2,000</td><td class="num">2,500</td></tr>
+<tr class="principal"><td>VIII. Responsabilidad Civil</td><td class="num">30,000</td><td class="num">50,000</td><td class="num">100,000</td><td class="num">100,000</td></tr>
+<tr class="sublimite"><td>Transferencia de Fondos</td><td class="num">500</td><td class="num">500</td><td class="num">500</td><td class="num">1,000</td></tr>
+<tr class="sublimite"><td>Asistencia Legal por Accidente de Tránsito</td><td class="num">1,500</td><td class="num">2,500</td><td class="num">2,500</td><td class="num">5,500</td></tr>
+<tr class="sublimite"><td>Orientación Telefónica</td><td class="num">Incluido</td><td class="num">Incluido</td><td class="num">Incluido</td><td class="num">Incluido</td></tr>
+<tr class="sublimite"><td>Transmisión de Mensajes Urgentes</td><td class="num">Incluido</td><td class="num">Incluido</td><td class="num">Incluido</td><td class="num">Incluido</td></tr>
+<tr class="sublimite"><td>Gastos de Búsqueda y Salvamento</td><td class="num">5,000</td><td class="num">5,000</td><td class="num">5,000</td><td class="num">10,000</td></tr>
+<tr class="total"><td>Prima neta por (3 asegurados) + IVA en dólares (USD)</td><td class="num">$381.96</td><td class="num">$435.18</td><td class="num">$478.23</td><td class="num">$511.74</td></tr>
+</tbody>
+</table>
+<p class="nota-tabla" style="font-style: italic;">Nota: Las sumas aseguradas aplican por asegurado y están expresadas en dólares americanos (USD).</p>
+<div class="banner">Especificaciones</div>
+<table class="espec" role="presentation">
+<tr><td>
+<ul>
+<li>• <strong>Edad de aceptación:</strong> de 79 años 11 meses a 89 años 11 meses.</li>
+<li>• <strong>Asegurados:</strong> mexicanos o extranjeros residiendo en México.</li>
+<li>• <strong>Cobertura:</strong> desde las 00:00 hrs del inicio hasta las 23:59 hrs de la culminación del viaje.</li>
+<li>• <strong>Territorialidad:</strong> México y el Extranjero. <span class="excepcion">Excepto: Afganistán, Bielorrusia, Crimea, Zaporizhzhia, Kherson, Donetsk, Luhansk, Irán, Israel, Corea del Norte, Rusia, Siria y Venezuela, o cualquier país que se encuentre en conflicto al momento de solicitar la propuesta.</span></li>
+<li>• <strong>No hay deducibles ni coaseguros.</strong></li>
+</ul>
+</td></tr>
+</table>
+<table class="cierre" role="presentation">
+<colgroup><col style="width:79%"><col style="width:21%"></colgroup>
+<tr>
+<td class="cierre-obs"><div class="obs">
+<h3>Observaciones</h3>
+<ol>
+<li>La presente es únicamente una PROPUESTA DE SEGURO, POR LO QUE NO SURTE NINGÚN EFECTO LEGAL COMO PÓLIZA DE SEGURO</li>
+<li>La presente propuesta tiene VIGENCIA HASTA EL 19/10/2026; en caso de la aceptación de la misma, deberá sujetarse a las condiciones y políticas vigentes de Seguros Atlas.</li>
+<li>En caso de existir una propuesta anterior o póliza emitida vigente, esta propuesta quedará sin efecto alguno.</li>
+</ol>
+<p>El alcance, términos, condiciones, exclusiones y limitantes de las coberturas cotizadas se encuentran en las condiciones generales que se le entregarán al momento de la contratación de la póliza, las cuales también podrá obtener de forma gratuita en nuestra página web <a href="https://www.segurosatlas.com.mx/descargas.html">www.segurosatlas.com.mx/descargas.html</a></p>
+<p>En Seguros Atlas S.A. sus datos están protegidos. Consulte el aviso de privacidad en <a href="https://www.segurosatlas.com.mx/">www.segurosatlas.com.mx</a></p>
+<p>Nota : El Impuesto al Valor Agregado se calcula de conformidad con el artículo 1 de LIVA.</p>
+</div>
+</td>
+<td class="cierre-qr"><div class="qr-tarjeta"><h3>¿Deseas una nueva propuesta para tu viaje?</h3><p>Escanea el código QR y solicita una nueva propuesta de forma rápida y sencilla.</p><p class="qr-nota">(Máximo 5 días hábiles antes del inicio del viaje)</p><img alt="Código QR para nueva propuesta" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAXIAAAFyAQAAAADAX2ykAAACQElEQVR42u2bQYrdMBBEX8eGWcowB8hR5JuF3Mw+yj9AQF5+kKksJNl/BrKYTaCH1sL4f9eqipK7umUTX1n7D762Ah/4wAc+8IEP/L/w1tc8/j7M2M3M1mM8W4NPv/gsSSpgK2C2TCIXACZJkoJP1/ijO1QbIKlia+qqvho7+PSFnz/9NgDt61S1LwVxBJ/fCp9Vu9LruAQ//v2bBBzAvhQZnKZ9tfZMwad3/G5mZguQHzPkMsl+lUnA2crn4NOxf2+Hal8mxHEa+zINYwefXvG09LOlSgtEWbX5t0WjLVUg1YELPj3qe4fgpuXW3sm159/tisihr099sypSmaSNYV2Vq/FxrdDXr74vWm5JuntaTfPwr+f66ljape/Uj7mqtzumGnx619cALG91Bqbaw9CxMEQ+Ix95xvdt+Jgh62mQnmZrupx73wWfLvORyiRJH7biHpJ6Zor6yn393MuocUfqcQmivvLuX1Ug3QXz8G/+GJJCX6/+1Rjop6vJkfrGTS5T6Ou6vvq9dGn7fP/xpjbzt+Uc5Vbw6TYfAecsjvdq+WF3ZBrreJcFn67fv7qOWd0bcu9pxf7sHf9yfjIXYF9u685AekZ/w319NeYLMKoqxkwp8pF3fcvV0Eh9HNyGDL3TQcwHnddX94Zs7ZCOkc4Z0p9ZUGcFn99B3ybj/rPO2tcZON7EPVgKPp3qO85PGqlguZxYvk5e7es1JAw+Xb5/++qpSFs7vzFSkQoxX/CJt/i+O/CBD3zgAx/4/47/C3fG2k11qFXlAAAAAElFTkSuQmCC"></div></td>
+</tr>
+</table>
+<div class="ops-caja">
+<div class="ops-banner">Solicita tu póliza</div>
+<table class="ops" role="presentation" cellspacing="5">
+<colgroup><col style="width:33.34%"><col style="width:33.33%"><col style="width:33.33%"></colgroup>
+<tr>
+<td class="celda"><h3>Paso 1. Requisitos para iniciar tu proceso</h3><p>En caso de aceptar la propuesta, envía la siguiente documentación al correo <strong>segurodeviaje@segurosatlas.com.mx</strong>:</p><ul><li>• Formato de emisión debidamente llenado.</li><li>• Propuesta aceptada.</li><li>• Obligatorio del contratante: Constancia de Situación Fiscal (CSF) actualizada e INE o pasaporte.</li></ul></td>
+<td class="celda"><h3>Paso 2. Consideraciones importantes</h3><ul><li>• <strong>Revisión de datos:</strong> verifica que la información de los asegurados y del contratante sea correcta y legible.</li><li>• <strong>Tiempo de gestión:</strong> la solicitud de emisión deberá ser enviada hasta 72 horas hábiles antes de iniciar tu viaje.</li><li>• <strong>Correcciones:</strong> los cambios por errores u omisiones toman de 3 a 5 días hábiles.</li><li>• <strong>Actualizaciones:</strong> cualquier cambio en los días de viaje requiere una nueva propuesta previa a la emisión.</li></ul></td>
+<td class="celda"><h3>En caso de requerir factura</h3><p>Antes de solicitar la emisión, es indispensable registrar la Constancia de Situación Fiscal (CSF) enviando un correo a <strong>constanciafiscal@segurosatlas.com.mx</strong> con este formato estricto:</p><ul><li>• <strong>Asunto (mayúsculas):</strong> RFC DEL CONTRATANTE.</li><li>• <strong>Contenido:</strong> completamente en blanco (sin firma, sin texto).</li><li>• <strong>Archivo adjunto (PDF en mayúsculas):</strong> CONSTANCIA + RFC.</li><li>• <strong>Confirmación:</strong> recibirás un correo con el estatus "Registro Exitoso".</li></ul></td>
+</tr>
+</table>
+</div>
+</td></tr>
+<tr><td class="marco-pie">
+<table class="pie" role="presentation">
+<colgroup><col style="width:19%"><col style="width:29%"><col style="width:26%"><col style="width:26%"></colgroup>
+<tr>
+<td>Seguros Atlas S.A</td>
+<td class="sep">Paseo de los Tamarindos 60 Planta Baja<br>T. 55 9177-5000</td>
+<td class="sep">Col. Bosques de las Lomas<br><a href="https://www.segurosatlas.com.mx/">www.segurosatlas.com.mx</a></td>
+<td class="sep">Ciudad de México C.P.05120<br>segurodeviaje@segurosatlas.com.mx</td>
+</tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>

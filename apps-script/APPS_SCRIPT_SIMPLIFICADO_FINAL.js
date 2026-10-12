@@ -1,27 +1,34 @@
 /**
  * ============================================================================
- * COTIZADOR SEGURO DE VIAJE SENIOR +79 — Seguros Atlas (DINE)
+ * PROPUESTA DE SEGURO DE VIAJE SENIOR +79 — Seguros Atlas · Seguro de Viaje
  * ============================================================================
  * Apps Script concentra TODA la regla de negocio y el armado de documentos.
  * Power Automate queda como emisor: recibe el cuerpo del correo ya renderizado
- * y el HTML de la cotización listo para convertir a PDF.
+ * y el HTML de la propuesta listo para convertir a PDF, y lo envía desde el
+ * buzón compartido segurodeviaje@segurosatlas.com.mx.
  *
  * FLUJO
  *   1) Trigger "Al enviar el formulario" -> se lee la fila exacta.
  *   2) Se filtran los asegurados elegibles (de 79 años 11 meses a 89 años
  *      11 meses, calculado desde su fecha de nacimiento respecto a la fecha
  *      de salida del viaje) y se registran los excluidos.
- *   3) Se valida la anticipación mínima (5 días hábiles).
- *   4) Si procede, se genera el HTML de la cotización (1 página, tamaño carta)
- *      y se guarda en Drive con codificación UTF-8 explícita.
+ *   3) Se validan las fechas (regreso posterior a la salida), la anticipación
+ *      mínima (5 días hábiles) y el máximo de 5 asegurados.
+ *   4) Si procede, se genera el HTML de la propuesta (1 página, tamaño carta)
+ *      y se guarda en Drive con codificación UTF-8 explícita. La vigencia es
+ *      la fecha de envío + 5 días hábiles, o 3 días hábiles antes de la
+ *      salida, lo que ocurra primero.
  *   5) Se construye el cuerpo HTML del correo (aprobación o rechazo).
- *   6) Se dispara el webhook a Power Automate.
+ *   6) Se dispara el webhook a Power Automate, que adjunta el PDF de la
+ *      propuesta y el formato de emisión (individual o grupal) de Drive.
  *
  * ESTATUS POSIBLES
- *   APROBADO                 Hay al menos un elegible y se cumple la anticipación.
- *   RECHAZADO_TIEMPO         Menos de 5 días hábiles antes de la salida.
- *   RECHAZADO_SIN_ELEGIBLES  Ningún pasajero cae en el rango de edad elegible.
+ *   APROBADO                     Pasa todas las validaciones; lleva adjuntos.
+ *   RECHAZADO_FECHAS             La fecha de regreso no es posterior a la salida.
+ *   RECHAZADO_TIEMPO             Menos de 5 días hábiles antes de la salida.
+ *   RECHAZADO_SIN_ELEGIBLES      Ningún pasajero cae en el rango de edad elegible.
  *   RECHAZADO_EXCESO_ASEGURADOS  Más de 5 asegurados elegibles en una solicitud.
+ *   (Se evalúan en ese orden; el primero que aplica define el estatus.)
  *
  * SOBRE LAS COLUMNAS "Validacion_*", "Estado_Final" y "Motivo_Rechazo" DEL
  * SHEET: se evaluaron como posible fuente de verdad y se descartaron. En
@@ -276,7 +283,7 @@ function onFormSubmit(e) {
 }
 
 /**
- * Bifurca según el estatus. Las solicitudes rechazadas no generan cotización
+ * Bifurca según el estatus. Las solicitudes rechazadas no generan propuesta
  * ni adjunto: solo el correo formal con el motivo.
  */
 function procesarSolicitud_(data) {
@@ -496,7 +503,7 @@ function construirDatosSolicitud_(fila, encabezados, valores) {
 
     // Nombre interno del respaldo en Drive (auditoría). Distinto del nombre
     // del PDF adjunto que recibe el cliente: ver construirNomenclatura_.
-    nombreArchivoDrive: 'Cotizacion_' + folio + '.html',
+    nombreArchivoDrive: 'Propuesta_' + folio + '.html',
     cuerpoCorreoHtml: ''
   };
 }
@@ -1013,7 +1020,7 @@ function bloquePie_() {
  * adjunto (solo en solicitudes aprobadas):
  * "Propuesta Seguro de Viaje Senior +79 - <fecha de salida> // <días del
  * viaje>D, <destino> <fecha de envío>"
- * Ej.: "Propuesta Seguro de Viaje Senior +79 - 25082026 // 011D, BRA 13082026"
+ * Ej.: "Propuesta Seguro de Viaje Senior +79 - 25082026 // 11D, BRA 13082026"
  */
 function construirNomenclatura_(data) {
   const fechaInicioFormato = data.fechaInicio.replace(/\//g, ''); // dd/MM/yyyy -> ddMMyyyy
@@ -1507,11 +1514,6 @@ function guardarHtmlEnDrive_(htmlContenido, nombreArchivo) {
   return carpeta.createFile(blob);
 }
 
-/**
- * @param {File|null} archivoHtml    Archivo en Drive; null si fue rechazada.
- * @param {Object}    data           Solicitud completa (incluye cuerpoCorreoHtml).
- * @param {string}    htmlCotizacion HTML renderizado; se envía en base64. '' si fue rechazada.
- */
 /** Formato de emisión que corresponde: individual con 1 asegurado, grupal con 2 o más. */
 function formatoEmision_(data) {
   const formato = data.numAsegurados > 1 ? CONFIG.FORMATO_EMISION_GRUPAL : CONFIG.FORMATO_EMISION_INDIVIDUAL;
@@ -1521,6 +1523,11 @@ function formatoEmision_(data) {
   };
 }
 
+/**
+ * @param {File|null} archivoHtml    Archivo en Drive; null si fue rechazada.
+ * @param {Object}    data           Solicitud completa (incluye cuerpoCorreoHtml).
+ * @param {string}    htmlCotizacion HTML renderizado; se envía en base64. '' si fue rechazada.
+ */
 function enviarWebhookPowerAutomate_(archivoHtml, data, htmlCotizacion) {
   const aprobado = data.estatus === CONFIG.ESTATUS.APROBADO;
 
@@ -1588,7 +1595,7 @@ function testearTodo() {
 
     const htmlCotizacion = generarHtmlCotizacion_(data);
     const archivoHtml = guardarHtmlEnDrive_(htmlCotizacion, data.nombreArchivoDrive);
-    Logger.log('✅ Cotización guardada en Drive (' + htmlCotizacion.length + ' caracteres).');
+    Logger.log('✅ Propuesta guardada en Drive (' + htmlCotizacion.length + ' caracteres).');
     Logger.log('URL: ' + archivoHtml.getUrl());
     Logger.log('fileId: ' + archivoHtml.getId());
 
@@ -1604,7 +1611,7 @@ function testearTodo() {
 }
 
 /**
- * Caso RECHAZADO_TIEMPO: salida en 2 días. No debe generar cotización ni
+ * Caso RECHAZADO_TIEMPO: salida en 2 días. No debe generar propuesta ni
  * primas; manda el correo de rechazo sin adjunto.
  */
 function testearRechazoPorTiempo() {
@@ -1649,6 +1656,54 @@ function testearRechazoSinElegibles() {
 }
 
 /**
+ * Caso RECHAZADO_FECHAS: la fecha de regreso es anterior a la de salida.
+ */
+function testearRechazoFechas() {
+  Logger.log('=== INICIO testearRechazoFechas() ===');
+  try {
+    const data = construirDatosPrueba_(20, null, -3);
+    Logger.log('Estatus: ' + data.estatus + ' | salida ' + data.fechaInicio + ' | regreso ' + data.fechaFin);
+
+    data.cuerpoCorreoHtml = construirCorreoRechazo_(data);
+    Logger.log('Asunto: ' + construirAsunto_(data));
+
+    enviarWebhookPowerAutomate_(null, data, '');
+    Logger.log('✅ Webhook de rechazo enviado sin adjunto.');
+  } catch (error) {
+    Logger.log('❌ Error en testearRechazoFechas(): ' + error.message);
+  }
+  Logger.log('=== FIN testearRechazoFechas() ===');
+}
+
+/**
+ * Caso RECHAZADO_EXCESO_ASEGURADOS: 6 asegurados elegibles, uno más que
+ * CONFIG.MAX_ASEGURADOS.
+ */
+function testearRechazoExcesoAsegurados() {
+  Logger.log('=== INICIO testearRechazoExcesoAsegurados() ===');
+  try {
+    const data = construirDatosPrueba_(20, [
+      { nombre: 'Roberto García', edad: 82 },
+      { nombre: 'María López', edad: 85 },
+      { nombre: 'Jorge Peña', edad: 80 },
+      { nombre: 'Elena Soto', edad: 81 },
+      { nombre: 'Carmen Díaz', edad: 84 },
+      { nombre: 'Raúl Vega', edad: 87 }
+    ]);
+    Logger.log('Estatus: ' + data.estatus + ' | elegibles: ' + data.numAsegurados);
+
+    data.cuerpoCorreoHtml = construirCorreoRechazo_(data);
+    Logger.log('Asunto: ' + construirAsunto_(data));
+
+    enviarWebhookPowerAutomate_(null, data, '');
+    Logger.log('✅ Webhook de rechazo enviado sin adjunto.');
+  } catch (error) {
+    Logger.log('❌ Error en testearRechazoExcesoAsegurados(): ' + error.message);
+  }
+  Logger.log('=== FIN testearRechazoExcesoAsegurados() ===');
+}
+
+/**
  * Arma una fila sintética y la pasa por construirDatosSolicitud_, de modo que
  * las pruebas ejerciten la misma lógica de filtro, estatus y primas que el
  * trigger real, sin tocar la hoja de cálculo.
@@ -1657,12 +1712,14 @@ function testearRechazoSinElegibles() {
  * @param {Array=} pasajeros       Lista {nombre, edad}; edad en años completos exactos
  *                                 a la fecha de salida (se genera la fecha de nacimiento
  *                                 correspondiente). Por defecto 2 elegibles + 1 excluido.
+ * @param {number=} diasViaje      Días entre salida y regreso (10 por defecto);
+ *                                 negativo para simular un regreso antes de la salida.
  */
-function construirDatosPrueba_(diasHastaSalida, pasajeros) {
+function construirDatosPrueba_(diasHastaSalida, pasajeros, diasViaje) {
   const msPorDia = 24 * 60 * 60 * 1000;
   const hoy = new Date();
   const salida = new Date(hoy.getTime() + diasHastaSalida * msPorDia);
-  const regreso = new Date(salida.getTime() + 10 * msPorDia);
+  const regreso = new Date(salida.getTime() + (diasViaje === undefined ? 10 : diasViaje) * msPorDia);
 
   const lista = pasajeros || [
     { nombre: 'Roberto García', edad: 82 },
