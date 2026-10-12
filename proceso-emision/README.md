@@ -17,7 +17,7 @@
 | `SOLICITUD DE TCC \|\| NUEVA POLIZA \|\| <sucursal>` | cotizacionesdanos@segurosatlas.com.mx | Solo los 14 datos del contratante | — |
 | `SOLICITUD DE EMISIÓN \|\| SENIOR +79 \|\| <contratante> \|\| <folio>` | segurodeviaje@segurosatlas.com.mx | Todo el formulario, por secciones | Todo lo que subió el cliente |
 
-Los tres llevan siempre en copia a Eloisa Quintanar y a Miguel Cárdenas (`COPIA_SIEMPRE`).
+Los tres llevan siempre en copia a equintanar@ (Eloisa Quintanar) y mhidalgo@ (Miguel Cárdenas), en `COPIA_SIEMPRE`.
 
 ### Datos del TCI / TCC
 
@@ -70,7 +70,7 @@ correo de Seguro de Viaje dentro de "Otros".
    - evento *Al enviarse el formulario*
 5. Prueba con `probarCorreosEmision()`:
    - manda los tres correos con datos ficticios y `[PRUEBA]` en el asunto;
-   - solo llegan a `COPIA_SIEMPRE`, nunca a Mesa Control ni a Cotizaciones.
+   - solo llegan a `CORREO_PRUEBAS` (mhidalgo@), nunca a Mesa Control, Cotizaciones ni Eloisa.
 
 ### Power Automate (flujo nuevo, separado del de la propuesta)
 
@@ -90,8 +90,6 @@ Un correo sin adjuntos manda una matriz vacía y Outlook lo envía igual.
 
 ## Pendientes
 
-- [ ] Correo de Eloisa Quintanar en `COPIA_SIEMPRE`.
-- [ ] Confirmar que `mhidalgo@segurosatlas.com.mx` es el correo de Miguel Cárdenas.
 - [ ] Siguientes partes:
   - QR de la propuesta apuntando a este formulario;
   - textos de "Solicita tu póliza" en el PDF y el correo;

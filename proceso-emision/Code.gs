@@ -47,8 +47,11 @@ const CONFIG_EMISION = {
   // En copia de los tres correos. Se ignoran las entradas vacías.
   COPIA_SIEMPRE: [
     'mhidalgo@segurosatlas.com.mx', // Miguel Ángel Cárdenas Hidalgo
-    ''                              // Eloisa Quintanar Curiel (PENDIENTE: su correo)
+    'equintanar@segurosatlas.com.mx' // Eloisa Quintanar Curiel
   ],
+
+  // Único destinatario de probarCorreosEmision(), para no molestar a nadie más.
+  CORREO_PRUEBAS: 'mhidalgo@segurosatlas.com.mx',
 
   // Datos fijos de la solicitud de TCI/TCC.
   FIJOS: {
@@ -461,7 +464,7 @@ function enviarAPowerAutomate_(payload) {
 /**
  * Manda los tres correos con datos ficticios (sin adjuntos), para probar el
  * flujo sin llenar el formulario. Los asuntos llevan [PRUEBA] y TODOS los
- * correos van solo a COPIA_SIEMPRE, nunca a Mesa Control ni a Cotizaciones.
+ * correos van solo a CORREO_PRUEBAS, nunca a Mesa Control ni a Cotizaciones.
  */
 function probarCorreosEmision() {
   const respuestas = [
@@ -480,12 +483,11 @@ function probarCorreosEmision() {
   ].map(function (r) { return { titulo: r[0], texto: r[1], archivos: [] }; });
 
   const payload = construirCorreos_({ respuestas: respuestas, archivos: [], folio: '', fecha: new Date() });
-  const soloCopia = CONFIG_EMISION.COPIA_SIEMPRE.filter(function (c) { return c; }).join(';');
   payload.correos.forEach(function (correo) {
     correo.asunto = '[PRUEBA] ' + correo.asunto;
-    correo.para = soloCopia;
+    correo.para = CONFIG_EMISION.CORREO_PRUEBAS;
     correo.cc = '';
   });
   enviarAPowerAutomate_(payload);
-  Logger.log('✅ Enviados ' + payload.correos.length + ' correos de prueba a ' + soloCopia);
+  Logger.log('✅ Enviados ' + payload.correos.length + ' correos de prueba a ' + CONFIG_EMISION.CORREO_PRUEBAS);
 }
