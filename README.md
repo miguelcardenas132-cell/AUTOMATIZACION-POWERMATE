@@ -163,8 +163,8 @@ python3 apps-script/test_webhook.py "<URL del flujo>" --estatus RECHAZADO_TIEMPO
 
 Antes de cambiar al formulario de emisión, el correo aprobado adjuntaba también el formato
 de emisión en blanco (individual o grupal) desde Google Drive, y el PDF pedía enviar la
-documentación por correo. Esa versión quedó guardada en `apps-script/respaldos/` y en la
-etiqueta de git `respaldo-formato-emision`. Para volver a ella:
+documentación por correo. Esa versión quedó guardada en `apps-script/respaldos/`.
+Para volver a ella:
 
 1. Pega `respaldos/APPS_SCRIPT_con_formato_emision_2026-10-13.js` en `Main.gs`. Esa
    versión no usa `QR_GENERADOR.gs`; puedes dejar el archivo, no estorba.
