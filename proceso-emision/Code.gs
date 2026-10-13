@@ -470,13 +470,14 @@ function bloqueSeccion_(titulo, filasHtml) {
 /** Firma del equipo: mismos colores y renglones que la firma de Outlook. */
 function firmaTexto_() {
   const F = CONFIG_EMISION.FIRMA;
+  // Arial: 12 pt el nombre, 9 pt "DINE" y 8 pt el resto (estilo de la firma de Outlook).
   const linea = function (html, estilo) {
-    return '<div style="margin:0;font-family:' + FUENTE_EMISION + ';font-size:10.5pt;line-height:1.35;' + estilo + '">' +
+    return '<div style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:8pt;line-height:1.35;' + estilo + '">' +
       html + '</div>';
   };
   const etiqueta = function (texto) { return '<strong style="color:#80340d;">' + texto + '</strong>'; };
-  return linea('Seguro de Viaje', 'font-size:13pt;font-weight:bold;color:#0f4761;') +
-    linea('DINE (Dirección de Negocios Especiales)', 'color:#7f7f7f;') +
+  return linea('Seguro de Viaje', 'font-size:12pt;font-weight:bold;color:#0f4761;') +
+    linea('DINE (Dirección de Negocios Especiales)', 'font-size:9pt;color:#7f7f7f;') +
     linea('&nbsp;', 'color:#595959;') +
     linea(etiqueta('Tel.') + ' ' + F.TELEFONO, 'color:#595959;') +
     linea(etiqueta('Correo.') + ' <a href="mailto:' + F.CORREO + '" style="color:#467886;">' + F.CORREO + '</a>', 'color:#595959;') +
