@@ -98,10 +98,10 @@ const CONFIG = {
    * prellenado). Si uno queda vacío, esa pregunta simplemente no se prellena.
    */
   PREFILL_EMISION: {
-    FOLIO: '',          // "Folio de la propuesta"
-    DESTINO: '',        // "Destino"
-    FECHA_SALIDA: '',   // "Fecha de Salida"
-    FECHA_REGRESO: ''   // "Fecha de Regreso"
+    FOLIO: 'entry.1124603788',        // "Folio de la propuesta"
+    DESTINO: 'entry.697166036',       // "Destino"
+    FECHA_SALIDA: 'entry.831370938',  // "Fecha de Salida"
+    FECHA_REGRESO: 'entry.11076833'   // "Fecha de Regreso"
   },
 
   // Enlaces del cuerpo del correo.
