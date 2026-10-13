@@ -148,6 +148,9 @@ const CONFIG = {
 
   // Columna opcional de trazabilidad. Si no existe en la hoja, se ignora.
   COL_ESTADO: 'Estado de envío',
+  // Columna opcional donde se escribe el folio definitivo (el de la hoja +
+  // consecutivo). Si no existe, el folio igual queda en "Estado de envío".
+  COL_FOLIO_PROPUESTA: 'Folio de propuesta',
 
   /**
    * Resolución de las columnas de cada asegurado.
@@ -280,7 +283,8 @@ function onFormSubmit(e) {
     const valores = sheet.getRange(fila, 1, 1, sheet.getLastColumn()).getValues()[0];
     const data = construirDatosSolicitud_(fila, encabezados, valores);
     procesarSolicitud_(data);
-    marcarEstadoFila_(sheet, fila, encabezados, data.estatus + ' — enviado a Power Automate');
+    registrarFolioFila_(sheet, fila, encabezados, data.folio);
+    marcarEstadoFila_(sheet, fila, encabezados, data.estatus + ' — folio ' + data.folio + ' — enviado a Power Automate');
   } catch (error) {
     Logger.log('Error en onFormSubmit (fila ' + fila + '): ' + error.message);
     marcarEstadoFila_(sheet, fila, encabezados, 'ERROR: ' + error.message);
@@ -293,6 +297,8 @@ function onFormSubmit(e) {
  * ni adjunto: solo el correo formal con el motivo.
  */
 function procesarSolicitud_(data) {
+  asignarFolioUnico_(data);
+
   if (data.estatus !== CONFIG.ESTATUS.APROBADO) {
     data.cuerpoCorreoHtml = construirCorreoRechazo_(data);
     enviarWebhookPowerAutomate_(null, data, '');
@@ -1852,6 +1858,39 @@ function getPropiedad_(nombre) {
   return valor;
 }
 
+/**
+ * Folio que nunca se repite: el folio de la hoja (días, destino y fecha de
+ * salida, que dos solicitudes pueden compartir) + un consecutivo global de
+ * 4 dígitos o más. Ej.: SEGURO_VIAJE_+79-15D-FRA-08102026-0042.
+ *
+ * El consecutivo vive en la propiedad CONSECUTIVO_FOLIO del script y se
+ * incrementa bajo LockService, así que dos envíos simultáneos nunca toman el
+ * mismo número. Cada solicitud procesada consume uno, aprobada o rechazada;
+ * si una falla después de asignarlo, ese número queda sin usar (puede haber
+ * saltos, nunca repetidos). NO borres ni reinicies CONSECUTIVO_FOLIO.
+ */
+function asignarFolioUnico_(data) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  let consecutivo;
+  try {
+    const propiedades = PropertiesService.getScriptProperties();
+    consecutivo = Number(propiedades.getProperty('CONSECUTIVO_FOLIO') || 0) + 1;
+    propiedades.setProperty('CONSECUTIVO_FOLIO', String(consecutivo));
+  } finally {
+    lock.releaseLock();
+  }
+  data.folio = String(data.folio).trim() + '-' + String(consecutivo).padStart(4, '0');
+  data.nombreArchivoDrive = 'Propuesta_' + data.folio + '.html';
+  return data.folio;
+}
+
+function registrarFolioFila_(sheet, fila, encabezados, folio) {
+  const indice = indiceDe_(encabezados, CONFIG.COL_FOLIO_PROPUESTA);
+  if (indice === -1) return; // columna opcional
+  sheet.getRange(fila, indice + 1).setValue(folio);
+}
+
 function marcarEstadoFila_(sheet, fila, encabezados, mensaje) {
   const indiceEstado = indiceDe_(encabezados, CONFIG.COL_ESTADO);
   if (indiceEstado === -1) return; // columna opcional
@@ -1883,7 +1922,8 @@ function procesarPegadoMasivo() {
     try {
       const data = construirDatosSolicitud_(fila, encabezados, valores);
       procesarSolicitud_(data);
-      marcarEstadoFila_(sheet, fila, encabezados, data.estatus + ' — enviado a Power Automate');
+      registrarFolioFila_(sheet, fila, encabezados, data.folio);
+      marcarEstadoFila_(sheet, fila, encabezados, data.estatus + ' — folio ' + data.folio + ' — enviado a Power Automate');
     } catch (error) {
       Logger.log('❌ Fila ' + fila + ': ' + error.message);
       marcarEstadoFila_(sheet, fila, encabezados, 'ERROR: ' + error.message);

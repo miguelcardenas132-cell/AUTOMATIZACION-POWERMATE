@@ -259,7 +259,7 @@ function claveSucursal_(texto) {
 
 /**
  * Lee el folio del PDF de la propuesta adjunta (OCR de Drive API v2).
- * Acepta el folio actual de la hoja (SEGURO_VIAJE_+79-...) y el anterior
+ * Acepta el folio actual (SEGURO_VIAJE_+79-...-NNNN, con o sin consecutivo) y el anterior
  * (COT-...). Nunca detiene el envío: si no lo encuentra, regresa ''.
  */
 function buscarFolio_(archivos) {
@@ -271,7 +271,7 @@ function buscarFolio_(archivos) {
         archivos[i].blob, { ocr: true, ocrLanguage: 'es' });
       temporalId = doc.id;
       const texto = DocumentApp.openById(temporalId).getBody().getText();
-      const folio = texto.match(/SEGURO_VIAJE_\+?79-\d+D-[A-Z]{3}-\d{8}|COT-\d+-\d{8}-\d{6}/);
+      const folio = texto.match(/SEGURO_VIAJE_\+?79-\d+D-[A-Z]{3}-\d{8}(?:-\d{4,})?|COT-\d+-\d{8}-\d{6}/);
       if (folio) return folio[0];
     } catch (error) {
       Logger.log('No se pudo leer el folio de ' + archivos[i].nombre + ': ' + error.message);

@@ -64,6 +64,21 @@ El script evalúa las reglas en este orden, y la primera que aplica define el es
 | `RECHAZADO_EXCESO_ASEGURADOS` | Más de 5 asegurados elegibles | Correo de rechazo |
 | `APROBADO` | Pasa todo lo anterior | Correo con el PDF de la propuesta y el botón "Solicitar emisión" |
 
+### Folio
+
+Cada solicitud procesada recibe un folio que **nunca se repite**: el folio que calcula la hoja
+(días, destino y fecha de salida) más un consecutivo global, por ejemplo
+`SEGURO_VIAJE_+79-15D-FRA-08102026-0042`.
+- El consecutivo vive en la propiedad del script `CONSECUTIVO_FOLIO` y se incrementa bajo
+  `LockService`, así que dos envíos simultáneos no pueden tomar el mismo número.
+- Lo consumen tanto las aprobadas como las rechazadas. Si una falla después de asignarlo,
+  queda un salto en la numeración, pero nunca un número repetido.
+- **No borres ni reinicies `CONSECUTIVO_FOLIO`.** `configurarPropiedades()` no lo toca.
+- El folio definitivo se escribe en la columna opcional `Folio de propuesta` y siempre en
+  `Estado de envío`. Es el que aparece en el PDF, el correo, el respaldo en Drive y el QR
+  de emisión.
+- Las funciones `testear*` no consumen consecutivo.
+
 Todos los rechazos llevan el asunto **"Solicitud de Propuesta de Seguro no procesada"**. Las
 propuestas aprobadas usan esta nomenclatura:
 `Propuesta Seguro de Viaje Senior +79 - <salida ddMMyyyy> // <días>D, <DESTINO 3 letras> <envío ddMMyyyy>`.
@@ -82,7 +97,8 @@ El PDF se llama igual, pero con ` - ` en lugar de ` // `.
 - Por cada asegurado (1 a 5): `Nombre Asegurado N` y `Fecha de Nacimiento Asegurado N`. Si
   los nombres cambian, ajusta `CONFIG.ASEGURADOS`. `listarEncabezados()` muestra los
   encabezados reales.
-- Opcional: una columna `Estado de envío`, donde el script anota el resultado de cada fila.
+- Opcionales: una columna `Estado de envío`, donde el script anota el resultado de cada fila, y
+  una columna `Folio de propuesta`, donde escribe el folio definitivo.
 - El formulario debe permitir **máximo 5 asegurados**.
 
 ### 2. Apps Script (Extensiones › Apps Script, desde el Sheet)
