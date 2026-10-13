@@ -391,7 +391,8 @@ function correoTramite_(tipo, d) {
         correo + '</li>' +
       renglon('Ejecutivo', '<span style="background-color:#ffff00;">' + escapar_(d.ejecutivo) + '</span>') +
     '</ol>' +
-    p('Saludos.', 14) +
+    // Dos renglones en blanco (dos "enter") entre "Saludos." y la firma.
+    p('Saludos.') + p('&nbsp;') + p('&nbsp;') +
     firmaTexto_() +
   '</div>';
 }
