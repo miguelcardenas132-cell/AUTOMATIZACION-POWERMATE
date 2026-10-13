@@ -15,7 +15,7 @@
 |---|---|---|---|
 | `SOLICITUD DE TCI \|\| NUEVA POLIZA \|\| <sucursal>` | mesacontroldanos@segurosatlas.com.mx | Solo los 14 datos del contratante | CSF |
 | `SOLICITUD DE TCC \|\| NUEVA POLIZA \|\| <sucursal>` | cotizacionesdanos@segurosatlas.com.mx | Solo los 14 datos del contratante | — |
-| `SOLICITUD DE EMISIÓN \|\| SENIOR +79 \|\| <contratante> \|\| <folio>` | segurodeviaje@segurosatlas.com.mx | Todo el formulario, por secciones | Todo lo que subió el cliente |
+| `SOLICITUD DE EMISIÓN \|\| SENIOR +79 \|\| <contratante> \|\| <folio>` | segurodeviaje@segurosatlas.com.mx | Todo el formulario, por secciones | Todo lo que subió el cliente + **SLIP en PDF** |
 
 Los tres llevan siempre en copia a equintanar@ (Eloisa Quintanar) y mhidalgo@ (Miguel Cárdenas), en `COPIA_SIEMPRE`.
 
@@ -40,7 +40,34 @@ Los tres llevan siempre en copia a equintanar@ (Eloisa Quintanar) y mhidalgo@ (M
 **Persona física o moral:** se decide por el RFC, sin preguntar en el formulario. Un RFC de
 12 caracteres es de persona moral y uno de 13 es de persona física.
 
+## SLIP
+
+El SLIP es el documento que Seguro de Viaje sube al sistema interno. En cada solicitud se llena
+solo su recuadro **ASEGURADOS** y se adjunta en **PDF** al correo de Seguro de Viaje como
+`SLIP_<folio>.pdf`. El resto del documento no cambia.
+
+- **Plantillas:** hay una por plan en `plantillas-slip/`
+  (`PLANTILLA_SLIP_MASTER`, `_MASTER_SMART`, `_MASTER_ELITE`, `_MASTER_PREMIUM`, en `.rtf`).
+  Salen de los SLIP originales, sin los datos de asegurados anteriores. La de **Elite** usa el
+  recuadro de 6 columnas, porque el original traía uno viejo de 3. En la de Master se corrigió
+  el encabezado "NACIMI/ENTO".
+  `herramientas/preparar_plantillas_slip.py` las vuelve a generar si cambian los originales.
+- **Plan:** se elige con la respuesta de *Producto Elegido* (`CONFIG_EMISION.SLIP`).
+- **Columnas:** nombre completo, fecha de nacimiento (dd/mm/aaaa), sexo (M/F), contacto de
+  emergencia, su teléfono y beneficiario.
+  - Una fila por asegurado (1 a 5).
+  - Arial 7, igual que el original.
+  - Nombres en mayúsculas; los vacíos salen como `-`.
+- **Conversión a PDF:** el script llena el RTF y Power Automate lo convierte a PDF con Word
+  (OneDrive), el mismo motor que la propuesta, así que el formato queda idéntico.
+- **Si algo falla** (plantilla no encontrada o plan sin plantilla), el correo lo avisa en rojo
+  y el adjunto lleva el motivo. La solicitud se envía igual.
+
 ## Cambios necesarios en el formulario
+
+- [ ] En cada sección de asegurado, agregar **Sexo** (opción múltiple *Masculino* /
+      *Femenino*, obligatoria) con los títulos `Sexo`, `Sexo 2`, `Sexo 3`, `Sexo 4` y `Sexo 5`.
+      La va a necesitar el SLIP.
 
 - [ ] Agregar **Folio de la propuesta** como primera pregunta de "Información para emisión":
   - respuesta corta y obligatoria;
@@ -113,6 +140,27 @@ correo de Seguro de Viaje dentro de "Otros".
    - Datos adjuntos: cambia a *matriz completa* y usa la salida de **Seleccionar**.
 
 Un correo sin adjuntos manda una matriz vacía y Outlook lo envía igual.
+
+#### SLIP en el flujo
+
+1. Sube las 4 plantillas de `plantillas-slip/` a Google Drive, en cualquier carpeta de la
+   cuenta dueña del script del formulario. **No les cambies el nombre.**
+2. En el flujo, pega el esquema nuevo de `POWER_AUTOMATE_SCHEMA.json`, que agrega `slip`.
+3. Entre el disparador y **Apply to each**, agrega dos pasos de OneDrive for Business:
+   - **Create file:**
+     - Carpeta: `/Cotizaciones Plantilla`.
+     - Nombre (fx): `triggerBody()?['slip']?['nombreRtf']`.
+     - Contenido (fx): `base64ToBinary(triggerBody()?['slip']?['contenidoBase64'])`.
+   - **Convert file:**
+     - Archivo (fx): `outputs('Create_file')?['body/Id']`.
+     - Tipo de destino: **PDF**.
+4. En el correo, en **Attachments** (modo matriz completa), cambia `body('Select')` por:
+
+   ```
+   if(equals(item()?['tipo'],'SEGURO_VIAJE'), union(body('Select'), createArray(addProperty(addProperty(json('{}'),'Name',triggerBody()?['slip']?['nombrePdf']),'ContentBytes',body('Convert_file')?['$content']))), body('Select'))
+   ```
+
+   Así el SLIP solo va en el correo de Seguro de Viaje. TCI y TCC quedan igual.
 
 ## Pendientes
 

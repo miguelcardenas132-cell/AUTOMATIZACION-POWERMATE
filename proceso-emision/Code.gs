@@ -129,17 +129,32 @@ const CONFIG_EMISION = {
     },
     {
       titulo: 'Asegurado 1',
-      preguntas: ['Nombre Completo', 'Fecha de Nacimiento', 'Contacto de Emergencia',
+      preguntas: ['Nombre Completo', 'Fecha de Nacimiento', 'Sexo', 'Contacto de Emergencia',
         'Teléfono Contacto de Emergencia', 'Nombre Beneficiario',
         'Domicilio del Asegurado (Calle, No. Ext y/o Int, Colonia, Municipio o Delegación, C.P.)']
     }
   ].concat([2, 3, 4, 5].map(function (n) {
     return {
       titulo: 'Asegurado ' + n,
-      preguntas: ['Nombre Completo ' + n, 'Fecha de Nacimiento ' + n, 'Contacto de Emergencia ' + n,
+      preguntas: ['Nombre Completo ' + n, 'Fecha de Nacimiento ' + n, 'Sexo ' + n, 'Contacto de Emergencia ' + n,
         'Teléfono Contacto de Emergencia ' + n, 'Nombre Beneficiario ' + n]
     };
   })),
+
+  /**
+   * SLIP: el documento que Seguro de Viaje sube al sistema interno. Hay una
+   * plantilla RTF por plan (carpeta proceso-emision/plantillas-slip del
+   * repositorio) que se sube tal cual a Google Drive; el script la busca por
+   * nombre, llena el recuadro de asegurados (Arial 7) y Power Automate la
+   * convierte a PDF con Word, así que el formato queda idéntico al original.
+   * La llave es la respuesta de "Producto Elegido" (sin mayúsculas ni acentos).
+   */
+  SLIP: {
+    'master': 'PLANTILLA_SLIP_MASTER.rtf',
+    'master smart': 'PLANTILLA_SLIP_MASTER_SMART.rtf',
+    'master elite': 'PLANTILLA_SLIP_MASTER_ELITE.rtf',
+    'master premium': 'PLANTILLA_SLIP_MASTER_PREMIUM.rtf'
+  },
 
   // Preguntas de control que no aportan nada al correo.
   OMITIR: [/^¿deseas agregar/i]
@@ -179,6 +194,7 @@ function desviarAPruebas_(payload) {
       '<strong>CORREO DE PRUEBA</strong> (' + escapar_(correo.tipo) + '). En producción iría a: <strong>' +
       escapar_(correo.para) + '</strong>' + (correo.cc ? ' · CC: ' + escapar_(correo.cc) : '') +
       ' · Adjuntos: ' + (correo.adjuntos.length ? escapar_(correo.adjuntos.map(function (a) { return a.nombre; }).join(', ')) : 'ninguno') +
+      (correo.tipo === 'SEGURO_VIAJE' && payload.slip ? ' + ' + escapar_(payload.slip.nombrePdf) : '') +
       '</div>';
     correo.asunto = '[PRUEBA] ' + correo.asunto;
     correo.cuerpoHtml = aviso + correo.cuerpoHtml;
@@ -290,11 +306,15 @@ function buscarFolio_(archivos) {
 
 function construirCorreos_(solicitud) {
   const datos = datosContratante_(solicitud);
+  const slip = construirSlip_(solicitud);
   const csf = buscarRespuesta_(solicitud, CONFIG_EMISION.PREGUNTAS.CSF);
   const copia = CONFIG_EMISION.COPIA_SIEMPRE.filter(function (c) { return c; }).join(';');
 
   return {
     folio: solicitud.folio,
+    // Va aparte de los correos: Power Automate lo convierte a PDF una vez y
+    // lo agrega solo al correo de Seguro de Viaje.
+    slip: { nombreRtf: slip.nombreRtf, nombrePdf: slip.nombrePdf, contenidoBase64: slip.contenidoBase64 },
     correos: [
       {
         tipo: 'TCI',
@@ -318,7 +338,7 @@ function construirCorreos_(solicitud) {
         cc: copia,
         asunto: 'SOLICITUD DE EMISIÓN || SENIOR +79 || ' + datos.contratante +
           (solicitud.folio ? ' || ' + solicitud.folio : ''),
-        cuerpoHtml: correoSeguroViaje_(solicitud, datos),
+        cuerpoHtml: correoSeguroViaje_(solicitud, datos, slip),
         adjuntos: adjuntosPayload_(solicitud.archivos)
       }
     ]
@@ -398,7 +418,10 @@ function correoTramite_(tipo, d) {
 }
 
 /** Correo completo para Seguro de Viaje: todo el formulario por secciones. */
-function correoSeguroViaje_(solicitud, d) {
+function correoSeguroViaje_(solicitud, d, slip) {
+  const avisoSlip = slip && slip.ok
+    ? ' También va adjunto el <strong>SLIP en PDF</strong> (' + escapar_(slip.nombrePdf) + ') con el recuadro de asegurados ya llenado.'
+    : ' <strong style="color:#b3261e;">⚠️ No se generó el SLIP: ' + escapar_(slip ? slip.motivo : '') + '. Llenarlo a mano.</strong>';
   const usadas = {};
   const omitir = function (titulo) {
     return CONFIG_EMISION.OMITIR.some(function (re) { return re.test(titulo); });
@@ -437,7 +460,7 @@ function correoSeguroViaje_(solicitud, d) {
           'Se recibió una solicitud de emisión desde el formulario. Ya se enviaron en automático la ' +
           '<strong>solicitud de TCI</strong> a Mesa Control Daños y la <strong>solicitud de TCC</strong> a ' +
           'Cotizaciones Daños (contratante: <strong>' + escapar_(d.contratante) + '</strong>, persona ' +
-          (d.personaMoral ? 'moral' : 'física') + '). Los archivos que subió el cliente van adjuntos.' +
+          (d.personaMoral ? 'moral' : 'física') + '). Los archivos que subió el cliente van adjuntos.' + avisoSlip +
         '</td></tr>' +
         '<tr><td style="padding:12px 20px 8px 20px;">' + bloques +
           '<div style="font-family:' + FUENTE_EMISION + ';font-size:9pt;color:#888888;">Fecha de solicitud: ' +
@@ -493,6 +516,121 @@ function escapar_(texto) {
 }
 
 // ============================================================================
+// 4b. SLIP (recuadro de asegurados)
+// ============================================================================
+
+/**
+ * Arma el SLIP del plan elegido con los asegurados del formulario.
+ * Siempre regresa un RTF: si no se pudo llenar, uno de una línea con el
+ * motivo, para que el flujo no se detenga y Seguro de Viaje lo vea.
+ */
+function construirSlip_(solicitud) {
+  const base = 'SLIP_' + (solicitud.folio || ('SENIOR79_' + Utilities.formatDate(solicitud.fecha, 'America/Mexico_City', 'yyyyMMdd_HHmmss')));
+  const nombre = base.replace(/[\\/:*?"<>|]/g, '-');
+  // El RTF es un archivo de paso en OneDrive: lleva fecha y hora para que dos
+  // envíos del mismo folio no choquen. El PDF adjunto conserva el nombre limpio.
+  const sello = Utilities.formatDate(solicitud.fecha, 'America/Mexico_City', 'yyyyMMdd_HHmmss');
+  const resultado = { ok: false, motivo: '', nombreRtf: nombre + '_' + sello + '.rtf', nombrePdf: nombre + '.pdf', contenidoBase64: '' };
+  let rtf;
+  try {
+    const producto = normalizar_((buscarRespuesta_(solicitud, ['Producto Elegido']) || {}).texto);
+    const archivo = CONFIG_EMISION.SLIP[producto];
+    if (!archivo) throw new Error('el producto "' + producto + '" no tiene plantilla de SLIP');
+    rtf = llenarSlip_(leerPlantillaSlip_(archivo), leerAsegurados_(solicitud));
+    resultado.ok = true;
+  } catch (error) {
+    resultado.motivo = error.message;
+    Logger.log('SLIP no generado: ' + error.message);
+    rtf = '{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Arial;}}\\f0\\fs20 SLIP no generado: ' +
+      rtfTexto_(error.message) + '. Llenarlo manualmente.\\par}';
+  }
+  resultado.contenidoBase64 = Utilities.base64Encode(rtf);
+  return resultado;
+}
+
+function leerPlantillaSlip_(nombreArchivo) {
+  const archivos = DriveApp.getFilesByName(nombreArchivo);
+  while (archivos.hasNext()) {
+    const archivo = archivos.next();
+    if (!archivo.isTrashed()) return archivo.getBlob().getDataAsString('ISO-8859-1');
+  }
+  throw new Error('no encontré "' + nombreArchivo + '" en Google Drive');
+}
+
+/** Asegurados 1 a 5 del formulario, en el orden y formato del SLIP. */
+function leerAsegurados_(solicitud) {
+  const texto = function (titulo) { return ((buscarRespuesta_(solicitud, [titulo]) || {}).texto || '').trim(); };
+  const lista = [];
+  for (let n = 1; n <= 5; n++) {
+    const sufijo = n === 1 ? '' : ' ' + n;
+    const nombre = texto('Nombre Completo' + sufijo);
+    if (!nombre) continue;
+    lista.push({
+      nombre: nombre.toUpperCase(),
+      nacimiento: fechaSlip_(texto('Fecha de Nacimiento' + sufijo)),
+      sexo: sexoSlip_(texto('Sexo' + sufijo)),
+      contacto: (texto('Contacto de Emergencia' + sufijo) || '-').toUpperCase(),
+      telefono: texto('Teléfono Contacto de Emergencia' + sufijo) || '-',
+      beneficiario: (texto('Nombre Beneficiario' + sufijo) || '-').toUpperCase()
+    });
+  }
+  return lista;
+}
+
+/** "1937-11-26" (formato de Google Forms) -> "26/11/1937". */
+function fechaSlip_(valor) {
+  const partes = String(valor || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return partes ? partes[3] + '/' + partes[2] + '/' + partes[1] : (valor || '-');
+}
+
+function sexoSlip_(valor) {
+  const v = normalizar_(valor);
+  if (/^(m|masculino|hombre)$/.test(v)) return 'M';
+  if (/^(f|femenino|mujer)$/.test(v)) return 'F';
+  return v ? String(valor).toUpperCase() : '-';
+}
+
+/**
+ * Repite la fila modelo de la plantilla (entre %%FILA_INICIO%% y
+ * %%FILA_FIN%%) una vez por asegurado. Ajusta el número de fila y deja la
+ * marca de última fila solo en la última, como lo escribe Word.
+ */
+function llenarSlip_(plantilla, asegurados) {
+  const INICIO = '%%FILA_INICIO%%';
+  const FIN = '%%FILA_FIN%%';
+  const i = plantilla.indexOf(INICIO);
+  const j = plantilla.indexOf(FIN);
+  if (i === -1 || j === -1) throw new Error('la plantilla no tiene la fila modelo');
+  const modelo = plantilla.substring(i + INICIO.length, j);
+  const filas = asegurados.length ? asegurados : [{ nombre: '-', nacimiento: '-', sexo: '-', contacto: '-', telefono: '-', beneficiario: '-' }];
+
+  const bloque = filas.map(function (a, k) {
+    let fila = modelo.replace(/\\irow\d+\\irowband\d+/g, '\\irow' + (k + 1) + '\\irowband' + (k + 1));
+    if (k < filas.length - 1) fila = fila.replace(/\\lastrow ?/g, '');
+    [a.nombre, a.nacimiento, a.sexo, a.contacto, a.telefono, a.beneficiario].forEach(function (valor, c) {
+      fila = fila.split('%%C' + (c + 1) + '%%').join(rtfTexto_(valor));
+    });
+    return fila;
+  }).join('');
+  return plantilla.substring(0, i) + bloque + plantilla.substring(j + FIN.length);
+}
+
+/** Texto plano -> RTF: escapa \\ { } y acentos (cp1252) para no romper el archivo. */
+function rtfTexto_(texto) {
+  let salida = '';
+  const s = String(texto === null || texto === undefined ? '' : texto).replace(/\s+/g, ' ');
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charAt(i);
+    const code = s.charCodeAt(i);
+    if (c === '\\' || c === '{' || c === '}') salida += '\\' + c;
+    else if (code < 128) salida += c;
+    else if (code < 256) salida += "\\'" + ('0' + code.toString(16)).slice(-2);
+    else salida += '\\u' + (code > 32767 ? code - 65536 : code) + '?';
+  }
+  return salida;
+}
+
+// ============================================================================
 // 5. PUENTE A POWER AUTOMATE
 // ============================================================================
 
@@ -539,7 +677,7 @@ function probarCorreosEmision() {
       'Av. Inglaterra 3089, Vallarta Poniente, Guadalajara, C.P. 44110'],
     ['RFC', 'OME910520I31'], ['CURP (PERSONA FISICA)', ''], ['Correo Electronico', 'lborbon.gdl@segurosatlas.com.mx'],
     ['Teléfono', ''], ['Ocupación', ''],
-    ['Nombre Completo', 'Roberto García'], ['Fecha de Nacimiento', '1943-03-10'],
+    ['Nombre Completo', 'Roberto García'], ['Fecha de Nacimiento', '1943-03-10'], ['Sexo', 'Masculino'],
     ['Contacto de Emergencia', 'Ana García'], ['Teléfono Contacto de Emergencia', '3312345678'],
     ['Nombre Beneficiario', 'Ana García'], ['¿Deseas agregar un segundo asegurado?', 'No']
   ].map(function (r) { return { titulo: r[0], texto: r[1], archivos: [] }; });
