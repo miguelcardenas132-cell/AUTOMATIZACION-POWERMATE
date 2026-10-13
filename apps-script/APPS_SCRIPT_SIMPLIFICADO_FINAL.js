@@ -20,7 +20,11 @@
  *      salida, lo que ocurra primero.
  *   5) Se construye el cuerpo HTML del correo (aprobación o rechazo).
  *   6) Se dispara el webhook a Power Automate, que adjunta el PDF de la
- *      propuesta y el formato de emisión (individual o grupal) de Drive.
+ *      propuesta y envía el correo.
+ *
+ * SOLICITUD DE EMISIÓN: la propuesta aprobada lleva un QR (PDF) y un botón
+ * (correo) al formulario de solicitud de emisión, prellenado con folio,
+ * destino y fechas (ver CONFIG.PREFILL_EMISION y proceso-emision/).
  *
  * ESTATUS POSIBLES
  *   APROBADO                     Pasa todas las validaciones; lleva adjuntos.
@@ -42,7 +46,8 @@
  * html2pdf.app). Manda `htmlBase64` con el HTML ya renderizado; Power Automate
  * hace base64ToBinary() -> Create file -> Convert file (Word Online) -> PDF.
  *
- * DEPENDENCIA: ASSETS_BASE64.gs (logos y código QR incrustados en base64).
+ * DEPENDENCIAS: ASSETS_BASE64.gs (logos y QR de nueva propuesta en base64) y
+ * QR_GENERADOR.gs (genera el QR de emisión de cada propuesta).
  * ============================================================================
  */
 
@@ -83,19 +88,20 @@ const CONFIG = {
   COLUMNAS_ASEGURADOS: 10,
   MAX_ASEGURADOS: 5,
 
-  // Formatos de solicitud de emisión que Power Automate adjunta al correo
-  // aprobado, tomándolos de Google Drive (Mi unidad) con la ruta que manda
-  // este script: el individual si hay 1 asegurado, el grupal si hay de 2 a
-  // MAX_ASEGURADOS. Si se mueven o renombran en Drive, hay que actualizar
-  // aquí la carpeta o el nombre exacto.
-  CARPETA_FORMATOS_EMISION: '/COTIZACIONES',
-  FORMATO_EMISION_INDIVIDUAL: {
-    archivo: 'SOLICITUD EMISION INDIVIDUAL.pdf',
-    nombreAdjunto: 'Solicitud de emisión individual.pdf'
-  },
-  FORMATO_EMISION_GRUPAL: {
-    archivo: 'SOLICITUD DE SEGURO DE VIAJE_GRUPAL v2.pdf',
-    nombreAdjunto: 'Solicitud de emisión grupal.pdf'
+  // Formulario "Solicitud de Emisión de Póliza de Seguro de Viaje". Cada
+  // propuesta aprobada lleva un QR (en el PDF) y un botón (en el correo) que
+  // abren este formulario con los datos de la propuesta ya escritos.
+  URL_FORMULARIO_EMISION: 'https://docs.google.com/forms/d/e/1FAIpQLSdOqmheMAPxTjV9Hc41Xras9M-C3UjGi2z2jl3tZ_fEg_YQ7Q/viewform',
+  /**
+   * Identificadores "entry.NNNN" de las preguntas que se prellenan. Salen del
+   * enlace prellenado del formulario (Editar formulario > ⋮ > Obtener enlace
+   * prellenado). Si uno queda vacío, esa pregunta simplemente no se prellena.
+   */
+  PREFILL_EMISION: {
+    FOLIO: '',          // "Folio de la propuesta"
+    DESTINO: '',        // "Destino"
+    FECHA_SALIDA: '',   // "Fecha de Salida"
+    FECHA_REGRESO: ''   // "Fecha de Regreso"
   },
 
   // Enlaces del cuerpo del correo.
@@ -482,6 +488,9 @@ function construirDatosSolicitud_(fila, encabezados, valores) {
     destino: valorObligatorio_(encabezados, valores, CONFIG.COL_DESTINO),
     fechaInicio: formatearFecha_(inicioRaw),
     fechaFin: formatearFecha_(finRaw),
+    // aaaa-MM-dd: el formato que acepta Google Forms para prellenar fechas.
+    fechaInicioIso: formatearFechaIso_(inicioRaw),
+    fechaFinIso: formatearFechaIso_(finRaw),
     duracionDias: duracionDias,
     diasAnticipacion: diasAnticipacion,
     fechaEmision: Utilities.formatDate(hoy, tz, 'dd/MM/yyyy HH:mm:ss'),
@@ -608,6 +617,52 @@ function formatearFecha_(valor) {
   return Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'dd/MM/yyyy');
 }
 
+function formatearFechaIso_(valor) {
+  const fecha = valor instanceof Date ? valor : new Date(valor);
+  if (!valor || isNaN(fecha.getTime())) return '';
+  return Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+}
+
+/**
+ * Liga al formulario de solicitud de emisión con folio, destino y fechas de
+ * esta propuesta ya escritos (prellenado de Google Forms).
+ */
+function construirUrlEmision_(data) {
+  const ids = CONFIG.PREFILL_EMISION;
+  const valores = [
+    [ids.FOLIO, data.folio],
+    [ids.DESTINO, data.destino],
+    [ids.FECHA_SALIDA, data.fechaInicioIso],
+    [ids.FECHA_REGRESO, data.fechaFinIso]
+  ].filter((par) => par[0] && par[1]);
+  if (!valores.length) return CONFIG.URL_FORMULARIO_EMISION;
+  return CONFIG.URL_FORMULARIO_EMISION + '?usp=pp_url&' + valores
+    .map((par) => par[0] + '=' + encodeURIComponent(String(par[1]).trim()))
+    .join('&');
+}
+
+/**
+ * Código QR (data: URI) de la liga de emisión, generado localmente con
+ * QR_GENERADOR.gs. Nivel de corrección L: la liga prellenada es larga y así
+ * el código queda con módulos más grandes, más fácil de escanear impreso.
+ * Lleva margen blanco de 4 módulos (lo que pide el estándar) y se imprime a
+ * 88 px (~23 mm): con la liga prellenada completa se lee bien en papel.
+ * Se entrega como PNG (Word Online, que convierte a PDF, lo maneja mejor que
+ * GIF); si la conversión no está disponible, se queda en GIF.
+ */
+function qrDataUri_(texto) {
+  const qr = qrcode(0, 'L');
+  qr.addData(texto);
+  qr.make();
+  const gif = qr.createDataURL(4, 16);
+  try {
+    const blob = Utilities.newBlob(Utilities.base64Decode(gif.split(',')[1]), 'image/gif', 'qr.gif');
+    return 'data:image/png;base64,' + Utilities.base64Encode(blob.getAs('image/png').getBytes());
+  } catch (error) {
+    return gif;
+  }
+}
+
 /** El formulario admite "NA"/"No" cuando no se quiere copia a otro correo. */
 function normalizarCC_(valor) {
   const texto = valor.toString().trim();
@@ -679,7 +734,7 @@ function generarHtmlCotizacion_(data) {
       bloqueCoberturas_(data) +
       bloqueEspecificaciones_() +
       bloqueObservacionesYQr_(data) +
-      bloqueAccionOperativa_() +
+      bloqueAccionOperativa_(data) +
     '</td></tr>\n' +
     '<tr><td class="marco-pie">\n' +
       bloquePie_() +
@@ -767,6 +822,11 @@ function estilosCotizacion_() {
     '.ops p { font-size: 7.8px; line-height: 1.24; }\n' +
     '.ops ul { list-style: none; margin-top: 1px; margin-left: 7px; }\n' +
     '.ops li { font-size: 7.8px; line-height: 1.24; padding-left: 7px; text-indent: -7px; }\n' +
+    // Paso 1: instrucciones a la izquierda y QR de emisión a la derecha.
+    '.paso-qr { border-collapse: collapse; }\n' +
+    '.paso-qr td { vertical-align: top; padding: 0; }\n' +
+    '.paso-qr-img { text-align: center; vertical-align: middle; }\n' +
+    '.paso-qr-img img { width: 88px; height: 88px; display: block; margin: 0 auto; }\n' +
     // Cierre: observaciones a la izquierda, QR esquinado abajo a la derecha.
     '.cierre { border-collapse: collapse; margin-top: 4px; }\n' +
     '.cierre td { vertical-align: top; }\n' +
@@ -908,7 +968,8 @@ function bloqueEspecificaciones_() {
  * abajo) en lugar de grid/flex: el resultado visual es la misma retícula
  * alineada, pero sobrevive la conversión a DOCX de Word Online.
  */
-function bloqueAccionOperativa_() {
+function bloqueAccionOperativa_(data) {
+  const urlEmision = construirUrlEmision_(data);
   return '<div class="ops-caja">\n' +
     '<div class="ops-banner">Solicita tu póliza</div>\n' +
     '<table class="ops" role="presentation" cellspacing="5">\n' +
@@ -916,15 +977,23 @@ function bloqueAccionOperativa_() {
 
     '<tr>\n' +
     '<td class="celda">' +
-      '<h3>Paso 1. Requisitos para iniciar tu proceso</h3>' +
-      '<p>En caso de aceptar la propuesta, envía la siguiente documentación al correo ' +
-      '<strong>segurodeviaje@segurosatlas.com.mx</strong>:</p>' +
-      '<ul>' +
-        '<li>• Formato de emisión debidamente llenado.</li>' +
-        '<li>• Propuesta aceptada.</li>' +
-        '<li>• Obligatorio del contratante: Constancia de Situación Fiscal (CSF) ' +
-          'actualizada e INE o pasaporte.</li>' +
-      '</ul>' +
+      '<table class="paso-qr" role="presentation">' +
+      '<colgroup><col style="width:63%"><col style="width:37%"></colgroup><tr>' +
+      '<td class="paso-qr-texto">' +
+        '<h3>Paso 1. Solicita tu emisión en línea</h3>' +
+        '<p>En caso de aceptar la propuesta, escanea el código QR (o da clic en él) y llena la ' +
+        'solicitud de emisión. Ten a la mano:</p>' +
+        '<ul>' +
+          '<li>• Propuesta aceptada (este PDF).</li>' +
+          '<li>• Obligatorio del contratante: Constancia de Situación Fiscal (CSF) ' +
+            'actualizada e INE o pasaporte.</li>' +
+        '</ul>' +
+      '</td>' +
+      '<td class="paso-qr-img">' +
+        '<a href="' + escaparHtml_(urlEmision) + '">' +
+        '<img alt="Código QR para solicitar la emisión" src="' + qrDataUri_(urlEmision) + '"></a>' +
+      '</td>' +
+      '</tr></table>' +
     '</td>\n' +
     '<td class="celda">' +
       '<h3>Paso 2. Consideraciones importantes</h3>' +
@@ -1172,6 +1241,19 @@ function avisoPrivacidadCorreo_() {
  * (motor Word): la separación real solo se respeta como celda con altura
  * explícita y contenido (&nbsp;), nunca como espacio en blanco vacío.
  */
+/**
+ * Botón a prueba de Outlook: celda con fondo y enlace con padding (Outlook
+ * ignora el padding y el fondo de un <a> suelto).
+ */
+function botonCorreo_(texto, url) {
+  return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">' +
+    '<tr><td bgcolor="' + COLORES.VERDE + '" style="background-color:' + COLORES.VERDE + ';border-radius:4px;' +
+      'padding:9px 22px;mso-padding-alt:9px 22px;">' +
+      '<a href="' + escaparHtml_(url) + '" style="color:#ffffff;text-decoration:none;font-weight:bold;' +
+        'font-size:11pt;font-family:' + FUENTE_CORREO + ';display:inline-block;">' + escaparHtml_(texto) + '</a>' +
+    '</td></tr></table>';
+}
+
 function espaciador_(altura) {
   return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">' +
     '<tr><td style="height:' + altura + 'px;line-height:' + altura + 'px;font-size:1px;">&nbsp;</td></tr>' +
@@ -1242,8 +1324,8 @@ function construirCorreoAprobado_(data) {
     '<tr><td bgcolor="#ffffff" style="padding:18px;background-color:#ffffff;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
 
       '<p style="margin:8px 0 16px 0;font-weight:bold;">¡Hola ' + escaparHtml_(data.nombreSolicitante) + ', buen día!</p>' +
-      '<p style="margin:0 0 16px 0;">En adjunto encontrarás la <strong>propuesta solicitada</strong> y el ' +
-      '<strong>formato de emisión</strong>. A continuación, el resumen:</p>' +
+      '<p style="margin:0 0 16px 0;">En adjunto encontrarás la <strong>propuesta solicitada</strong>. ' +
+      'A continuación, el resumen:</p>' +
 
       '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
       'style="border-collapse:collapse;background-color:' + COLORES.VERDE_CLARO + ';">' +
@@ -1285,15 +1367,15 @@ function construirCorreoAprobado_(data) {
       espaciador_(16) +
 
       recuadroCorreo_('&#128196;', 'Solicitud de Emisión',
-        '<div>Favor de enviar la siguiente documentación al correo ' +
-        '<a href="mailto:segurodeviaje@segurosatlas.com.mx" style="color:' + COLORES.VERDE + ';">' +
-        'segurodeviaje@segurosatlas.com.mx</a>:</div>' +
+        '<div>Si aceptas la propuesta, llena la <strong>solicitud de emisión en línea</strong> (también puedes ' +
+        'escanear el código QR de la propuesta). Ten a la mano:</div>' +
         listaCorreo_([
-          '<strong>Formato de emisión</strong> debidamente llenado.',
-          '<strong>Propuesta aceptada.</strong>',
+          '<strong>Propuesta aceptada</strong> (el PDF adjunto a este correo).',
           '<strong>Obligatorio del contratante:</strong> Constancia de Situación Fiscal (CSF) actualizada e ' +
             'INE o pasaporte.'
-        ], COLORES.GRIS_TABLA),
+        ], COLORES.GRIS_TABLA) +
+        espaciador_(8) +
+        botonCorreo_('Solicitar emisión', construirUrlEmision_(data)),
         COLORES.GRIS_TABLA, COLORES.AZUL) +
       espaciador_(16) +
 
@@ -1514,15 +1596,6 @@ function guardarHtmlEnDrive_(htmlContenido, nombreArchivo) {
   return carpeta.createFile(blob);
 }
 
-/** Formato de emisión que corresponde: individual con 1 asegurado, grupal con 2 o más. */
-function formatoEmision_(data) {
-  const formato = data.numAsegurados > 1 ? CONFIG.FORMATO_EMISION_GRUPAL : CONFIG.FORMATO_EMISION_INDIVIDUAL;
-  return {
-    ruta: CONFIG.CARPETA_FORMATOS_EMISION + '/' + formato.archivo,
-    nombreAdjunto: formato.nombreAdjunto
-  };
-}
-
 /**
  * @param {File|null} archivoHtml    Archivo en Drive; null si fue rechazada.
  * @param {Object}    data           Solicitud completa (incluye cuerpoCorreoHtml).
@@ -1549,12 +1622,6 @@ function enviarWebhookPowerAutomate_(archivoHtml, data, htmlCotizacion) {
     // Nombre del PDF que recibe el cliente (misma nomenclatura que el
     // asunto, sin '/'); no confundir con nombreArchivoDrive, el respaldo interno.
     nombreArchivo: aprobado ? construirNombreArchivoPdf_(data) : '',
-
-    // Formato de solicitud de emisión que Power Automate adjunta como
-    // segundo archivo (solo aprobadas): ruta en Google Drive para "Get file
-    // content using path" y nombre con el que llega al cliente.
-    formatoEmisionRuta: aprobado ? formatoEmision_(data).ruta : '',
-    formatoEmisionNombre: aprobado ? formatoEmision_(data).nombreAdjunto : '',
 
     folio: data.folio,
     htmlFileId: archivoHtml ? archivoHtml.getId() : '',

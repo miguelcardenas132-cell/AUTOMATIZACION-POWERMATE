@@ -7,10 +7,10 @@ Usa los cuerpos de correo y la propuesta de /ejemplos (generados con
 igual que en producción, con datos ficticios.
 
 Uso (desde la raíz del repo):
-    # Propuesta aprobada grupal (adjunta el PDF y el formato de emisión grupal)
+    # Propuesta aprobada (adjunta el PDF de la propuesta)
     python3 apps-script/test_webhook.py "https://...invoke?..." --email tu@correo.com
 
-    # Propuesta aprobada individual (adjunta el formato de emisión individual)
+    # Propuesta aprobada individual
     python3 apps-script/test_webhook.py "https://..." --asegurados 1
 
     # Rechazos (sin adjuntos)
@@ -28,11 +28,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 EJEMPLOS = Path(__file__).resolve().parent.parent / "ejemplos"
-
-# Mismos valores que CONFIG en APPS_SCRIPT_SIMPLIFICADO_FINAL.js.
-CARPETA_FORMATOS_EMISION = "/COTIZACIONES"
-FORMATO_INDIVIDUAL = ("SOLICITUD EMISION INDIVIDUAL.pdf", "Solicitud de emisión individual.pdf")
-FORMATO_GRUPAL = ("SOLICITUD DE SEGURO DE VIAJE_GRUPAL v2.pdf", "Solicitud de emisión grupal.pdf")
 
 CUERPOS_RECHAZO = {
     "RECHAZADO_TIEMPO": "correo_rechazo_tiempo.html",
@@ -55,18 +50,15 @@ def construir_payload(estatus, email, folio, asegurados):
     nomenclatura = f"Propuesta Seguro de Viaje Senior +79 - 01122026 // 15D, FRA {datetime.now().strftime('%d%m%Y')}"
 
     if aprobado:
-        archivo, nombre_adjunto = FORMATO_GRUPAL if asegurados > 1 else FORMATO_INDIVIDUAL
         html_propuesta = leer_ejemplo("propuesta_aprobada.html")
         asunto = f"[PRUEBA] {nomenclatura}"
         cuerpo = leer_ejemplo("correo_aprobado.html")
         html_b64 = base64.b64encode(html_propuesta.encode("utf-8")).decode("ascii")
         nombre_archivo = nomenclatura.replace(" // ", " - ") + ".pdf"
-        formato_ruta = f"{CARPETA_FORMATOS_EMISION}/{archivo}"
-        formato_nombre = nombre_adjunto
     else:
         asunto = "[PRUEBA] Solicitud de Propuesta de Seguro no procesada"
         cuerpo = leer_ejemplo(CUERPOS_RECHAZO[estatus])
-        html_b64 = nombre_archivo = formato_ruta = formato_nombre = ""
+        html_b64 = nombre_archivo = ""
 
     return {
         "emailCliente": email,
@@ -77,8 +69,6 @@ def construir_payload(estatus, email, folio, asegurados):
         "tipoProducto": "Grupal" if asegurados > 1 else "Individual",
         "htmlBase64": html_b64,
         "nombreArchivo": nombre_archivo,
-        "formatoEmisionRuta": formato_ruta,
-        "formatoEmisionNombre": formato_nombre,
         "folio": folio,
         "htmlFileId": "",
         "fechaGeneracion": datetime.now(timezone.utc).isoformat(),
@@ -91,7 +81,7 @@ def main():
     parser.add_argument("--estatus", default="APROBADO", choices=["APROBADO", *CUERPOS_RECHAZO])
     parser.add_argument("--email", default="prueba@example.com", help="A quién llega el correo de prueba")
     parser.add_argument("--asegurados", type=int, default=3, choices=range(1, 6),
-                        help="1 = formato individual; 2 a 5 = formato grupal")
+                        help="1 = Individual; 2 a 5 = Grupal (tipoProducto)")
     parser.add_argument("--folio", default=None)
     args = parser.parse_args()
 

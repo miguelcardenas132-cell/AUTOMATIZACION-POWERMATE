@@ -2,37 +2,41 @@
 
 Seguros Atlas · Seguro de Viaje (DINE — Dirección de Negocios Especiales)
 
-Proyecto de Apps Script: **Cotizaciones 2026** (ID `1LpY-U8AGMcjErPLIhX4B50I7NUx7BUu4yFqYIX8VYL3AA15_ETAeHDZF`), con los archivos `Main.gs` y `ASSETS_BASE64.gs`.
+Proyecto de Apps Script: **Cotizaciones 2026** (ID `1LpY-U8AGMcjErPLIhX4B50I7NUx7BUu4yFqYIX8VYL3AA15_ETAeHDZF`), con los archivos `Main.gs`, `ASSETS_BASE64.gs` y `QR_GENERADOR.gs`.
 
 Un agente o cliente llena un Google Form. En menos de un minuto recibe, desde el buzón
 compartido **segurodeviaje@segurosatlas.com.mx**, una de dos respuestas:
 
-- **Propuesta aprobada:** un correo con el resumen y las primas, que trae adjuntos el PDF de
-  la propuesta y el formato de emisión en blanco.
+- **Propuesta aprobada:** un correo con el resumen, las primas y un botón **"Solicitar
+  emisión"**, que trae adjunto el PDF de la propuesta. El PDF lleva un **QR de emisión**.
+  El botón y el QR abren el formulario de solicitud de emisión con el folio, el destino y las
+  fechas ya escritos (ver `proceso-emision/`).
 - **Solicitud no procesada:** un correo de rechazo que explica el motivo, sin adjuntos.
 
 ```
 Google Form ─► Google Sheet ─► Apps Script (reglas + HTML) ─► webhook ─► Power Automate
                                                                            │
-                     PDF (OneDrive/Word Online) + formato de emisión (Google Drive)
+                                   PDF de la propuesta (OneDrive/Word Online)
                                                                            ▼
                                                Outlook · buzón compartido segurodeviaje@
 ```
 
 Apps Script tiene **toda** la regla de negocio y arma los documentos. Power Automate solo
-convierte el HTML a PDF, toma el formato de emisión de Drive y envía el correo.
+convierte el HTML a PDF y envía el correo.
 
 ## Contenido del repositorio
 
 | Archivo | Qué es |
 |---|---|
 | `apps-script/APPS_SCRIPT_SIMPLIFICADO_FINAL.js` | Script principal: se pega completo en `Main.gs` del proyecto de Apps Script **Cotizaciones 2026**. |
-| `apps-script/ASSETS_BASE64.gs` | Logos y QR del PDF en base64. Va como segundo archivo `.gs` del mismo proyecto. |
+| `apps-script/ASSETS_BASE64.gs` | Logos y QR de nueva propuesta del PDF, en base64. Va como segundo archivo `.gs` del mismo proyecto. |
+| `apps-script/QR_GENERADOR.gs` | Genera el QR de emisión de cada propuesta (librería qrcode-generator, MIT). Va como tercer archivo `.gs` del mismo proyecto. |
+| `apps-script/respaldos/` | Versión anterior, que adjuntaba el formato de emisión en blanco. Ver "Regresar a la versión con formato de emisión". |
 | `apps-script/POWER_AUTOMATE_SCHEMA.json` | Esquema JSON del disparador HTTP de Power Automate. |
 | `apps-script/test_webhook.py` | Envía al flujo un payload de prueba igual al de producción, sin pasar por el formulario. |
 | `herramientas/generar_ejemplos.js` | Regenera `ejemplos/` con el código real (datos ficticios). |
 | `ejemplos/` | Propuesta (HTML y PDF), correo aprobado y un correo por cada motivo de rechazo. |
-| `proceso-emision/` | Siguiente fase: script del formulario "Solicitud de Emisión" que manda en automático las solicitudes de TCI, TCC y la emisión completa a Seguro de Viaje. **En construcción**; ver su README. |
+| `proceso-emision/` | Script del formulario "Solicitud de Emisión": manda en automático las solicitudes de TCI, TCC y la emisión completa a Seguro de Viaje. Ver su README. |
 
 ## Reglas de negocio
 
@@ -58,7 +62,7 @@ El script evalúa las reglas en este orden, y la primera que aplica define el es
 | `RECHAZADO_TIEMPO` | Menos de 5 días hábiles antes de la salida | Correo de rechazo |
 | `RECHAZADO_SIN_ELEGIBLES` | Ningún pasajero en el rango de edad | Correo de rechazo |
 | `RECHAZADO_EXCESO_ASEGURADOS` | Más de 5 asegurados elegibles | Correo de rechazo |
-| `APROBADO` | Pasa todo lo anterior | Correo con PDF + formato de emisión |
+| `APROBADO` | Pasa todo lo anterior | Correo con el PDF de la propuesta y el botón "Solicitar emisión" |
 
 Todos los rechazos llevan el asunto **"Solicitud de Propuesta de Seguro no procesada"**. Las
 propuestas aprobadas usan esta nomenclatura:
@@ -84,7 +88,7 @@ El PDF se llama igual, pero con ` - ` en lugar de ` // `.
 ### 2. Apps Script (Extensiones › Apps Script, desde el Sheet)
 
 1. Pega `APPS_SCRIPT_SIMPLIFICADO_FINAL.js` completo en `Main.gs` (proyecto **Cotizaciones 2026**).
-2. Crea un segundo archivo `ASSETS_BASE64.gs` y pega ahí su contenido.
+2. Crea los archivos `ASSETS_BASE64.gs` y `QR_GENERADOR.gs` y pega en cada uno su contenido.
 3. Ejecuta **una vez** `configurarPropiedades()`. Guarda en Script Properties la carpeta de
    Drive donde se respaldan las propuestas (`CARPETA_SALIDA_ID`) y la URL del webhook
    (`WEBHOOK_POWER_AUTOMATE_URL`). Si el flujo se recrea, la URL cambia: actualízala y
@@ -105,17 +109,19 @@ dirigido a `prueba@example.com`; cambia ese correo en `construirDatosPrueba_` pa
 | `testearRechazoExcesoAsegurados()` | 6 asegurados elegibles |
 | `procesarPegadoMasivo()` | Procesa filas pegadas a mano en la hoja (se salta las que ya tienen `Estado de envío`) |
 
-### 3. Google Drive
+### 3. Google Drive y formulario de emisión
 
-- En **Mi unidad/COTIZACIONES**, los formatos de emisión en blanco:
-  - `SOLICITUD EMISION INDIVIDUAL.pdf`: se adjunta con 1 asegurado. Llega al cliente como
-    *Solicitud de emisión individual.pdf*.
-  - `SOLICITUD DE SEGURO DE VIAJE_GRUPAL v2.pdf`: se adjunta con 2 a 5 asegurados. Llega al
-    cliente como *Solicitud de emisión grupal.pdf*.
-- Si se mueven o renombran, actualiza `CARPETA_FORMATOS_EMISION` y
-  `FORMATO_EMISION_INDIVIDUAL` / `FORMATO_EMISION_GRUPAL`.
 - El logo y la firma del correo son imágenes públicas de Drive (`URL_LOGO_CORREO`,
   `URL_FIRMA_CORREO`).
+- **QR y botón de emisión:** apuntan a `URL_FORMULARIO_EMISION`. Para que el formulario abra
+  con los datos de la propuesta ya escritos, llena `PREFILL_EMISION` con los identificadores
+  `entry.NNNN` de cuatro preguntas: *Folio de la propuesta*, *Destino*, *Fecha de Salida* y
+  *Fecha de Regreso*.
+  1. Formulario de emisión en modo edición › **⋮** › **Obtener enlace prellenado**.
+  2. Escribe cualquier valor en esas cuatro preguntas › **Obtener enlace** › **Copiar enlace**.
+  3. Cada `entry.NNNN=valor` del enlace corresponde a una pregunta.
+
+  Si un identificador queda vacío, esa pregunta no se prellena y el resto sigue funcionando.
 
 ### 4. Power Automate
 
@@ -126,15 +132,11 @@ dirigido a `prueba@example.com`; cambia ese correo en `construirDatosPrueba_` pa
 3. **Rama Verdadero:**
    - OneDrive › *Crear archivo*, con el contenido `base64ToBinary(triggerBody()?['htmlBase64'])`.
    - OneDrive › *Convertir archivo* a PDF.
-   - Google Drive › *Obtener contenido de archivo mediante ruta*, con la ruta
-     `formatoEmisionRuta`.
    - Outlook › *Enviar un correo electrónico desde un buzón compartido (V2)*:
      - Buzón: segurodeviaje@segurosatlas.com.mx.
      - Para: `emailCliente`. CC: `correoCC`. Asunto: `asunto`.
      - Cuerpo: `cuerpoCorreoHtml`, **sin** el `<p class="editor-paragraph">` que agrega el editor.
-     - Adjunto 1: nombre `nombreArchivo`; contenido, la salida de *Convertir archivo*.
-     - Adjunto 2: nombre `formatoEmisionNombre`; contenido
-       `body('Get_file_content_using_path')`. Si apunta a otro paso, el PDF llega dañado.
+     - Adjunto: nombre `nombreArchivo`; contenido, la salida de *Convertir archivo*.
 4. **Rama Falso:** el mismo envío desde el buzón compartido, con el cuerpo `cuerpoCorreoHtml`
    y sin adjuntos.
 
@@ -143,7 +145,7 @@ Para probar el flujo sin el formulario:
 ```bash
 node herramientas/generar_ejemplos.js            # actualiza /ejemplos
 python3 apps-script/test_webhook.py "<URL del flujo>" --email tu@correo.com
-python3 apps-script/test_webhook.py "<URL del flujo>" --asegurados 1        # formato individual
+python3 apps-script/test_webhook.py "<URL del flujo>" --asegurados 1        # propuesta individual
 python3 apps-script/test_webhook.py "<URL del flujo>" --estatus RECHAZADO_TIEMPO
 ```
 
@@ -156,6 +158,25 @@ python3 apps-script/test_webhook.py "<URL del flujo>" --estatus RECHAZADO_TIEMPO
   de escritorio. No uses `<ul>`, márgenes ni `max-width` sin el bloque `<!--[if mso]>`.
 - **Errores:** si una fila falla, el script escribe `ERROR: <mensaje>` en `Estado de envío`.
   El detalle queda en Apps Script › Ejecuciones.
+
+## Regresar a la versión con formato de emisión
+
+Antes de cambiar al formulario de emisión, el correo aprobado adjuntaba también el formato
+de emisión en blanco (individual o grupal) desde Google Drive, y el PDF pedía enviar la
+documentación por correo. Esa versión quedó guardada en `apps-script/respaldos/` y en la
+etiqueta de git `respaldo-formato-emision`. Para volver a ella:
+
+1. Pega `respaldos/APPS_SCRIPT_con_formato_emision_2026-10-13.js` en `Main.gs`. Esa
+   versión no usa `QR_GENERADOR.gs`; puedes dejar el archivo, no estorba.
+2. En Power Automate:
+   - pon de nuevo en el disparador el esquema
+     `respaldos/POWER_AUTOMATE_SCHEMA_con_formato_emision_2026-10-13.json`;
+   - en la rama Verdadero, agrega otra vez el paso de Google Drive *Obtener contenido de
+     archivo mediante ruta* (ruta `formatoEmisionRuta`);
+   - agrega el segundo adjunto: nombre `formatoEmisionNombre` y contenido
+     `body('Get_file_content_using_path')`.
+3. Los formatos tienen que seguir en **Mi unidad/COTIZACIONES**:
+   `SOLICITUD EMISION INDIVIDUAL.pdf` y `SOLICITUD DE SEGURO DE VIAJE_GRUPAL v2.pdf`.
 
 ## Seguridad
 

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Genera los ejemplos de /ejemplos con el código real de Apps Script, sin
- * tocar Google: carga APPS_SCRIPT_SIMPLIFICADO_FINAL.js y ASSETS_BASE64.gs
+ * tocar Google: carga APPS_SCRIPT_SIMPLIFICADO_FINAL.js, ASSETS_BASE64.gs y
+ * QR_GENERADOR.gs
  * con sustitutos mínimos de los servicios de Apps Script y escribe:
  *
  *   ejemplos/propuesta_aprobada.html   HTML que Power Automate convierte a PDF
@@ -28,14 +29,16 @@ var Session = { getScriptTimeZone: function () { return 'America/Mexico_City'; }
 var Utilities = { formatDate: function (fecha, tz, formato) {
   var p2 = function (n) { return String(n).padStart(2, '0'); };
   var f = p2(fecha.getDate()) + '/' + p2(fecha.getMonth() + 1) + '/' + fecha.getFullYear();
+  if (formato === 'yyyy-MM-dd') return fecha.getFullYear() + '-' + p2(fecha.getMonth() + 1) + '-' + p2(fecha.getDate());
   return formato === 'dd/MM/yyyy HH:mm:ss' ? f + ' ' + p2(fecha.getHours()) + ':' + p2(fecha.getMinutes()) + ':00' : f;
 } };
 var __gas = {};`;
 
 const codigo = fs.readFileSync(path.join(raiz, 'apps-script/APPS_SCRIPT_SIMPLIFICADO_FINAL.js'), 'utf8');
 const assets = fs.readFileSync(path.join(raiz, 'apps-script/ASSETS_BASE64.gs'), 'utf8');
+const qr = fs.readFileSync(path.join(raiz, 'apps-script/QR_GENERADOR.gs'), 'utf8');
 // eslint-disable-next-line no-eval
-eval(sustitutos + assets + codigo +
+eval(sustitutos + assets + qr + codigo +
   ';__gas.CONFIG = CONFIG; __gas.datos = construirDatosSolicitud_; __gas.pdf = generarHtmlCotizacion_;' +
   '__gas.aprobado = construirCorreoAprobado_; __gas.rechazo = construirCorreoRechazo_;');
 

@@ -87,6 +87,7 @@ const CONFIG_EMISION = {
    * posibles, por si la pregunta se renombra.
    */
   PREGUNTAS: {
+    FOLIO: ['Folio de la propuesta', 'Folio'],
     NOMBRE_AGENTE: ['Nombre de Agente'],
     CLAVE_AGENTE: ['Clave de Agente'],
     CLAVE_EJECUTIVO: ['Clave de tu Ejecutivo', 'Clave del Ejecutivo'],
@@ -113,7 +114,7 @@ const CONFIG_EMISION = {
   SECCIONES: [
     {
       titulo: 'Información para emisión',
-      preguntas: ['Nombre de Agente', 'Clave de Agente', 'Clave de tu Ejecutivo', 'Nombre de tu Ejecutivo',
+      preguntas: ['Folio de la propuesta', 'Nombre de Agente', 'Clave de Agente', 'Clave de tu Ejecutivo', 'Nombre de tu Ejecutivo',
         'Clave de Sucursal', 'Sucursal', 'Producto Elegido', 'Costo en USD', 'Adjunta la cotización recibida',
         'Adjunta la propuesta recibida', 'Adjunta tu CSF (Constancia de Situación Fiscal)',
         'Adjunta tu INE o pasaporte',
@@ -211,12 +212,11 @@ function leerRespuestas_(itemResponses) {
   });
 
   const todosLosArchivos = [].concat.apply([], respuestas.map(function (r) { return r.archivos; }));
-  return {
-    respuestas: respuestas,
-    archivos: todosLosArchivos,
-    folio: buscarFolio_(todosLosArchivos),
-    fecha: new Date()
-  };
+  const solicitud = { respuestas: respuestas, archivos: todosLosArchivos, fecha: new Date() };
+  // El folio llega prellenado desde el QR / botón de la propuesta; solo si
+  // viene vacío se intenta leer del PDF adjunto.
+  solicitud.folio = valor_(solicitud, 'FOLIO') || buscarFolio_(todosLosArchivos);
+  return solicitud;
 }
 
 function normalizar_(texto) {

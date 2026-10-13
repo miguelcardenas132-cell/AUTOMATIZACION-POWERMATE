@@ -42,6 +42,14 @@ Los tres llevan siempre en copia a equintanar@ (Eloisa Quintanar) y mhidalgo@ (M
 
 ## Cambios necesarios en el formulario
 
+- [ ] Agregar **Folio de la propuesta** como primera pregunta de "Información para emisión":
+  - respuesta corta y obligatoria;
+  - descripción sugerida: "Se llena solo si entraste desde el QR o el botón de tu
+    propuesta.";
+  - llega prellenada desde el QR o el botón de la propuesta, y con ella el correo a Seguro
+    de Viaje trae el folio sin tener que leerlo del PDF;
+  - después saca el enlace prellenado (ver el README de la raíz, "Google Drive y formulario
+    de emisión") para llenar `PREFILL_EMISION` en el script de la propuesta.
 - [ ] Agregar **Clave de Sucursal** (sección "Información para emisión"):
   - respuesta corta y obligatoria;
   - validación: *Expresión regular* → *Coincide con* → `^[A-Za-z][A-Za-z0-9]{2}$`, con el
@@ -108,7 +116,4 @@ Un correo sin adjuntos manda una matriz vacía y Outlook lo envía igual.
 
 ## Pendientes
 
-- [ ] Siguientes partes:
-  - QR de la propuesta apuntando a este formulario;
-  - textos de "Solicita tu póliza" en el PDF y el correo;
-  - acuse al cliente, si se requiere.
+- [ ] Acuse al cliente de que su solicitud de emisión se recibió, si se requiere.
