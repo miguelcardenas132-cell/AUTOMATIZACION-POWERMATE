@@ -69,7 +69,7 @@ const CONFIG_EMISION = {
     CORREO: 'segurodeviaje@segurosatlas.com.mx',
     DIRECCION: ['AV. Paseo de los Tamarindos No. 60 INT. PB, C.P. 05120', 'Col. Bosques de las Lomas, Ciudad de México'],
     // Imagen del 85 aniversario: debe ser una URL pública (Outlook bloquea base64).
-    URL_IMAGEN: 'https://drive.google.com/uc?export=view&id=1PVMOnr8P9YA5uFgv-0Hf4MZm-p0kaIA9'
+    URL_IMAGEN: 'https://drive.google.com/uc?export=view&id=10hT2Y0GwMlCHhuBzE6Dv8dq-TTRaUqA2'
   },
 
   // Datos fijos de la solicitud de TCI/TCC.
