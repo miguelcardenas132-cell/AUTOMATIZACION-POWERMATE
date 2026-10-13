@@ -63,6 +63,15 @@ const CONFIG_EMISION = {
     // , 'equintanar@segurosatlas.com.mx'  // descomentar para que Eloisa también reciba las pruebas
   ],
 
+  // Firma de los tres correos (misma que usa el equipo en Outlook).
+  FIRMA: {
+    TELEFONO: '(55) 9177 &ndash; 5000 Ext. 4931 Cel: 55 1322 6276',
+    CORREO: 'segurodeviaje@segurosatlas.com.mx',
+    DIRECCION: ['AV. Paseo de los Tamarindos No. 60 INT. PB, C.P. 05120', 'Col. Bosques de las Lomas, Ciudad de México'],
+    // Imagen del 85 aniversario: debe ser una URL pública (Outlook bloquea base64).
+    URL_IMAGEN: 'https://drive.google.com/uc?export=view&id=1PVMOnr8P9YA5uFgv-0Hf4MZm-p0kaIA9'
+  },
+
   // Datos fijos de la solicitud de TCI/TCC.
   FIJOS: {
     TIPO_MOVIMIENTO: 'Nueva',
@@ -136,7 +145,9 @@ const CONFIG_EMISION = {
 };
 
 const COLORES_EMISION = { VERDE: '#027370', VERDE_CLARO: '#e6f4f3', GRIS: '#f4f5f7', TEXTO: '#222222' };
-const FUENTE_EMISION = "Aptos,'Aptos Display',Calibri,Arial,sans-serif";
+const FUENTE_EMISION = "'Aptos Display',Aptos,Calibri,Arial,sans-serif";
+// Tamaño del texto de las solicitudes de TCI y TCC.
+const TAMANO_TRAMITE = '10.5pt';
 
 // ============================================================================
 // 2. TRIGGER
@@ -347,18 +358,18 @@ function datosContratante_(solicitud) {
 function correoTramite_(tipo, d) {
   const F = CONFIG_EMISION.FIJOS;
   const p = function (html, extra) {
-    return '<p style="margin:0 0 ' + (extra || 0) + 'px 0;font-family:' + FUENTE_EMISION + ';font-size:11pt;color:#000000;">' +
+    return '<p style="margin:0 0 ' + (extra || 0) + 'px 0;font-family:' + FUENTE_EMISION + ';font-size:' + TAMANO_TRAMITE + ';color:#000000;">' +
       html + '</p>';
   };
   const renglon = function (etiqueta, valorHtml) {
-    return '<li style="margin:0;font-family:' + FUENTE_EMISION + ';font-size:11pt;color:#000000;">' +
+    return '<li style="margin:0;font-family:' + FUENTE_EMISION + ';font-size:' + TAMANO_TRAMITE + ';color:#000000;">' +
       etiqueta + ': <strong>' + valorHtml + '</strong></li>';
   };
   const correo = d.correo
     ? '<a href="mailto:' + escapar_(d.correo) + '" style="color:#467886;">' + escapar_(d.correo) + '</a>'
     : 'N/A';
 
-  return '<div style="font-family:' + FUENTE_EMISION + ';font-size:11pt;color:#000000;">' +
+  return '<div style="font-family:' + FUENTE_EMISION + ';font-size:' + TAMANO_TRAMITE + ';color:#000000;">' +
     p('Hola, buen día.', 14) +
     p('Me pueden apoyar por favor con la emisión de <strong>1 (un) ' + tipo + '</strong> Nueva Póliza. ' +
       'Favor de asignarla al ' + escapar_(F.ASIGNACION), 14) +
@@ -376,7 +387,7 @@ function correoTramite_(tipo, d) {
       renglon('Ocupación', escapar_(d.ocupacion)) +
       renglon('Domicilio', escapar_(d.domicilio)) +
       renglon('Tel', escapar_(d.telefono)) +
-      '<li style="margin:0;font-family:' + FUENTE_EMISION + ';font-size:11pt;color:#000000;">Correo Electrónico: ' +
+      '<li style="margin:0;font-family:' + FUENTE_EMISION + ';font-size:' + TAMANO_TRAMITE + ';color:#000000;">Correo Electrónico: ' +
         correo + '</li>' +
       renglon('Ejecutivo', '<span style="background-color:#ffff00;">' + escapar_(d.ejecutivo) + '</span>') +
     '</ol>' +
@@ -456,16 +467,22 @@ function bloqueSeccion_(titulo, filasHtml) {
       '<td height="14" style="height:14px;font-size:1px;line-height:1px;">&nbsp;</td></tr></table>';
 }
 
+/** Firma del equipo: mismos colores y renglones que la firma de Outlook. */
 function firmaTexto_() {
+  const F = CONFIG_EMISION.FIRMA;
   const linea = function (html, estilo) {
-    return '<div style="font-family:' + FUENTE_EMISION + ';font-size:10pt;line-height:1.5;color:#222222;' + (estilo || '') + '">' +
+    return '<div style="margin:0;font-family:' + FUENTE_EMISION + ';font-size:10.5pt;line-height:1.35;' + estilo + '">' +
       html + '</div>';
   };
-  return linea('Seguro de Viaje', 'font-size:11pt;font-weight:bold;color:' + COLORES_EMISION.VERDE + ';') +
-    linea('DINE (Dirección de Negocios Especiales)') +
-    linea('<strong>Tel.</strong> (55) 9177 &ndash; 5000 Ext. 5114') +
-    linea('<strong>Correo:</strong> <a href="mailto:segurodeviaje@segurosatlas.com.mx" style="color:' +
-      COLORES_EMISION.VERDE + ';">segurodeviaje@segurosatlas.com.mx</a>');
+  const etiqueta = function (texto) { return '<strong style="color:#80340d;">' + texto + '</strong>'; };
+  return linea('Seguro de Viaje', 'font-size:13pt;font-weight:bold;color:#0f4761;') +
+    linea('DINE (Dirección de Negocios Especiales)', 'color:#7f7f7f;') +
+    linea('&nbsp;', 'color:#595959;') +
+    linea(etiqueta('Tel.') + ' ' + F.TELEFONO, 'color:#595959;') +
+    linea(etiqueta('Correo.') + ' <a href="mailto:' + F.CORREO + '" style="color:#467886;">' + F.CORREO + '</a>', 'color:#595959;') +
+    F.DIRECCION.map(function (renglon) { return linea(escapar_(renglon), 'color:#2f5496;'); }).join('') +
+    '<img src="' + escapar_(F.URL_IMAGEN) + '" alt="85 Aniversario Seguros Atlas" width="360" ' +
+      'style="display:block;width:360px;max-width:100%;height:auto;border:0;margin-top:6px;">';
 }
 
 function escapar_(texto) {
