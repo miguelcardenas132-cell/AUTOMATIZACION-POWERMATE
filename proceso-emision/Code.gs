@@ -609,3 +609,33 @@ function esObligatoria_(item) {
     return false;
   }
 }
+
+/**
+ * Imprime los identificadores "entry.NNNN" de las preguntas que se prellenan
+ * desde el QR / botón de la propuesta, listos para copiar en
+ * CONFIG.PREFILL_EMISION del script Cotizaciones 2026. No envía nada.
+ */
+function obtenerIdsPrellenado() {
+  const form = FormApp.getActiveForm();
+  const T = FormApp.ItemType;
+  const buscadas = [
+    ['FOLIO', 'Folio de la propuesta'],
+    ['DESTINO', 'Destino'],
+    ['FECHA_SALIDA', 'Fecha de Salida'],
+    ['FECHA_REGRESO', 'Fecha de Regreso']
+  ];
+  const lineas = buscadas.map(function (par) {
+    const item = form.getItems().filter(function (i) { return normalizar_(i.getTitle()) === normalizar_(par[1]); })[0];
+    if (!item) return '    ' + par[0] + ": '',   // ❌ no encontré la pregunta \"" + par[1] + '"';
+    let respuesta;
+    if (item.getType() === T.TEXT) respuesta = item.asTextItem().createResponse('x');
+    else if (item.getType() === T.PARAGRAPH_TEXT) respuesta = item.asParagraphTextItem().createResponse('x');
+    else if (item.getType() === T.DATE) respuesta = item.asDateItem().createResponse(new Date());
+    else return '    ' + par[0] + ": '',   // ❌ \"" + par[1] + '" es de tipo ' + item.getType() + '; debe ser respuesta corta o fecha';
+    const url = form.createResponse().withItemResponse(respuesta).toPrefilledUrl();
+    const id = (url.match(/entry\.\d+/) || [''])[0];
+    return '    ' + par[0] + ": '" + id + "',   // " + par[1];
+  });
+  Logger.log('Copia esto y pégaselo a Claude (o en PREFILL_EMISION de Cotizaciones 2026):\n' +
+    '  PREFILL_EMISION: {\n' + lineas.join('\n') + '\n  },');
+}
