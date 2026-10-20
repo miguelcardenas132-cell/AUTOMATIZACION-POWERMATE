@@ -13,8 +13,8 @@
 
 | Correo | Para | Contenido | Adjuntos |
 |---|---|---|---|
-| `SOLICITUD DE TCI \|\| NUEVA POLIZA \|\| <sucursal>` | mesacontroldanos@segurosatlas.com.mx | Solo los 14 datos del contratante | CSF |
-| `SOLICITUD DE TCC \|\| NUEVA POLIZA \|\| <sucursal>` | cotizacionesdanos@segurosatlas.com.mx | Solo los 14 datos del contratante | — |
+| `SOLICITUD DE TCI \|\| NUEVA POLIZA \|\| <sucursal>` | mesacontroldanos@segurosatlas.com.mx | Solo los 14 datos del contratante | CSF + INE o pasaporte |
+| `SOLICITUD DE TCC \|\| NUEVA POLIZA \|\| <sucursal>` | cotizacionesdanos@segurosatlas.com.mx | Solo los 14 datos del contratante | CSF + INE o pasaporte |
 | `SOLICITUD DE EMISIÓN \|\| SENIOR +79 \|\| <contratante> \|\| <folio>` | segurodeviaje@segurosatlas.com.mx | Todo el formulario, por secciones | Todo lo que subió el cliente + **SLIP en PDF** |
 
 Los tres llevan siempre en copia a equintanar@ (Eloisa Quintanar) y mhidalgo@ (Miguel Cárdenas), en `COPIA_SIEMPRE`.
@@ -133,7 +133,9 @@ correo de Seguro de Viaje dentro de "Otros".
 3. Dentro del ciclo, **Seleccionar** (*Select*):
    - De: `adjuntos` del elemento actual (elígelo en el contenido dinámico del ciclo)
    - Asignar `Name` = `item()?['nombre']`
-   - Asignar `ContentBytes` = `item()?['contenidoBase64']`
+   - Asignar `ContentBytes` = `base64ToBinary(item()?['contenidoBase64'])`
+     (tiene que ir como archivo; si va como texto, Outlook lo manda codificado y el
+     adjunto no abre)
 4. Dentro del ciclo, **Enviar un correo electrónico desde un buzón compartido (V2)**:
    - Buzón: segurodeviaje@segurosatlas.com.mx
    - Para: `para`; CC: `cc`; Asunto: `asunto`; Cuerpo: `cuerpoHtml`
@@ -157,7 +159,7 @@ Un correo sin adjuntos manda una matriz vacía y Outlook lo envía igual.
 4. En el correo, en **Attachments** (modo matriz completa), cambia `body('Select')` por:
 
    ```
-   if(equals(item()?['tipo'],'SEGURO_VIAJE'), union(body('Select'), createArray(addProperty(addProperty(json('{}'),'Name',triggerBody()?['slip']?['nombrePdf']),'ContentBytes',body('Convert_file')?['$content']))), body('Select'))
+   if(equals(item()?['tipo'],'SEGURO_VIAJE'), union(body('Select'), createArray(addProperty(addProperty(json('{}'),'Name',triggerBody()?['slip']?['nombrePdf']),'ContentBytes',body('Convert_file')))), body('Select'))
    ```
 
    Así el SLIP solo va en el correo de Seguro de Viaje. TCI y TCC quedan igual.

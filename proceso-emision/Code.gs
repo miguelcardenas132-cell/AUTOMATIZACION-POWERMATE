@@ -11,8 +11,8 @@
  * que los envía desde el buzón compartido segurodeviaje@segurosatlas.com.mx:
  *
  *   1) SOLICITUD DE TCI -> Mesa Control Daños. Solo datos del contratante,
- *      con la Constancia de Situación Fiscal adjunta.
- *   2) SOLICITUD DE TCC -> Cotizaciones Daños. Solo datos del contratante.
+ *      con la CSF y la INE o pasaporte adjuntas.
+ *   2) SOLICITUD DE TCC -> Cotizaciones Daños. Igual que el TCI.
  *   3) SOLICITUD DE EMISIÓN -> Seguro de Viaje. Toda la información del
  *      formulario, con todos los archivos que subió el cliente.
  *
@@ -101,10 +101,10 @@ const CONFIG_EMISION = {
     CORREO: ['Correo Electronico', 'Correo Electrónico'],
     TELEFONO: ['Teléfono', 'Telefono'],
     OCUPACION: ['Ocupación', 'Ocupacion'],
-    // Archivos. Si el formulario pide la CSF en su propia pregunta, solo esa
-    // va al TCI; si la CSF comparte pregunta con la INE, va todo lo de ahí.
+    // Archivos que van al TCI y al TCC (los dos siempre llevan CSF e INE).
     CSF: ['Adjunta tu CSF (Constancia de Situación Fiscal)', 'Constancia de Situación Fiscal (CSF)',
-      'Adjunta tu CSF (Constancia de Situación Fiscal) o INE o Identificación Migratoria de residencia mexicana']
+      'Adjunta tu CSF (Constancia de Situación Fiscal) o INE o Identificación Migratoria de residencia mexicana'],
+    INE: ['Adjunta tu INE o pasaporte', 'INE o pasaporte']
   },
 
   /**
@@ -307,7 +307,7 @@ function buscarFolio_(archivos) {
 function construirCorreos_(solicitud) {
   const datos = datosContratante_(solicitud);
   const slip = construirSlip_(solicitud);
-  const csf = buscarRespuesta_(solicitud, CONFIG_EMISION.PREGUNTAS.CSF);
+  const documentosContratante = documentosContratante_(solicitud);
   const copia = CONFIG_EMISION.COPIA_SIEMPRE.filter(function (c) { return c; }).join(';');
 
   return {
@@ -322,7 +322,7 @@ function construirCorreos_(solicitud) {
         cc: copia,
         asunto: 'SOLICITUD DE TCI || NUEVA POLIZA || ' + datos.sucursal,
         cuerpoHtml: correoTramite_('TCI', datos),
-        adjuntos: adjuntosPayload_(csf ? csf.archivos : [])
+        adjuntos: documentosContratante
       },
       {
         tipo: 'TCC',
@@ -330,7 +330,7 @@ function construirCorreos_(solicitud) {
         cc: copia,
         asunto: 'SOLICITUD DE TCC || NUEVA POLIZA || ' + datos.sucursal,
         cuerpoHtml: correoTramite_('TCC', datos),
-        adjuntos: []
+        adjuntos: documentosContratante
       },
       {
         tipo: 'SEGURO_VIAJE',
@@ -343,6 +343,24 @@ function construirCorreos_(solicitud) {
       }
     ]
   };
+}
+
+/**
+ * CSF + INE o pasaporte del contratante, que el TCI y el TCC siempre llevan.
+ * Si las dos preguntas fueran la misma (formulario anterior), no se repiten.
+ */
+function documentosContratante_(solicitud) {
+  const vistos = {};
+  const archivos = [];
+  [CONFIG_EMISION.PREGUNTAS.CSF, CONFIG_EMISION.PREGUNTAS.INE].forEach(function (titulos) {
+    const respuesta = buscarRespuesta_(solicitud, titulos);
+    (respuesta ? respuesta.archivos : []).forEach(function (archivo) {
+      if (vistos[archivo.id]) return;
+      vistos[archivo.id] = true;
+      archivos.push(archivo);
+    });
+  });
+  return adjuntosPayload_(archivos);
 }
 
 function datosContratante_(solicitud) {
