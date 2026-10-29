@@ -88,6 +88,10 @@ const CONFIG = {
   COLUMNAS_ASEGURADOS: 10,
   MAX_ASEGURADOS: 5,
 
+  // Formulario de propuestas. El QR de "nueva propuesta" del PDF lleva ahí
+  // (vía q.me-qr.com) y la imagen también es enlace directo a esta URL.
+  URL_NUEVA_PROPUESTA: 'https://docs.google.com/forms/d/e/1FAIpQLSfPedluEXJ32DFHxBjCRddBUzMgjsgK5OnwfZPluPuR6XHycw/viewform',
+
   // Formulario "Solicitud de Emisión de Póliza de Seguro de Viaje". Cada
   // propuesta aprobada lleva un QR (en el PDF) y un botón (en el correo) que
   // abren este formulario con los datos de la propuesta ya escritos.
@@ -1033,8 +1037,8 @@ function bloqueAccionOperativa_(data) {
       '<colgroup><col style="width:63%"><col style="width:37%"></colgroup><tr>' +
       '<td class="paso-qr-texto">' +
         '<h3>Paso 1. Solicita tu emisión en línea</h3>' +
-        '<p>En caso de aceptar la propuesta, escanea el código QR (o da clic en él) y llena la ' +
-        'solicitud de emisión. Ten a la mano:</p>' +
+        '<p>En caso de aceptar la propuesta, escanea el código QR o <a href="' + escaparHtml_(urlEmision) + '">' +
+        'da clic aquí</a> y llena la solicitud de emisión. Ten a la mano:</p>' +
         '<ul>' +
           '<li>• Propuesta aceptada (este PDF).</li>' +
           '<li>• Obligatorio del contratante: Constancia de Situación Fiscal (CSF) ' +
@@ -1086,9 +1090,11 @@ function bloqueObservacionesYQr_(data) {
     '<td class="cierre-qr">' +
       '<div class="qr-tarjeta">' +
         '<h3>¿Deseas una nueva propuesta para tu viaje?</h3>' +
-        '<p>Escanea el código QR y solicita una nueva propuesta de forma rápida y sencilla.</p>' +
+        '<p>Escanea el código QR o <a href="' + escaparHtml_(CONFIG.URL_NUEVA_PROPUESTA) + '">da clic aquí</a> ' +
+        'y solicita una nueva propuesta de forma rápida y sencilla.</p>' +
         '<p class="qr-nota">(Máximo 5 días hábiles antes del inicio del viaje)</p>' +
-        '<img alt="Código QR para nueva propuesta" src="' + ASSETS.QR_COTIZAR + '">' +
+        '<a href="' + escaparHtml_(CONFIG.URL_NUEVA_PROPUESTA) + '">' +
+        '<img alt="Código QR para nueva propuesta" src="' + ASSETS.QR_COTIZAR + '"></a>' +
       '</div>' +
     '</td>\n' +
     '</tr>\n</table>\n';
