@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proceso SENIOR +79</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: cabecera institucional, pestañas Ejecutivo / Técnico, cada una con mapa de flujo arriba y pasos numerados abajo. */
+:root {
+  --bg: #f4f6f5;
+  --surface: #ffffff;
+  --ink: #17262b;
+  --muted: #5b6b6f;
+  --line: #d5dedc;
+  --accent: #027370;       /* verde Atlas */
+  --accent-soft: #e3f1ef;
+  --navy: #0f2b48;
+  --amber: #a86200;
+  --amber-soft: #fff4e0;
+  --red: #b3261e;
+  --red-soft: #fdecea;
+  --google: #1a73e8;
+  --ms: #6b3fa0;
+  --chip: #eef2f1;
+  --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Source Sans 3", "Segoe UI", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1716; --surface: #16211f; --ink: #e4ecea; --muted: #9db0ac; --line: #2a3a37;
+    --accent: #3fb7ad; --accent-soft: #15302d; --navy: #a9c8ea; --amber: #f0b45a; --amber-soft: #2e2412;
+    --red: #f2958d; --red-soft: #33191a; --google: #8ab4f8; --ms: #c4a5ef; --chip: #1f2c2a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1716; --surface: #16211f; --ink: #e4ecea; --muted: #9db0ac; --line: #2a3a37;
+  --accent: #3fb7ad; --accent-soft: #15302d; --navy: #a9c8ea; --amber: #f0b45a; --amber-soft: #2e2412;
+  --red: #f2958d; --red-soft: #33191a; --google: #8ab4f8; --ms: #c4a5ef; --chip: #1f2c2a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 64px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(1.7rem, 4vw, 2.4rem); font-weight: 800; letter-spacing: -0.01em; color: var(--navy); }
+h2 { font-size: 1.35rem; font-weight: 700; color: var(--navy); }
+h3 { font-size: 1.02rem; font-weight: 700; }
+p { margin: 0; }
+code, .mono { font-family: var(--font-mono); font-size: 0.82em; }
+code { background: var(--chip); padding: 0.05em 0.35em; border-radius: 4px; overflow-wrap: anywhere; }
+
+/* Cabecera */
+.head { display: grid; gap: 10px; border-bottom: 3px solid var(--accent); padding-bottom: 18px; }
+.eyebrow { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+.lead { color: var(--muted); max-width: 68ch; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 0.85rem; color: var(--muted); }
+.meta b { color: var(--ink); font-weight: 600; }
+
+/* Pestañas */
+.bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-block: 22px 18px;
+  position: sticky; top: env(safe-area-inset-top, 0px); background: var(--bg); padding-block: 10px; z-index: 5; }
+.tabs { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.tabs button { font: 600 0.95rem var(--font-body); border: 0; background: transparent; color: var(--muted); padding: 9px 18px; cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--accent); color: #ffffff; }
+.tabs button:focus-visible, .copy:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+.copy { font: 600 0.88rem var(--font-body); border: 1px solid var(--accent); color: var(--accent); background: var(--surface);
+  border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+.copy:hover { background: var(--accent-soft); }
+.copy-msg { font-size: 0.85rem; color: var(--accent); min-height: 1.2em; }
+.copy-fallback { width: 100%; min-height: 220px; font: 0.8rem var(--font-mono); margin-top: 10px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+
+section.panel { display: grid; gap: 34px; }
+.block { display: grid; gap: 14px; }
+.block > .intro { color: var(--muted); max-width: 72ch; }
+
+/* Mapa de flujo */
+.map { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
+.lane { display: grid; grid-template-columns: 150px 1fr; gap: 14px; align-items: center; min-width: 860px; }
+#tecnico .lane, #tecnico .legend { min-width: 1040px; }
+.lane + .lane { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); }
+.lane-name { font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+.lane-name b { display: block; font-family: var(--font-display); font-size: 0.95rem; text-transform: none; letter-spacing: 0; color: var(--ink); }
+.nodes { display: flex; align-items: stretch; gap: 0; }
+.node { flex: 1 1 0; min-width: 0; border: 1.5px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--bg); font-size: 0.8rem; line-height: 1.3; }
+.node b { display: block; font-size: 0.86rem; }
+.node small { display: block; color: var(--muted); font-family: var(--font-mono); font-size: 0.68rem; overflow-wrap: anywhere; }
+.node.g { border-color: var(--google); }
+.node.m { border-color: var(--ms); }
+.node.p { border-color: var(--accent); background: var(--accent-soft); }
+.node.d { border-color: var(--amber); background: var(--amber-soft); }
+.arrow { flex: 0 0 22px; display: grid; place-items: center; color: var(--muted); font-size: 1rem; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.8rem; color: var(--muted); margin-top: 12px; min-width: 860px; }
+.legend span::before { content: ""; display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; border: 1.5px solid; }
+.legend .lg::before { border-color: var(--google); }
+.legend .lm::before { border-color: var(--ms); }
+.legend .lp::before { border-color: var(--accent); background: var(--accent-soft); }
+.legend .ld::before { border-color: var(--amber); background: var(--amber-soft); }
+
+/* Ejecutivo: pasos grandes */
+.esteps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; counter-reset: paso; }
+.estep { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 8px; align-content: start; counter-increment: paso; }
+.estep-top { display: flex; align-items: center; gap: 10px; }
+.num { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; font: 800 0.95rem var(--font-display); font-variant-numeric: tabular-nums; }
+.who { font-family: var(--font-mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.estep ul, .tstep ul, .pillar ul, .plain { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; }
+.estep li, .tstep li, .pillar li { font-size: 0.93rem; }
+.ctrl { font-size: 0.86rem; background: var(--accent-soft); border-radius: 6px; padding: 7px 10px; }
+.ctrl b { color: var(--accent); }
+.pillars { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.pillar { background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: 10px; padding: 16px; display: grid; gap: 10px; align-content: start; }
+.pillar:nth-child(2) { border-top-color: var(--navy); }
+.pillar:nth-child(3) { border-top-color: var(--amber); }
+.twocol { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.status { display: grid; gap: 8px; }
+.status div { display: flex; gap: 10px; align-items: baseline; font-size: 0.93rem; }
+.pill { flex: 0 0 auto; font: 600 0.72rem var(--font-mono); text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 8px; border-radius: 999px; }
+.pill.ok { background: var(--accent-soft); color: var(--accent); }
+.pill.test { background: var(--amber-soft); color: var(--amber); }
+.pill.man { background: var(--chip); color: var(--muted); }
+
+/* Tablas */
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); background: var(--bg); font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+td.k { font-weight: 600; white-space: nowrap; }
+
+/* Técnico: fases y pasos */
+.phase { display: grid; gap: 12px; }
+.phase-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.phase-tag { font: 700 0.8rem var(--font-mono); color: #fff; background: var(--navy); border-radius: 6px; padding: 3px 9px; }
+.phase-sys { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); }
+.tsteps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.tstep { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.tid { font: 700 0.9rem var(--font-mono); color: var(--accent); padding-top: 2px; }
+.tbody { display: grid; gap: 7px; min-width: 0; }
+.tbody h3 { font-size: 0.98rem; }
+.comp { display: flex; flex-wrap: wrap; gap: 6px; }
+.comp span { font: 0.72rem var(--font-mono); background: var(--chip); border-radius: 4px; padding: 2px 7px; color: var(--muted); }
+.io { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; font-size: 0.85rem; }
+.io div { border-radius: 6px; padding: 6px 9px; }
+.io .out { background: var(--accent-soft); }
+.io .fail { background: var(--red-soft); }
+.io b { font-family: var(--font-mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; display: block; }
+.io .out b { color: var(--accent); }
+.io .fail b { color: var(--red); }
+pre.json { margin: 0; overflow-x: auto; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px; font: 0.78rem/1.5 var(--font-mono); color: var(--ink); }
+.risk td:first-child { white-space: nowrap; }
+.sev { font: 600 0.7rem var(--font-mono); padding: 2px 7px; border-radius: 999px; text-transform: uppercase; }
+.sev.alta { background: var(--red-soft); color: var(--red); }
+.sev.media { background: var(--amber-soft); color: var(--amber); }
+.sev.baja { background: var(--chip); color: var(--muted); }
+
+@media (max-width: 860px) {
+  .esteps, .pillars { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .twocol { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .esteps, .pillars, .io { grid-template-columns: minmax(0, 1fr); }
+  .tstep { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tabs button, .copy { transition: background-color .15s ease, color .15s ease; }
+}
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <div class="eyebrow">Seguro de Viaje · DINE · Seguros Atlas</div>
+    <h1>Proceso SENIOR +79</h1>
+    <p class="lead">De la solicitud de propuesta a la solicitud de emisión: cómo funciona la automatización, qué controla y dónde vive cada pieza.</p>
+    <div class="meta">
+      <span><b>Corte:</b> octubre 2026</span>
+      <span><b>Propuesta:</b> en producción</span>
+      <span><b>Solicitud de emisión:</b> en pruebas (modo pruebas activo)</span>
+      <span><b>Código:</b> repositorio automatizacion-powermate</span>
+    </div>
+  </header>
+
+  <div class="bar">
+    <div class="tabs" role="tablist" aria-label="Versión del flujo">
+      <button role="tab" id="tab-ejecutivo" aria-controls="ejecutivo" aria-selected="true">Flujo ejecutivo</button>
+      <button role="tab" id="tab-tecnico" aria-controls="tecnico" aria-selected="false">Flujo técnico</button>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <span class="copy-msg" id="copy-msg" aria-live="polite"></span>
+      <button class="copy" id="copy" type="button">Copiar como viñetas</button>
+    </div>
+  </div>
+  <textarea class="copy-fallback" id="copy-fallback" hidden aria-label="Texto para copiar"></textarea>
+
+  <!-- ===================================================== EJECUTIVO -->
+  <section class="panel" id="ejecutivo" role="tabpanel" aria-labelledby="tab-ejecutivo" data-copy-title="FLUJO EJECUTIVO · Proceso SENIOR +79">
+
+    <div class="block">
+      <h2 data-copy>Qué resuelve</h2>
+      <p class="intro" data-copy>Un agente pide una propuesta para viajeros de 79 a 89 años y, sin que nadie del equipo intervenga, recibe en minutos una propuesta oficial o una respuesta clara de por qué no procede. Cuando el cliente acepta, la solicitud de emisión llega ordenada a cada área, con los documentos obligatorios y sin volver a capturar datos.</p>
+    </div>
+
+    <div class="block">
+      <h2>Mapa del proceso</h2>
+      <div class="map" aria-label="Mapa del proceso en dos etapas">
+        <div class="lane">
+          <div class="lane-name">Etapa 1<b>Propuesta</b></div>
+          <div class="nodes">
+            <div class="node"><b>Agente</b>llena la solicitud</div><div class="arrow" aria-hidden="true">→</div>
+            <div class="node p"><b>Revisión automática</b>reglas de suscripción</div><div class="arrow" aria-hidden="true">→</div>
+            <div class="node p"><b>Propuesta oficial</b>PDF con vigencia y QR</div><div class="arrow" aria-hidden="true">→</div>
+            <div class="node"><b>Correo institucional</b>al agente o cliente</div>
+          </div>
+        </div>
+        <div class="lane">
+          <div class="lane-name">Etapa 2<b>Emisión</b></div>
+          <div class="nodes">
+            <div class="node"><b>Cliente acepta</b>escanea el QR</div><div class="arrow" aria-hidden="true">→</div>
+            <div class="node p"><b>Solicitud en línea</b>datos ya cargados</div><div class="arrow" aria-hidden="true">→</div>
+            <div class="node p"><b>Reparto automático</b>TCI · TCC · expediente + SLIP</div><div class="arrow" aria-hidden="true">→</div>
+            <div class="node d"><b>Equipo SV</b>emite la póliza</div>
+          </div>
+        </div>
+        <div class="legend"><span class="lp">Lo hace el sistema</span><span class="ld">Lo hace el equipo</span></div>
+      </div>
+    </div>
+
+    <div class="block">
+      <h2 data-copy>Paso a paso</h2>
+      <ol class="esteps">
+        <li class="estep" data-copy-step>
+          <div class="estep-top"><span class="num">1</span><div><div class="who">Agente</div><h3>Solicita la propuesta</h3></div></div>
+          <ul>
+            <li>Llena un formulario: destino, fechas y hasta 5 asegurados.</li>
+            <li>Las primas salen de la tarifa vigente, sin cálculo manual.</li>
+          </ul>
+          <p class="ctrl"><b>Control:</b> cada solicitud recibe un folio único, que nunca se repite, y queda registrada.</p>
+        </li>
+        <li class="estep" data-copy-step>
+          <div class="estep-top"><span class="num">2</span><div><div class="who">Sistema</div><h3>Revisa las reglas de suscripción</h3></div></div>
+          <ul>
+            <li>Edad elegible, mínimo 5 días hábiles de anticipación, máximo 5 asegurados y fechas coherentes.</li>
+            <li>Si algo no cumple, responde con el motivo exacto y no genera propuesta.</li>
+          </ul>
+          <p class="ctrl"><b>Control:</b> ninguna propuesta sale fuera de política.</p>
+        </li>
+        <li class="estep" data-copy-step>
+          <div class="estep-top"><span class="num">3</span><div><div class="who">Sistema</div><h3>Envía la propuesta oficial</h3></div></div>
+          <ul>
+            <li>PDF de una hoja con formato institucional, coberturas, primas de los 4 planes y fecha de vigencia.</li>
+            <li>Sale del buzón segurodeviaje@ con copia oculta a Seguro de Viaje.</li>
+          </ul>
+          <p class="ctrl"><b>Control:</b> la vigencia se calcula sola y obliga a pedir la emisión a tiempo.</p>
+        </li>
+        <li class="estep" data-copy-step>
+          <div class="estep-top"><span class="num">4</span><div><div class="who">Cliente</div><h3>Acepta y solicita la emisión</h3></div></div>
+          <ul>
+            <li>Escanea el QR de la propuesta o da clic en "Solicitar emisión".</li>
+            <li>El formulario abre con folio, destino y fechas ya cargados; pide CSF e INE o pasaporte.</li>
+          </ul>
+          <p class="ctrl"><b>Control:</b> la solicitud queda ligada a su propuesta y no se envía sin documentos obligatorios.</p>
+        </li>
+        <li class="estep" data-copy-step>
+          <div class="estep-top"><span class="num">5</span><div><div class="who">Sistema</div><h3>Reparte la solicitud a cada área</h3></div></div>
+          <ul>
+            <li>Mesa Control Daños recibe la solicitud de TCI y Cotizaciones Daños la de TCC, las dos con CSF e INE.</li>
+            <li>Seguro de Viaje recibe el expediente completo con todos los documentos y el SLIP ya llenado, listo para subir al sistema.</li>
+          </ul>
+          <p class="ctrl"><b>Control:</b> los tres correos llevan copia a Eloisa Quintanar y a Miguel Cárdenas.</p>
+        </li>
+        <li class="estep" data-copy-step>
+          <div class="estep-top"><span class="num">6</span><div><div class="who">Equipo SV</div><h3>Emite la póliza</h3></div></div>
+          <ul>
+            <li>Con el expediente completo, el equipo emite la póliza en el sistema de la aseguradora.</li>
+            <li>La solicitud debe llegar hasta 72 horas hábiles antes del viaje.</li>
+          </ul>
+          <p class="ctrl"><b>Control:</b> el equipo dedica su tiempo a emitir, no a capturar ni a perseguir documentos.</p>
+        </li>
+      </ol>
+    </div>
+
+    <div class="block">
+      <h2 data-copy>Valor para el negocio</h2>
+      <div class="pillars">
+        <div class="pillar" data-copy-step>
+          <h3>Control</h3>
+          <ul>
+            <li>Las mismas reglas se aplican igual a cada solicitud, sin excepciones informales.</li>
+            <li>Folio único que nunca se repite, vigencia calculada y formato institucional en cada propuesta.</li>
+            <li>Eloisa Quintanar y Miguel Cárdenas reciben copia de cada solicitud de emisión.</li>
+          </ul>
+        </div>
+        <div class="pillar" data-copy-step>
+          <h3>Seguridad</h3>
+          <ul>
+            <li>Todo sale del buzón institucional de Seguro de Viaje, nunca de cuentas personales.</li>
+            <li>Los datos del cliente se quedan en herramientas de Google y Microsoft que ya usa la empresa; no pasan por servicios externos.</li>
+            <li>Los accesos técnicos están protegidos con llaves que no aparecen en los correos ni en los documentos.</li>
+          </ul>
+        </div>
+        <div class="pillar" data-copy-step>
+          <h3>Prevención de riesgos</h3>
+          <ul>
+            <li>No se ofrece cobertura fuera de edad, de tiempo ni de cupo.</li>
+            <li>Los datos se capturan una sola vez: sin errores de transcripción entre propuesta, TCI y TCC.</li>
+            <li>Queda evidencia de cada solicitud: registro, copia del documento y copia del correo.</li>
+            <li>Los cambios se prueban primero en modo pruebas y existe respaldo para regresar a la versión anterior.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="twocol">
+      <div class="card">
+        <h2 data-copy>Reglas que aplica siempre</h2>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Regla</th><th>Valor</th></tr></thead>
+            <tbody>
+              <tr data-copy-row><td class="k">Edad elegible</td><td>De 79 años 11 meses a 89 años 11 meses, a la fecha de salida</td></tr>
+              <tr data-copy-row><td class="k">Anticipación</td><td>Mínimo 5 días hábiles antes de la salida</td></tr>
+              <tr data-copy-row><td class="k">Asegurados</td><td>Máximo 5 por propuesta</td></tr>
+              <tr data-copy-row><td class="k">Vigencia</td><td>5 días hábiles, o hasta 3 días hábiles antes del viaje si eso ocurre antes</td></tr>
+              <tr data-copy-row><td class="k">Emisión</td><td>Solicitud hasta 72 horas hábiles antes del viaje</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <h2 data-copy>Estado actual</h2>
+        <div class="status">
+          <div data-copy-step><span class="pill ok">Producción</span><span>Propuesta y respuestas de rechazo.</span></div>
+          <div data-copy-step><span class="pill test">Pruebas</span><span>Solicitud de emisión y reparto de TCI, TCC y expediente; los correos llegan solo a Miguel Cárdenas hasta liberarlo.</span></div>
+          <div data-copy-step><span class="pill man">Manual</span><span>Emisión de la póliza y revisión de documentos por el equipo.</span></div>
+          <div data-copy-step><span class="pill man">Manual</span><span>Días festivos: el cálculo de días hábiles considera lunes a viernes.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== TÉCNICO -->
+  <section class="panel" id="tecnico" role="tabpanel" aria-labelledby="tab-tecnico" hidden data-copy-title="FLUJO TÉCNICO · Proceso SENIOR +79">
+
+    <div class="block">
+      <h2>Arquitectura</h2>
+      <p class="intro">Dos circuitos independientes. En cada uno, Apps Script concentra la regla de negocio y arma el contenido; Power Automate solo convierte y envía desde el buzón compartido. Se comunican por webhook HTTP con JSON.</p>
+      <div class="map" aria-label="Mapa técnico de los dos circuitos">
+        <div class="lane">
+          <div class="lane-name">Circuito 1<b>Propuesta</b></div>
+          <div class="nodes">
+            <div class="node g"><b>Google Form</b><small>propuestas</small></div><div class="arrow" aria-hidden="true">→</div>
+            <div class="node g"><b>Google Sheet</b><small>fórmulas: folio, primas</small></div><div class="arrow" aria-hidden="true">→</div>
+            <div class="node g"><b>Apps Script</b><small>onFormSubmit · Cotizaciones 2026</small></div><div class="arrow" aria-hidden="true">→</div>
+            <div class="node g"><b>Drive</b><small>Propuesta_&lt;folio&gt;.html</small></div><div class="arrow" aria-hidden="true">→</div>
+            <div class="node m"><b>Power Automate</b><small>Flujo Cotizaciones_SV_2026</small></div><div class="arrow" aria-hidden="true">→</div>
+            <div class="node m"><b>OneDrive</b><small>HTML → PDF</small></div><div class="arrow" aria-hidden="true">→</div>
+            <div class="node m"><b>Outlook</b><small>buzón segurodeviaje@</small></div>
+          </div>
+        </div>
+        <div class="lane">
+          <div class="lane-name">Circuito 2<b>Emisión</b></div>
+          <div class="nodes">
+            <div class="node p"><b>QR / botón</b><small>liga prellenada</small></div><div class="arrow" aria-hidden="true">→</div>
+            <div class="node g"><b>Google Form</b><small>Solicitud de Emisión</small></div><div class="arrow" aria-hidden="true">→</div>
+            <div class="node g"><b>Apps Script</b><small>onFormSubmitSolicitudEmision</small></div><div class="arrow" aria-hidden="true">→</div>
+            <div class="node m"><b>Power Automate</b><small>Solicitud de Emisión SV</small></div><div class="arrow" aria-hidden="true">→</div>
+            <div class="node m"><b>Outlook × 3</b><small>TCI · TCC · expediente</small></div>
+          </div>
+        </div>
+        <div class="legend"><span class="lg">Google Workspace</span><span class="lm">Microsoft 365</span><span class="lp">Generado por el script</span></div>
+      </div>
+    </div>
+
+    <!-- Fase A -->
+    <div class="phase" data-copy-phase>
+      <div class="phase-head"><span class="phase-tag">A</span><h2 data-copy>Captura de la solicitud de propuesta</h2><span class="phase-sys">Google Form · Google Sheet</span></div>
+      <ol class="tsteps">
+        <li class="tstep" data-copy-step><div class="tid">A1</div><div class="tbody">
+          <h3>Envío del formulario de propuestas</h3>
+          <div class="comp"><span>Google Form</span><span>hoja de respuestas</span></div>
+          <ul>
+            <li>Captura perfil, clave y nombre de agente, solicitante, correo, CC opcional, destino, fecha de salida y regreso, nombre y fecha de nacimiento por asegurado.</li>
+            <li>El script lee hasta 10 posiciones de asegurado para poder rechazar un exceso en vez de truncarlo en silencio.</li>
+          </ul>
+          <div class="io"><div class="out"><b>Salida</b>Fila nueva en la hoja</div><div class="fail"><b>Riesgo</b>Encabezado renombrado: el script no encuentra la columna</div></div>
+        </div></li>
+        <li class="tstep" data-copy-step><div class="tid">A2</div><div class="tbody">
+          <h3>Fórmulas de la hoja</h3>
+          <div class="comp"><span>Folio</span><span>PrimaMaster</span><span>PrimaSmart</span><span>PrimaElite</span><span>PrimaPremium</span></div>
+          <ul>
+            <li>Calculan el folio <code>SEGURO_VIAJE_+79-&lt;días&gt;D-&lt;DES&gt;-&lt;ddMMyyyy&gt;</code> y la prima por asegurado de cada plan.</li>
+            <li>El script no tiene tarifa propia: la hoja es la fuente única de primas.</li>
+          </ul>
+          <div class="io"><div class="out"><b>Salida</b>Fila completa con folio y primas</div><div class="fail"><b>Riesgo</b>Cambio de tarifa sin actualizar fórmulas</div></div>
+        </div></li>
+        <li class="tstep" data-copy-step><div class="tid">A3</div><div class="tbody">
+          <h3>Disparo del script</h3>
+          <div class="comp"><span>Activador instalable</span><span>onFormSubmit(e)</span><span>Main.gs</span></div>
+          <ul>
+            <li>Origen "De la hoja de cálculo", evento "Al enviar el formulario". Proyecto Cotizaciones 2026: Main.gs, ASSETS_BASE64.gs, QR_GENERADOR.gs; runtime V8; zona America/Mexico_City.</li>
+            <li>Lee la fila exacta con <code>e.range.getRow()</code>, no <code>getLastRow()</code>, para no cruzar solicitudes simultáneas.</li>
+            <li>Encabezados mapeados por nombre (trim + minúsculas), no por posición de columna.</li>
+          </ul>
+          <div class="io"><div class="out"><b>Salida</b>Encabezados y valores de la fila</div><div class="fail"><b>Falla</b>Excepción → "ERROR: …" en Estado de envío</div></div>
+        </div></li>
+      </ol>
+    </div>
+
+    <!-- Fase B -->
+    <div class="phase" data-copy-phase>
+      <div class="phase-head"><span class="phase-tag">B</span><h2 data-copy>Motor de reglas</h2><span class="phase-sys">construirDatosSolicitud_</span></div>
+      <ol class="tsteps">
+        <li class="tstep" data-copy-step><div class="tid">B1</div><div class="tbody">
+          <h3>Filtro de edad por asegurado</h3>
+          <div class="comp"><span>CONFIG.EDAD_MINIMA 79</span><span>EDAD_MAXIMA 89</span><span>EDAD_MESES_ADICIONALES 11</span></div>
+          <ul>
+            <li>Edad en meses a la fecha de salida; elegible de 79a 11m a 89a 11m inclusive.</li>
+            <li>Los excluidos se guardan con nombre, edad y motivo (menor o mayor) para el aviso del correo.</li>
+          </ul>
+          <div class="io"><div class="out"><b>Salida</b>asegurados[], pasajerosExcluidos[]</div><div class="fail"><b>Riesgo</b>Fecha de nacimiento mal capturada</div></div>
+        </div></li>
+        <li class="tstep" data-copy-step><div class="tid">B2</div><div class="tbody">
+          <h3>Fechas y días hábiles</h3>
+          <div class="comp"><span>calcularDuracionViaje_</span><span>calcularDiasAnticipacion_</span></div>
+          <ul>
+            <li>Duración en días naturales, inclusive. Anticipación en días hábiles (lunes a viernes) entre hoy y la salida, con ambas fechas a medianoche.</li>
+          </ul>
+          <div class="io"><div class="out"><b>Salida</b>duracionDias, diasAnticipacion</div><div class="fail"><b>Límite</b>No contempla días festivos</div></div>
+        </div></li>
+        <li class="tstep" data-copy-step><div class="tid">B3</div><div class="tbody">
+          <h3>Estatus (el primero que aplica)</h3>
+          <div class="comp"><span>CONFIG.ESTATUS</span></div>
+          <ul>
+            <li><code>RECHAZADO_FECHAS</code>: duración ≤ 0.</li>
+            <li><code>RECHAZADO_TIEMPO</code>: anticipación &lt; 5 días hábiles.</li>
+            <li><code>RECHAZADO_SIN_ELEGIBLES</code>: 0 asegurados en rango.</li>
+            <li><code>RECHAZADO_EXCESO_ASEGURADOS</code>: más de 5 elegibles.</li>
+            <li><code>APROBADO</code>: pasa todo lo anterior.</li>
+          </ul>
+          <div class="io"><div class="out"><b>Salida</b>data.estatus</div><div class="fail"><b>Nota</b>Primas solo se leen si es APROBADO</div></div>
+        </div></li>
+        <li class="tstep" data-copy-step><div class="tid">B4</div><div class="tbody">
+          <h3>Vigencia y primas</h3>
+          <div class="comp"><span>calcularVigencia_</span><span>VIGENCIA_DIAS_HABILES 5</span><span>DIAS_HABILES_LIMITE_EMISION 3</span></div>
+          <ul>
+            <li>Vigencia = la fecha más temprana entre envío + 5 días hábiles y salida − 3 días hábiles; se muestra sin hora.</li>
+            <li>Total por plan = prima por asegurado × asegurados elegibles, redondeado a 2 decimales.</li>
+          </ul>
+          <div class="io"><div class="out"><b>Salida</b>vigenciaCotizacion, total* por plan</div><div class="fail"><b>Riesgo</b>Prima vacía en la hoja → total 0</div></div>
+        </div></li>
+        <li class="tstep" data-copy-step><div class="tid">B5</div><div class="tbody">
+          <h3>Folio único</h3>
+          <div class="comp"><span>asignarFolioUnico_</span><span>CONSECUTIVO_FOLIO</span><span>LockService</span></div>
+          <ul>
+            <li>Al procesar la fila: folio de la hoja + consecutivo global de 4 dígitos o más (<code>…-08102026-0042</code>), incrementado bajo bloqueo del script para que dos envíos simultáneos no tomen el mismo número.</li>
+            <li>Se escribe en la columna opcional Folio de propuesta y en Estado de envío; es el que viaja al PDF, al correo, al respaldo y al QR.</li>
+          </ul>
+          <div class="io"><div class="out"><b>Salida</b>data.folio definitivo</div><div class="fail"><b>Regla</b>Nunca borrar ni reiniciar CONSECUTIVO_FOLIO</div></div>
+        </div></li>
+      </ol>
+    </div>
+
+    <!-- Fase C -->
+    <div class="phase" data-copy-phase>
+      <div class="phase-head"><span class="phase-tag">C</span><h2 data-copy>Generación de documentos</h2><span class="phase-sys">Apps Script · Drive</span></div>
+      <ol class="tsteps">
+        <li class="tstep" data-copy-step><div class="tid">C1</div><div class="tbody">
+          <h3>HTML de la propuesta (solo APROBADO)</h3>
+          <div class="comp"><span>generarHtmlCotizacion_</span><span>ASSETS_BASE64.gs</span></div>
+          <ul>
+            <li>Una hoja tamaño carta. Maquetado con tablas y colgroup, sin flex ni grid, porque Word Online los descarta al convertir.</li>
+            <li>Logos y QR de nueva propuesta como data: URI: el convertidor no descarga imágenes externas.</li>
+          </ul>
+          <div class="io"><div class="out"><b>Salida</b>htmlCotizacion (string)</div><div class="fail"><b>Riesgo</b>Texto de más → segunda hoja</div></div>
+        </div></li>
+        <li class="tstep" data-copy-step><div class="tid">C2</div><div class="tbody">
+          <h3>Liga y QR de solicitud de emisión</h3>
+          <div class="comp"><span>construirUrlEmision_</span><span>qrDataUri_</span><span>QR_GENERADOR.gs</span></div>
+          <ul>
+            <li>URL del formulario de emisión + <code>usp=pp_url</code> + 4 entry IDs (folio, destino, fecha de salida y de regreso en aaaa-MM-dd), con valores en encodeURIComponent.</li>
+            <li>QR generado local con qrcode-generator (MIT), nivel L, margen de 4 módulos; GIF convertido a PNG con <code>getAs</code>; 88 px (~23 mm) en el Paso 1. La imagen también es enlace.</li>
+          </ul>
+          <div class="io"><div class="out"><b>Salida</b>QR en el PDF, botón en el correo</div><div class="fail"><b>Riesgo</b>Entry ID cambia si se recrea la pregunta</div></div>
+        </div></li>
+        <li class="tstep" data-copy-step><div class="tid">C3</div><div class="tbody">
+          <h3>Respaldo en Drive</h3>
+          <div class="comp"><span>guardarHtmlEnDrive_</span><span>CARPETA_SALIDA_ID</span></div>
+          <ul>
+            <li>Guarda <code>Propuesta_&lt;folio&gt;.html</code> en UTF-8 en la carpeta de salida; su fileId viaja a Power Automate.</li>
+          </ul>
+          <div class="io"><div class="out"><b>Salida</b>htmlFileId</div><div class="fail"><b>Falla</b>Carpeta sin permisos → ERROR en la fila</div></div>
+        </div></li>
+        <li class="tstep" data-copy-step><div class="tid">C4</div><div class="tbody">
+          <h3>Cuerpo del correo</h3>
+          <div class="comp"><span>construirCorreoAprobado_</span><span>construirCorreoRechazo_</span></div>
+          <ul>
+            <li>Tablas y CSS en línea por Outlook de escritorio; contenedor fluido de máximo 850 px con tabla fantasma <code>&lt;!--[if mso]&gt;</code>; listas armadas con tablas; espaciadores en lugar de márgenes.</li>
+            <li>Aprobado: resumen, primas, aviso de excluidos, botón "Solicitar emisión" y firma (Ext. 5114, sin celular). Rechazo: motivo según estatus y asunto fijo "Solicitud de Propuesta de Seguro no procesada".</li>
+          </ul>
+          <div class="io"><div class="out"><b>Salida</b>cuerpoCorreoHtml, asunto, nombreArchivo</div><div class="fail"><b>Riesgo</b>Imágenes de Drive bloqueadas por Outlook hasta "Descargar imágenes"</div></div>
+        </div></li>
+      </ol>
+    </div>
+
+    <!-- Fase D -->
+    <div class="phase" data-copy-phase>
+      <div class="phase-head"><span class="phase-tag">D</span><h2 data-copy>Integración y entrega de la propuesta</h2><span class="phase-sys">UrlFetchApp → Flujo Cotizaciones_SV_2026</span></div>
+      <ol class="tsteps">
+        <li class="tstep" data-copy-step><div class="tid">D1</div><div class="tbody">
+          <h3>Webhook</h3>
+          <div class="comp"><span>enviarWebhookPowerAutomate_</span><span>WEBHOOK_POWER_AUTOMATE_URL</span></div>
+          <ul>
+            <li>POST JSON UTF-8 a la URL del disparador HTTP, guardada en Script Properties; la URL lleva firma de acceso <code>sig</code>.</li>
+            <li>Respuesta ≥ 300 lanza excepción; la fila queda en ERROR con el código.</li>
+          </ul>
+          <div class="io"><div class="out"><b>Salida</b>202 Accepted</div><div class="fail"><b>Falla</b>401 si la firma no coincide</div></div>
+        </div></li>
+        <li class="tstep" data-copy-step><div class="tid">D2</div><div class="tbody">
+          <h3>Bifurcación en Power Automate</h3>
+          <div class="comp"><span>When an HTTP request is received</span><span>Condition</span></div>
+          <ul>
+            <li>Valida el JSON contra POWER_AUTOMATE_SCHEMA.json. Condición <code>estatus = APROBADO</code>; cualquier otro estatus, incluso uno nuevo, cae en Falso.</li>
+          </ul>
+          <div class="io"><div class="out"><b>Salida</b>Rama Verdadero o Falso</div><div class="fail"><b>Riesgo</b>Campo nuevo no declarado en el esquema</div></div>
+        </div></li>
+        <li class="tstep" data-copy-step><div class="tid">D3</div><div class="tbody">
+          <h3>Rama Verdadero: PDF y envío</h3>
+          <div class="comp"><span>Get file content using id</span><span>Create file</span><span>Convert file</span><span>Send an email from a shared mailbox (V2)</span></div>
+          <ul>
+            <li>Google Drive (cuenta del conector) trae el HTML por htmlFileId → OneDrive for Business lo crea en <code>/Cotizaciones Plantilla/Propuesta_&lt;folio&gt;.html</code> → Convert file a PDF.</li>
+            <li>Correo desde segurodeviaje@: Para emailCliente, CC correoCC, CCO segurodeviaje@, adjunto <code>nombreArchivo</code> con <code>body('Convert_file')</code>.</li>
+          </ul>
+          <div class="io"><div class="out"><b>Salida</b>Correo con PDF en la bandeja del cliente</div><div class="fail"><b>Riesgo</b>Conexión del conector vencida</div></div>
+        </div></li>
+        <li class="tstep" data-copy-step><div class="tid">D4</div><div class="tbody">
+          <h3>Rama Falso y cierre</h3>
+          <div class="comp"><span>Send an email (rechazo)</span><span>marcarEstadoFila_</span></div>
+          <ul>
+            <li>Correo de rechazo sin adjuntos. En la hoja, la columna Estado de envío recibe <code>&lt;ESTATUS&gt; — enviado a Power Automate — &lt;fecha&gt;</code>.</li>
+          </ul>
+          <div class="io"><div class="out"><b>Salida</b>Fila marcada; historial de ejecución en el flujo</div><div class="fail"><b>Nota</b>Sin columna Estado de envío no hay marca</div></div>
+        </div></li>
+      </ol>
+    </div>
+
+    <!-- Fase E -->
+    <div class="phase" data-copy-phase>
+      <div class="phase-head"><span class="phase-tag">E</span><h2 data-copy>Solicitud de emisión</h2><span class="phase-sys">Form de emisión · Apps Script ligado al Form · Solicitud de Emisión SV</span></div>
+      <ol class="tsteps">
+        <li class="tstep" data-copy-step><div class="tid">E1</div><div class="tbody">
+          <h3>Formulario de emisión</h3>
+          <div class="comp"><span>8 secciones</span><span>ramificación por asegurado</span><span>carga de archivos</span></div>
+          <ul>
+            <li>Abre prellenado desde el QR o el botón. Pide agente, clave y nombre de ejecutivo, clave de sucursal, producto, costo, contratante y asegurados 1 a 5.</li>
+            <li>Archivos obligatorios: propuesta, CSF, INE o pasaporte. Por las cargas, Google exige iniciar sesión.</li>
+          </ul>
+          <div class="io"><div class="out"><b>Salida</b>e.response con itemResponses</div><div class="fail"><b>Riesgo</b>Respondente sin cuenta de Google</div></div>
+        </div></li>
+        <li class="tstep" data-copy-step><div class="tid">E2</div><div class="tbody">
+          <h3>Lectura de respuestas</h3>
+          <div class="comp"><span>onFormSubmitSolicitudEmision</span><span>leerRespuestas_</span><span>Drive API v2</span></div>
+          <ul>
+            <li>Activador "Desde el formulario". Cada respuesta se guarda como título, texto y archivos; los blobs se leen de Drive una sola vez.</li>
+            <li>Folio: de la pregunta prellenada; si viene vacía, OCR del PDF adjunto (Drive.Files.insert con ocr) y búsqueda por patrón.</li>
+          </ul>
+          <div class="io"><div class="out"><b>Salida</b>solicitud {respuestas, archivos, folio}</div><div class="fail"><b>Riesgo</b>Título de pregunta cambiado (revisarFormulario lo detecta)</div></div>
+        </div></li>
+        <li class="tstep" data-copy-step><div class="tid">E3</div><div class="tbody">
+          <h3>Datos del contratante</h3>
+          <div class="comp"><span>datosContratante_</span><span>CONFIG_EMISION.PREGUNTAS</span></div>
+          <ul>
+            <li>Títulos comparados sin mayúsculas, acentos ni espacios extra. Persona moral si el RFC tiene 12 caracteres: CURP y Ocupación pasan a N/A.</li>
+            <li>"NA", "n/a" o "No aplica" → N/A. Sucursal reducida a su clave de 3 caracteres. Agente como <code>NOMBRE || CLAVE</code>; ejecutivo como clave + nombre.</li>
+          </ul>
+          <div class="io"><div class="out"><b>Salida</b>14 renglones del TCI/TCC</div><div class="fail"><b>Riesgo</b>RFC extranjero con NA se trata como persona física</div></div>
+        </div></li>
+        <li class="tstep" data-copy-step><div class="tid">E4</div><div class="tbody">
+          <h3>Armado de los tres correos</h3>
+          <div class="comp"><span>construirCorreos_</span><span>correoTramite_</span><span>correoSeguroViaje_</span></div>
+          <ul>
+            <li>TCI → mesacontroldanos@ y TCC → cotizacionesdanos@, los dos con CSF + INE (documentosContratante_). Expediente → segurodeviaje@ con todo el formulario por secciones, todos los archivos y el SLIP.</li>
+            <li>CC fijo: equintanar@ y mhidalgo@. TCI/TCC en Aptos Display 10.5; firma Arial 12/9/8 con Ext. 4931 y celular (solo correos internos).</li>
+          </ul>
+          <div class="io"><div class="out"><b>Salida</b>payload {folio, slip, correos[]} con adjuntos en base64</div><div class="fail"><b>Riesgo</b>Adjuntos grandes inflan el payload</div></div>
+        </div></li>
+        <li class="tstep" data-copy-step><div class="tid">E4b</div><div class="tbody">
+          <h3>SLIP del plan elegido</h3>
+          <div class="comp"><span>construirSlip_</span><span>llenarSlip_</span><span>PLANTILLA_SLIP_*.rtf</span></div>
+          <ul>
+            <li>Toma de Google Drive la plantilla RTF del plan (Producto Elegido) y repite la fila modelo del recuadro ASEGURADOS una vez por asegurado: nombre, fecha dd/mm/aaaa, sexo M/F, contacto, teléfono y beneficiario, en Arial 7 con acentos escapados.</li>
+            <li>Si falta la plantilla o el plan, manda un RTF con el motivo y el correo lo avisa en rojo; la solicitud sale igual.</li>
+          </ul>
+          <div class="io"><div class="out"><b>Salida</b>slip {nombreRtf, nombrePdf, contenidoBase64}</div><div class="fail"><b>Riesgo</b>Plantilla renombrada o convertida a Documentos de Google</div></div>
+        </div></li>
+        <li class="tstep" data-copy-step><div class="tid">E5</div><div class="tbody">
+          <h3>Modo pruebas</h3>
+          <div class="comp"><span>MODO_PRUEBAS</span><span>CORREOS_PRUEBAS</span><span>desviarAPruebas_</span></div>
+          <ul>
+            <li>Con <code>MODO_PRUEBAS: true</code>, los tres correos van solo a CORREOS_PRUEBAS, sin CC, con [PRUEBA] en el asunto y una franja con destinatarios y adjuntos reales. Producción: cambiar a false.</li>
+          </ul>
+          <div class="io"><div class="out"><b>Salida</b>Envío seguro durante validación</div><div class="fail"><b>Riesgo</b>Olvidar desactivarlo al liberar</div></div>
+        </div></li>
+        <li class="tstep" data-copy-step><div class="tid">E6</div><div class="tbody">
+          <h3>Envío en Power Automate</h3>
+          <div class="comp"><span>HTTP request</span><span>Create file</span><span>Convert file</span><span>Apply to each</span><span>Select</span><span>Send an email from a shared mailbox (V2)</span></div>
+          <ul>
+            <li>Antes del ciclo: Create file guarda el SLIP en OneDrive (/Cotizaciones Plantilla) y Convert file lo pasa a PDF con Word.</li>
+            <li>Recorre <code>correos</code>; Select mapea cada adjunto con <code>ContentBytes = base64ToBinary(…)</code>; Attachments agrega el PDF del SLIP solo cuando <code>tipo = SEGURO_VIAJE</code>.</li>
+            <li>Los adjuntos tienen que ir como archivo: si van como texto, Outlook los codifica dos veces y llegan dañados.</li>
+          </ul>
+          <div class="io"><div class="out"><b>Salida</b>3 correos entregados</div><div class="fail"><b>Falla</b>Visible en historial de ejecuciones del flujo</div></div>
+        </div></li>
+      </ol>
+    </div>
+
+    <div class="block">
+      <h2 data-copy>Contratos de datos (JSON)</h2>
+      <div class="twocol">
+        <div class="card">
+          <h3>Propuesta → Flujo Cotizaciones_SV_2026</h3>
+<pre class="json">{
+  "emailCliente", "correoCC", "asunto",
+  "estatus",            // APROBADO | RECHAZADO_*
+  "cuerpoCorreoHtml",
+  "tipoProducto",       // Individual | Grupal
+  "htmlBase64",         // HTML de la propuesta
+  "nombreArchivo",      // nombre del PDF
+  "folio", "htmlFileId", "fechaGeneracion"
+}</pre>
+        </div>
+        <div class="card">
+          <h3>Emisión → Solicitud de Emisión SV</h3>
+<pre class="json">{
+  "folio",
+  "slip": { "nombreRtf", "nombrePdf", "contenidoBase64" },
+  "correos": [{
+    "tipo",             // TCI | TCC | SEGURO_VIAJE
+    "para", "cc", "asunto", "cuerpoHtml",
+    "adjuntos": [{ "nombre", "contenidoBase64" }]
+  }]
+}</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="block">
+      <h2 data-copy>Inventario de componentes</h2>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Componente</th><th>Dónde vive</th><th>Qué guarda o hace</th></tr></thead>
+          <tbody>
+            <tr data-copy-row><td class="k">Cotizaciones 2026</td><td>Apps Script ligado a la hoja de respuestas</td><td>Main.gs, ASSETS_BASE64.gs, QR_GENERADOR.gs; propiedades CARPETA_SALIDA_ID y WEBHOOK_POWER_AUTOMATE_URL</td></tr>
+            <tr data-copy-row><td class="k">Script del formulario de emisión</td><td>Apps Script ligado al Form de emisión</td><td>Code.gs, appsscript.json (Drive API v2); propiedad WEBHOOK_EMISION_URL; plantillas PLANTILLA_SLIP_*.rtf en Drive</td></tr>
+            <tr data-copy-row><td class="k">Flujo Cotizaciones_SV_2026</td><td>Power Automate, entorno Seguros Atlas</td><td>HTML → PDF y envío de propuestas y rechazos</td></tr>
+            <tr data-copy-row><td class="k">Solicitud de Emisión SV</td><td>Power Automate, entorno Seguros Atlas</td><td>SLIP a PDF y envío de TCI, TCC y expediente</td></tr>
+            <tr data-copy-row><td class="k">Carpeta de salida</td><td>Google Drive</td><td>Respaldo HTML de cada propuesta</td></tr>
+            <tr data-copy-row><td class="k">/Cotizaciones Plantilla</td><td>OneDrive for Business</td><td>HTML intermedio y PDF convertido</td></tr>
+            <tr data-copy-row><td class="k">Buzón segurodeviaje@</td><td>Exchange (buzón compartido)</td><td>Remitente de todo; CCO de cada propuesta</td></tr>
+            <tr data-copy-row><td class="k">Repositorio automatizacion-powermate</td><td>GitHub</td><td>Código, esquemas, ejemplos, respaldos y documentación</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="block">
+      <h2 data-copy>Controles, evidencia y recuperación</h2>
+      <div class="twocol">
+        <div class="card" data-copy-step>
+          <h3>Evidencia por solicitud</h3>
+          <ul class="plain">
+            <li>Fila del Sheet con folio y columna Estado de envío.</li>
+            <li>HTML en Drive y PDF en OneDrive.</li>
+            <li>Copia oculta de cada propuesta en el buzón segurodeviaje@.</li>
+            <li>Historial de ejecuciones en ambos flujos y en Apps Script › Ejecuciones.</li>
+          </ul>
+        </div>
+        <div class="card" data-copy-step>
+          <h3>Herramientas de prueba y diagnóstico</h3>
+          <ul class="plain">
+            <li><code>testearTodo</code> y un <code>testearRechazo*</code> por estatus; <code>procesarPegadoMasivo</code> para filas pegadas.</li>
+            <li><code>probarCorreosEmision</code>, <code>revisarFormulario</code>, <code>obtenerIdsPrellenado</code>.</li>
+            <li><code>test_webhook.py</code> y <code>generar_ejemplos.js</code> fuera de Google.</li>
+            <li>Respaldo de la versión con formato de emisión en <code>apps-script/respaldos/</code>.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="block">
+      <h2 data-copy>Riesgos y pendientes técnicos</h2>
+      <div class="tbl-wrap">
+        <table class="risk">
+          <thead><tr><th>Nivel</th><th>Punto</th><th>Acción sugerida</th></tr></thead>
+          <tbody>
+            <tr data-copy-row><td><span class="sev alta">Alta</span></td><td>La URL firmada del flujo de propuestas está escrita en <code>configurarPropiedades()</code> y en el repositorio.</td><td>Regenerar la URL, guardarla solo en Script Properties y borrarla del código.</td></tr>
+            <tr data-copy-row><td><span class="sev media">Media</span></td><td>El conector de Google Drive del flujo usa una cuenta de Gmail.</td><td>Documentar el responsable de esa cuenta y su recuperación.</td></tr>
+            <tr data-copy-row><td><span class="sev media">Media</span></td><td>Días hábiles sin festivos.</td><td>Agregar calendario de días inhábiles si el negocio lo pide.</td></tr>
+            <tr data-copy-row><td><span class="sev media">Media</span></td><td>Entry IDs del prellenado ligados a las preguntas actuales.</td><td>Si se recrea una pregunta, correr obtenerIdsPrellenado y actualizar PREFILL_EMISION.</td></tr>
+            <tr data-copy-row><td><span class="sev baja">Baja</span></td><td>El payload de propuesta manda htmlBase64 aunque el flujo usa htmlFileId.</td><td>Mantener por compatibilidad o retirarlo en una limpieza futura.</td></tr>
+            <tr data-copy-row><td><span class="sev baja">Baja</span></td><td>Imágenes del correo servidas desde Drive.</td><td>Evaluar hospedarlas en SharePoint con acceso de lectura.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+  var msg = document.getElementById('copy-msg');
+  var fallback = document.getElementById('copy-fallback');
+
+  function show(id) {
+    tabs.forEach(function (t) {
+      var on = t.getAttribute('aria-controls') === id;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    });
+    msg.textContent = '';
+    fallback.hidden = true;
+    try { localStorage.setItem('senior79-tab', id); } catch (e) { /* sin almacenamiento */ }
+  }
+  tabs.forEach(function (t) { t.addEventListener('click', function () { show(t.getAttribute('aria-controls')); }); });
+  var inicial = (location.hash || '').replace('#', '');
+  if (inicial !== 'tecnico' && inicial !== 'ejecutivo') {
+    try { inicial = localStorage.getItem('senior79-tab') || 'ejecutivo'; } catch (e) { inicial = 'ejecutivo'; }
+  }
+  show(inicial === 'tecnico' ? 'tecnico' : 'ejecutivo');
+  // El ancla de la liga solo elige la pestaña; la página abre desde arriba.
+  if (location.hash) { window.scrollTo(0, 0); setTimeout(function () { window.scrollTo(0, 0); }, 0); }
+
+  function limpio(el) { return el.textContent.replace(/\s+/g, ' ').trim(); }
+
+  // Texto plano con viñetas, en el orden de la página, para pegar en una presentación.
+  function comoVinetas(panel) {
+    var out = [panel.getAttribute('data-copy-title'), ''];
+    panel.querySelectorAll('[data-copy], [data-copy-step], [data-copy-row]').forEach(function (el) {
+      if (el.hasAttribute('data-copy')) {
+        out.push('', el.tagName === 'H2' ? limpio(el).toUpperCase() : limpio(el));
+      } else if (el.hasAttribute('data-copy-row')) {
+        var celdas = Array.prototype.map.call(el.children, limpio);
+        out.push('• ' + celdas.join(' — '));
+      } else {
+        var num = el.querySelector('.num, .tid');
+        var titulo = el.querySelector('h3');
+        var cabeza = (num ? limpio(num) + '. ' : '') + (titulo ? limpio(titulo) : '');
+        if (!titulo && !num) { out.push('• ' + limpio(el)); return; }
+        out.push(cabeza);
+        el.querySelectorAll('li').forEach(function (li) { out.push('   • ' + limpio(li)); });
+        el.querySelectorAll('.ctrl').forEach(function (c) { out.push('   ✔ ' + limpio(c)); });
+        el.querySelectorAll('.io > div').forEach(function (d) { out.push('   ▸ ' + limpio(d.querySelector('b')) + ': ' + limpio(d).replace(limpio(d.querySelector('b')), '').trim()); });
+      }
+    });
+    return out.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
+  }
+
+  document.getElementById('copy').addEventListener('click', function () {
+    var panel = document.querySelector('section.panel:not([hidden])');
+    var texto = comoVinetas(panel);
+    function respaldo() {
+      fallback.value = texto; fallback.hidden = false; fallback.focus(); fallback.select();
+      msg.textContent = 'Selecciona y copia el texto de abajo.';
+    }
+    try {
+      navigator.clipboard.writeText(texto).then(function () {
+        msg.textContent = 'Copiado. Pégalo en tu presentación.';
+        fallback.hidden = true;
+      }, respaldo);
+    } catch (e) { respaldo(); }
+  });
+})();
+</script>
+
+</html>

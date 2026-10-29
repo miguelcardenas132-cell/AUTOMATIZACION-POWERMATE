@@ -1,7 +1,8 @@
 # Solicitud de Emisión — Seguro de Viaje SENIOR +79
 
-> **Estado:** en construcción (parte 1 de la fase de emisión automática). Todavía no está
-> activo en el formulario.
+> **Estado (octubre 2026): en pruebas.** El formulario, el script y el flujo están armados y
+> probados de punta a punta. `MODO_PRUEBAS` sigue activo: todo llega solo a mhidalgo@ hasta
+> que se libere (ver "Paso a producción").
 
 ## Flujo
 
@@ -63,106 +64,134 @@ solo su recuadro **ASEGURADOS** y se adjunta en **PDF** al correo de Seguro de V
 - **Si algo falla** (plantilla no encontrada o plan sin plantilla), el correo lo avisa en rojo
   y el adjunto lleva el motivo. La solicitud se envía igual.
 
-## Cambios necesarios en el formulario
+## El formulario
 
-- [ ] En cada sección de asegurado, agregar **Sexo** (opción múltiple *Masculino* /
-      *Femenino*, obligatoria) con los títulos `Sexo`, `Sexo 2`, `Sexo 3`, `Sexo 4` y `Sexo 5`.
-      La va a necesitar el SLIP.
+Formulario **"Solicitud de Emisión de Póliza de Seguro de Viaje"**: 8 secciones, máximo 5
+asegurados. Por las cargas de archivos, Google pide iniciar sesión para responderlo.
 
-- [ ] Agregar **Folio de la propuesta** como primera pregunta de "Información para emisión":
-  - respuesta corta y obligatoria;
-  - descripción sugerida: "Se llena solo si entraste desde el QR o el botón de tu
-    propuesta.";
-  - llega prellenada desde el QR o el botón de la propuesta, y con ella el correo a Seguro
-    de Viaje trae el folio sin tener que leerlo del PDF;
-  - después saca el enlace prellenado (ver el README de la raíz, "Google Drive y formulario
-    de emisión") para llenar `PREFILL_EMISION` en el script de la propuesta.
-- [ ] Agregar **Clave de Sucursal** (sección "Información para emisión"):
-  - respuesta corta y obligatoria;
-  - validación: *Expresión regular* → *Coincide con* → `^[A-Za-z][A-Za-z0-9]{2}$`, con el
-    mensaje "Escribe la clave de 3 caracteres de tu sucursal, por ejemplo G00, E82 o M20";
-  - no conviene una lista desplegable: las sucursales no son fijas y una que falte
-    bloquearía la solicitud.
-  - Claves vistas en las emisiones de 2026: C00, C01, C16, D00, D70, DF4, E59, E82, F02,
-    F04, F10, F19, F20, G00, G05, G11, G15, G22, H00, H02, L00, L01, L06, L07, M00, M05,
-    M14, M20, M25, MC1, MC7, MCA, MCC, ML0, MS1, MS5, MSJ, P00, P01, P06, P07, P09, P12,
-    Q00, Q02, T00, T02, T03, Y00, Y01, Y02, Y10, Y15, Y17.
-- [ ] Agregar **Clave de tu Ejecutivo** como pregunta obligatoria, y hacer obligatoria
-      **Nombre de tu Ejecutivo**.
-- [ ] Recomendado: separar la pregunta de archivos en dos, ambas obligatorias:
-      **Adjunta tu CSF (Constancia de Situación Fiscal)** y **Adjunta tu INE o pasaporte**.
-      Así solo la CSF viaja al TCI. Si se quedan en una sola pregunta, al TCI va todo lo que
-      se suba en ella.
-- [ ] Renombrar "Adjunta la cotización recibida" a **"Adjunta la propuesta recibida"**. El
-      script acepta los dos títulos.
+| Sección | Preguntas que usa el script |
+|---|---|
+| 1. Información para emisión | Folio de la propuesta (llega prellenado), Nombre de Agente, Clave de Agente, Nombre de tu Ejecutivo, Clave de tu Ejecutivo, Clave de Sucursal, Producto Elegido, Costo en USD, Adjunta la propuesta recibida, Adjunta tu CSF (Constancia de Situación Fiscal), Adjunta tu INE o pasaporte |
+| 2. Información del Viaje | Destino, Fecha de Salida, Fecha de Regreso (las tres llegan prellenadas) |
+| 3. Contratante | Nombre Completo del Contratante, Domicilio del Contratante (…), RFC, CURP (PERSONA FISICA), Correo Electronico, Teléfono, Ocupación |
+| 4. Asegurado 1 | Nombre Completo, Fecha de Nacimiento, Sexo, Contacto de Emergencia, Teléfono Contacto de Emergencia, Nombre Beneficiario, Domicilio del Asegurado (…), ¿Deseas agregar un segundo asegurado? |
+| 5 a 8. Asegurado 2 a 5 | Los mismos con el número al final (`Nombre Completo 2`, `Sexo 2`…). La pregunta "¿Deseas agregar…?" lleva *Ir a la sección según la respuesta*: **No → Enviar el formulario** |
 
-Después de editar el formulario, ejecuta **`revisarFormulario()`** en su Apps Script: no envía nada, marca con ✅/❌ cada dato que necesitan el TCI y el TCC y lista todas las preguntas.
-
-Los títulos de las preguntas se comparan sin distinguir mayúsculas, acentos ni espacios. Si
-se renombra una pregunta, agrega el nuevo título en `CONFIG_EMISION.PREGUNTAS` o
-`CONFIG_EMISION.SECCIONES`. Si una pregunta no aparece en `SECCIONES`, sale igual en el
-correo de Seguro de Viaje dentro de "Otros".
+- **Clave de Sucursal:** respuesta corta con validación `^[A-Za-z][A-Za-z0-9]{2}$`.
+  Claves vistas en las emisiones de 2026: C00, C01, C16, D00, D70, DF4, E59, E82, F02, F04,
+  F10, F19, F20, G00, G05, G11, G15, G22, H00, H02, L00, L01, L06, L07, M00, M05, M14, M20,
+  M25, MC1, MC7, MCA, MCC, ML0, MS1, MS5, MSJ, P00, P01, P06, P07, P09, P12, Q00, Q02, T00,
+  T02, T03, Y00, Y01, Y02, Y10, Y15, Y17.
+- **Sexo:** opción múltiple *Masculino / Femenino*. La usa el SLIP; si falta, la columna
+  sale con `-`. **Pendiente de confirmar** que esté en las 5 secciones de asegurados.
+- **Comparación de títulos:** sin distinguir mayúsculas, acentos ni espacios.
+  - Si se renombra una pregunta, agrega el título nuevo en `CONFIG_EMISION.PREGUNTAS` o
+    `SECCIONES`.
+  - Lo que no esté en `SECCIONES` sale igual en el correo de Seguro de Viaje, en "Otros".
+- **`revisarFormulario()`:** no envía nada. Marca ✅/❌ cada dato que necesitan el TCI y el
+  TCC y lista todas las preguntas.
+- **`obtenerIdsPrellenado()`:** imprime los `entry.NNNN` de folio, destino y fechas para
+  `PREFILL_EMISION` del script de la propuesta. Hay que correrla otra vez si se recrea alguna
+  de esas preguntas.
 
 ## Puesta en marcha
 
-### Apps Script (Extensiones › Apps Script, desde el **formulario**, no desde la hoja)
+### Apps Script
+
+Se abre desde el **formulario** (modo edición › ⋮ › Apps Script). La hoja de respuestas
+tiene un proyecto viejo ("Proyecto sin título") con la versión anterior: **no se usa** y no
+debe tener activadores.
 
 1. Pega `Code.gs` completo.
-2. Proyecto › Configuración: activa *Mostrar el archivo de manifiesto* y pega
-   `appsscript.json`. Esto agrega Drive API v2, que se usa para leer el folio del PDF.
-3. En `configurarPropiedades()`, pega la URL del flujo de Power Automate y ejecútala una vez.
+2. ⚙️ Configuración › *Mostrar el archivo de manifiesto* › pega `appsscript.json`. Agrega
+   Drive API v2, que solo se usa si el folio no llega prellenado y hay que leerlo del PDF.
+3. En `configurarPropiedades()` pega la URL del flujo (debe terminar en `&sig=…`) y ejecútala
+   una vez.
 4. Activadores › Añadir:
-   - función `onFormSubmitSolicitudEmision`
-   - origen *Desde el formulario*
-   - evento *Al enviarse el formulario*
-5. Prueba con `probarCorreosEmision()`:
-   - manda los tres correos con datos ficticios y `[PRUEBA]` en el asunto;
-   - solo llegan a `CORREOS_PRUEBAS` (mhidalgo@), nunca a Mesa Control ni a Cotizaciones.
-6. **Modo pruebas** (`MODO_PRUEBAS: true`, como viene): los envíos reales del formulario
-   también llegan solo a `CORREOS_PRUEBAS`, los tres (TCI, TCC y solicitud general), con
-   `[PRUEBA]` en el asunto y una franja amarilla que dice a quién irían en producción y con
-   qué adjuntos. Para que Eloisa también los reciba, descomenta su correo en
-   `CORREOS_PRUEBAS`.
-7. **Paso a producción:** cambia `MODO_PRUEBAS` a `false` y guarda.
+   - función `onFormSubmitSolicitudEmision`;
+   - origen *Desde el formulario*;
+   - evento *Al enviarse el formulario*.
+5. Sube las 4 plantillas de `plantillas-slip/` a Google Drive de la misma cuenta, **sin
+   cambiarles el nombre ni convertirlas** a Documentos de Google.
 
-### Power Automate (flujo nuevo, separado del de la propuesta)
+### Power Automate: flujo "Solicitud de Emisión SV"
 
-1. **Disparador:** *Cuando se recibe una solicitud HTTP*, con el esquema
-   `POWER_AUTOMATE_SCHEMA.json`.
-2. **Aplicar a cada uno** sobre `correos`.
-3. Dentro del ciclo, **Seleccionar** (*Select*):
-   - De: `adjuntos` del elemento actual (elígelo en el contenido dinámico del ciclo)
-   - Asignar `Name` = `item()?['nombre']`
-   - Asignar `ContentBytes` = `base64ToBinary(item()?['contenidoBase64'])`
-     (tiene que ir como archivo; si va como texto, Outlook lo manda codificado y el
-     adjunto no abre)
-4. Dentro del ciclo, **Enviar un correo electrónico desde un buzón compartido (V2)**:
-   - Buzón: segurodeviaje@segurosatlas.com.mx
-   - Para: `para`; CC: `cc`; Asunto: `asunto`; Cuerpo: `cuerpoHtml`
-   - Datos adjuntos: cambia a *matriz completa* y usa la salida de **Seleccionar**.
+```
+manual (HTTP) → Create file → Convert file → Apply to each (correos)
+                                               ├─ Select (adjuntos)
+                                               └─ Send an email from a shared mailbox (V2)
+```
 
-Un correo sin adjuntos manda una matriz vacía y Outlook lo envía igual.
+1. **manual** (*When an HTTP request is received*):
+   - *Who can trigger the flow*: **Anyone**;
+   - esquema: `POWER_AUTOMATE_SCHEMA.json`.
+2. **Create file** (OneDrive for Business), para el SLIP:
+   - carpeta `/Cotizaciones Plantilla`;
+   - nombre `triggerBody()?['slip']?['nombreRtf']`;
+   - contenido `base64ToBinary(triggerBody()?['slip']?['contenidoBase64'])`.
+3. **Convert file**:
+   - archivo `outputs('Create_file')?['body/Id']`;
+   - destino **PDF**.
+4. **Apply to each** sobre `correos`. Dentro:
+   - **Select**:
+     - De: `items('Apply_to_each')?['adjuntos']`;
+     - `Name` = `item()?['nombre']`;
+     - `ContentBytes` = `base64ToBinary(item()?['contenidoBase64'])`.
+   - **Send an email from a shared mailbox (V2)**:
+     - buzón `segurodeviaje@segurosatlas.com.mx`;
+     - Para `item()?['para']`, CC `item()?['cc']`, Asunto `item()?['asunto']`;
+     - Cuerpo `item()?['cuerpoHtml']`, sin el `<p class="editor-paragraph">`;
+     - **Attachments** (modo matriz completa):
 
-#### SLIP en el flujo
+       ```
+       if(equals(item()?['tipo'],'SEGURO_VIAJE'), union(body('Select'), createArray(addProperty(addProperty(json('{}'),'Name',triggerBody()?['slip']?['nombrePdf']),'ContentBytes',body('Convert_file')))), body('Select'))
+       ```
 
-1. Sube las 4 plantillas de `plantillas-slip/` a Google Drive, en cualquier carpeta de la
-   cuenta dueña del script del formulario. **No les cambies el nombre.**
-2. En el flujo, pega el esquema nuevo de `POWER_AUTOMATE_SCHEMA.json`, que agrega `slip`.
-3. Entre el disparador y **Apply to each**, agrega dos pasos de OneDrive for Business:
-   - **Create file:**
-     - Carpeta: `/Cotizaciones Plantilla`.
-     - Nombre (fx): `triggerBody()?['slip']?['nombreRtf']`.
-     - Contenido (fx): `base64ToBinary(triggerBody()?['slip']?['contenidoBase64'])`.
-   - **Convert file:**
-     - Archivo (fx): `outputs('Create_file')?['body/Id']`.
-     - Tipo de destino: **PDF**.
-4. En el correo, en **Attachments** (modo matriz completa), cambia `body('Select')` por:
+**Regla de los adjuntos:** `ContentBytes` siempre tiene que ir como **archivo**, con
+`base64ToBinary(...)` o `body('Convert_file')`, nunca como texto. Si va como texto, Outlook lo
+vuelve a codificar y el adjunto llega dañado ("Acrobat no pudo abrir…").
 
-   ```
-   if(equals(item()?['tipo'],'SEGURO_VIAJE'), union(body('Select'), createArray(addProperty(addProperty(json('{}'),'Name',triggerBody()?['slip']?['nombrePdf']),'ContentBytes',body('Convert_file')))), body('Select'))
-   ```
+## Pruebas
 
-   Así el SLIP solo va en el correo de Seguro de Viaje. TCI y TCC quedan igual.
+Con `MODO_PRUEBAS: true`, los tres correos de **cualquier** envío del formulario llegan solo
+a `CORREOS_PRUEBAS` (mhidalgo@):
+- sin copia a nadie;
+- con `[PRUEBA]` en el asunto;
+- con una franja amarilla que dice a quién irían en producción y con qué adjuntos, SLIP
+  incluido.
+
+Nunca llegan a Mesa Control Daños ni a Cotizaciones Daños.
+
+**Prueba del proceso completo:**
+1. Pide una propuesta en el formulario de propuestas **con tu correo**. Ese formulario no
+   tiene modo pruebas: la propuesta va al correo capturado, con copia oculta a segurodeviaje@.
+2. Escanea el QR del PDF o da clic en "Solicitar emisión". El formulario debe abrir con folio,
+   destino y fechas ya llenos.
+3. Llénalo con archivos de prueba (propuesta, CSF, INE).
+4. Revisa los 3 correos:
+
+   | Correo | Adjuntos |
+   |---|---|
+   | TCI | CSF + INE |
+   | TCC | CSF + INE |
+   | Solicitud de emisión | Propuesta + CSF + INE + SLIP del plan elegido |
+
+   Todos los adjuntos deben abrir sin error.
+
+Casos para cubrir: 1 y 5 asegurados, persona física y moral, y cada uno de los 4 planes
+(cada uno tiene su SLIP).
+
+`probarCorreosEmision()` manda los tres correos con datos ficticios **sin archivos** y el SLIP
+de Master Elite. Sirve para revisar el formato rápido, no los adjuntos.
+
+## Paso a producción
+
+- [ ] Pruebas completas aprobadas: los 4 planes y persona física y moral.
+- [ ] `Sexo` en las 5 secciones de asegurados.
+- [ ] Sin activadores en el proyecto viejo de la hoja de respuestas.
+- [ ] Cambiar `MODO_PRUEBAS: true` a `false` en `Code.gs` y guardar.
+- [ ] Primer caso real: confirmar con Mesa Control y Cotizaciones Daños que el TCI y el TCC
+      llegaron completos.
 
 ## Pendientes
 

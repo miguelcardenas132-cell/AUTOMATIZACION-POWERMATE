@@ -2,6 +2,18 @@
 
 Seguros Atlas · Seguro de Viaje (DINE — Dirección de Negocios Especiales)
 
+El proceso tiene dos circuitos:
+
+| Circuito | Qué hace | Estado | Documentación |
+|---|---|---|---|
+| **1. Propuesta** | Formulario de propuestas → reglas → PDF con QR → correo al agente o cliente | En producción | Este README |
+| **2. Solicitud de emisión** | QR o botón → formulario de emisión → TCI, TCC y expediente con SLIP | En pruebas (`MODO_PRUEBAS`) | [`proceso-emision/README.md`](proceso-emision/README.md) |
+
+El mapa visual de los dos circuitos (versión ejecutiva y técnica) está en
+[`docs/proceso-senior79.html`](docs/proceso-senior79.html); se abre en cualquier navegador.
+
+## Circuito 1 · Propuesta
+
 Proyecto de Apps Script: **Cotizaciones 2026** (ID `1LpY-U8AGMcjErPLIhX4B50I7NUx7BUu4yFqYIX8VYL3AA15_ETAeHDZF`), con los archivos `Main.gs`, `ASSETS_BASE64.gs` y `QR_GENERADOR.gs`.
 
 Un agente o cliente llena un Google Form. En menos de un minuto recibe, desde el buzón
@@ -36,7 +48,9 @@ convierte el HTML a PDF y envía el correo.
 | `apps-script/test_webhook.py` | Envía al flujo un payload de prueba igual al de producción, sin pasar por el formulario. |
 | `herramientas/generar_ejemplos.js` | Regenera `ejemplos/` con el código real (datos ficticios). |
 | `ejemplos/` | Propuesta (HTML y PDF), correo aprobado y un correo por cada motivo de rechazo. |
-| `proceso-emision/` | Script del formulario "Solicitud de Emisión": manda en automático las solicitudes de TCI, TCC y la emisión completa a Seguro de Viaje. Ver su README. |
+| `proceso-emision/` | Circuito 2: script del formulario "Solicitud de Emisión" (TCI, TCC y expediente con SLIP), su esquema de Power Automate y las 4 plantillas del SLIP. Ver su README. |
+| `herramientas/preparar_plantillas_slip.py` | Regenera las plantillas del SLIP a partir de los originales en Word/RTF. |
+| `docs/proceso-senior79.html` | Mapa del proceso: versión ejecutiva y técnica. |
 
 ## Reglas de negocio
 
