@@ -131,6 +131,14 @@ const CONFIG = {
   // --- Mapeo de columnas (fila 1 de la hoja de respuestas) ---
   COL_PERFIL: 'Perfil',
   COL_AGENTE_INFO: 'Escribe tu Clave y Nombre de Agente Completo',
+  // Otros títulos que ha tenido o puede tener esa pregunta.
+  COL_AGENTE_ALTERNOS: [
+    'Escribe tu Clave y Nombre de Agente',
+    'Clave y Nombre de Agente Completo',
+    'Clave y Nombre de Agente',
+    'Clave y nombre del agente',
+    'Agente'
+  ],
   COL_NOMBRE_SOLICITANTE: 'Nombre completo de quien solicita',
   COL_EMAIL_CLIENTE: 'Correo electrónico de quien solicita',
   COL_CORREO_CC: 'Quieres enviar tu propuesta a algún otro correo?',
@@ -358,8 +366,46 @@ function letraColumna_(indice) {
 }
 
 function indiceDe_(encabezados, nombre) {
-  const buscado = nombre.toString().trim().toLowerCase();
-  return encabezados.findIndex((e) => e.toString().trim().toLowerCase() === buscado);
+  const buscado = normalizarEncabezado_(nombre);
+  return encabezados.findIndex((e) => normalizarEncabezado_(e) === buscado);
+}
+
+/**
+ * Encabezado comparable: sin mayúsculas, acentos, signos de interrogación,
+ * dos puntos ni espacios de más. Así "¿Escribe tu clave y nombre de agente?"
+ * y "Escribe tu Clave y Nombre de Agente Completo " se comparan bien.
+ */
+function normalizarEncabezado_(texto) {
+  return String(texto === null || texto === undefined ? '' : texto)
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[¿?¡!:]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Clave y nombre del agente. Se busca, en orden:
+ *  1. la columna CONFIG.COL_AGENTE_INFO o uno de sus títulos alternos;
+ *  2. columnas separadas de clave y nombre de agente, que se unen;
+ *  3. cualquier otra columna cuyo título hable del agente (no "Perfil").
+ * Si nada aparece, deja un aviso en el registro de ejecución.
+ */
+function leerAgente_(encabezados, valores) {
+  const texto = (indice) => (indice === -1 ? '' : String(valores[indice] === null ? '' : valores[indice]).trim());
+  for (const titulo of [CONFIG.COL_AGENTE_INFO].concat(CONFIG.COL_AGENTE_ALTERNOS)) {
+    const valor = texto(indiceDe_(encabezados, titulo));
+    if (valor) return valor;
+  }
+  const clave = texto(indiceDe_(encabezados, 'Clave de Agente'));
+  const nombre = texto(indiceDe_(encabezados, 'Nombre de Agente'));
+  if (clave || nombre) return [clave, nombre].filter((v) => v).join(' ');
+
+  const indicePerfil = indiceDe_(encabezados, CONFIG.COL_PERFIL);
+  for (let i = 0; i < encabezados.length; i++) {
+    if (i === indicePerfil || !/agente/.test(normalizarEncabezado_(encabezados[i]))) continue;
+    const valor = texto(i);
+    if (valor) return valor;
+  }
+  Logger.log('⚠️ No encontré la columna del agente. Corre listarEncabezados() y ajusta CONFIG.COL_AGENTE_INFO.');
+  return '';
 }
 
 /** Devuelve el valor de una columna obligatoria; falla si no existe. */
@@ -473,9 +519,9 @@ function construirDatosSolicitud_(fila, encabezados, valores) {
 
   // --- Datos del agente ---
   const perfil = valorOpcional_(encabezados, valores, CONFIG.COL_PERFIL).toString().trim();
-  const agenteInfo = valorOpcional_(encabezados, valores, CONFIG.COL_AGENTE_INFO).toString().trim();
-  const mostrarAgente = perfil === 'Soy Agente' ||
-    (agenteInfo !== '' && agenteInfo.toUpperCase() !== 'NA');
+  const agenteInfo = leerAgente_(encabezados, valores);
+  // Se muestra siempre que haya un dato real (no vacío ni "NA"), sea agente o no.
+  const mostrarAgente = agenteInfo !== '' && !/^(na|n\/a|no aplica)$/i.test(agenteInfo);
 
   const folio = valorObligatorio_(encabezados, valores, CONFIG.COL_FOLIO);
 
