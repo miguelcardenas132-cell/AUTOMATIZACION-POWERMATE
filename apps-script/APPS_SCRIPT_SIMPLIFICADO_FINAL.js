@@ -88,8 +88,8 @@ const CONFIG = {
   COLUMNAS_ASEGURADOS: 10,
   MAX_ASEGURADOS: 5,
 
-  // Formulario de propuestas. El QR de "nueva propuesta" del PDF lleva ahí
-  // (vía q.me-qr.com) y la imagen también es enlace directo a esta URL.
+  // Formulario de propuestas. El QR de "nueva propuesta" del PDF se genera
+  // aquí mismo (QR_GENERADOR.gs) con esta URL, sin depender de me-qr.com.
   URL_NUEVA_PROPUESTA: 'https://docs.google.com/forms/d/e/1FAIpQLSfPedluEXJ32DFHxBjCRddBUzMgjsgK5OnwfZPluPuR6XHycw/viewform',
 
   // Formulario "Solicitud de Emisión de Póliza de Seguro de Viaje". Cada
@@ -1094,7 +1094,7 @@ function bloqueObservacionesYQr_(data) {
         'y solicita una nueva propuesta de forma rápida y sencilla.</p>' +
         '<p class="qr-nota">(Máximo 5 días hábiles antes del inicio del viaje)</p>' +
         '<a href="' + escaparHtml_(CONFIG.URL_NUEVA_PROPUESTA) + '">' +
-        '<img alt="Código QR para nueva propuesta" src="' + ASSETS.QR_COTIZAR + '"></a>' +
+        '<img alt="Código QR para nueva propuesta" src="' + qrDataUri_(CONFIG.URL_NUEVA_PROPUESTA) + '"></a>' +
       '</div>' +
     '</td>\n' +
     '</tr>\n</table>\n';
