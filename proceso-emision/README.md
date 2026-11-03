@@ -133,23 +133,26 @@ manual (HTTP) → Create file → Convert file → Apply to each (correos)
    - archivo `outputs('Create_file')?['body/Id']`;
    - destino **PDF**.
 4. **Apply to each** sobre `correos`. Dentro:
-   - **Select**:
-     - De: `items('Apply_to_each')?['adjuntos']`;
+   - **Select**. Ahí se suma el SLIP al correo de Seguro de Viaje, para que todos los adjuntos
+     sigan el mismo camino:
+     - **De:**
+
+       ```
+       if(equals(items('Apply_to_each')?['tipo'],'SEGURO_VIAJE'), union(items('Apply_to_each')?['adjuntos'], createArray(addProperty(addProperty(json('{}'),'nombre',triggerBody()?['slip']?['nombrePdf']),'contenidoBase64',body('Convert_file')?['$content']))), items('Apply_to_each')?['adjuntos'])
+       ```
+
      - `Name` = `item()?['nombre']`;
      - `ContentBytes` = `base64ToBinary(item()?['contenidoBase64'])`.
    - **Send an email from a shared mailbox (V2)**:
      - buzón `segurodeviaje@segurosatlas.com.mx`;
      - Para `item()?['para']`, CC `item()?['cc']`, Asunto `item()?['asunto']`;
      - Cuerpo `item()?['cuerpoHtml']`, sin el `<p class="editor-paragraph">`;
-     - **Attachments** (modo matriz completa):
+     - **Attachments** (modo matriz completa): `body('Select')`.
 
-       ```
-       if(equals(item()?['tipo'],'SEGURO_VIAJE'), union(body('Select'), createArray(addProperty(addProperty(json('{}'),'Name',triggerBody()?['slip']?['nombrePdf']),'ContentBytes',body('Convert_file')))), body('Select'))
-       ```
-
-**Regla de los adjuntos:** `ContentBytes` siempre tiene que ir como **archivo**, con
-`base64ToBinary(...)` o `body('Convert_file')`, nunca como texto. Si va como texto, Outlook lo
-vuelve a codificar y el adjunto llega dañado ("Acrobat no pudo abrir…").
+**Regla de los adjuntos:** todos pasan por **Select** y salen con
+`ContentBytes = base64ToBinary(...)`, que los entrega como archivo. Si un adjunto se arma
+fuera de Select o va como texto, Outlook lo vuelve a codificar y llega dañado ("Acrobat no
+pudo abrir…").
 
 ## Pruebas
 
