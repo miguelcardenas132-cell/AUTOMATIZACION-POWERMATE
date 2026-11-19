@@ -179,6 +179,24 @@ python3 apps-script/test_webhook.py "<URL del flujo>" --asegurados 1        # pr
 python3 apps-script/test_webhook.py "<URL del flujo>" --estatus RECHAZADO_TIEMPO
 ```
 
+## Carpetas del buzón segurodeviaje@
+
+Dos reglas de Outlook en el buzón compartido separan lo que manda la automatización. Se crean
+en Outlook web con el buzón abierto (Configuración › Correo › Reglas), así corren en el
+servidor aunque nadie tenga Outlook abierto. Hace falta acceso total al buzón.
+
+| Regla | Condiciones (todas) | Acción |
+|---|---|---|
+| Propuestas SENIOR +79 | De: segurodeviaje@ · Asunto incluye `Propuesta Seguro de Viaje Senior +79` **o** `Solicitud de Propuesta de Seguro no procesada` | Mover a **Propuestas enviadas** · Detener reglas |
+| Solicitudes de emisión | De: segurodeviaje@ · Asunto incluye `\|\| SENIOR +79 \|\|` **o** `\|\| NUEVA POLIZA \|\|` | Mover a **Solicitudes de emisión** · Detener reglas |
+
+- La condición **De: segurodeviaje@** evita mover las respuestas de clientes y agentes
+  ("RE: Propuesta…"), que se quedan en la Bandeja de entrada.
+- Para que las propuestas lleguen al buzón, las dos acciones de envío del flujo de propuestas
+  llevan **CCO: segurodeviaje@segurosatlas.com.mx**.
+- En `ETAPA: 'PILOTO'` los tres correos de emisión caen en *Solicitudes de emisión*; en
+  `'PRODUCCION'` solo el expediente, porque el TCI y el TCC van a Daños.
+
 ## Mantenimiento
 
 - **Textos del PDF:** `generarHtmlCotizacion_` y las funciones que lo siguen. El PDF debe
