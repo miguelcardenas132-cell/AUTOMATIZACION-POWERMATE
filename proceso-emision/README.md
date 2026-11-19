@@ -1,8 +1,9 @@
 # Solicitud de Emisión — Seguro de Viaje SENIOR +79
 
-> **Estado (octubre 2026): en pruebas.** El formulario, el script y el flujo están armados y
-> probados de punta a punta. `MODO_PRUEBAS` sigue activo: todo llega solo a mhidalgo@ hasta
-> que se libere (ver "Paso a producción").
+> **Estado (noviembre 2026): piloto.** El formulario, el script y el flujo están armados y
+> probados de punta a punta. `ETAPA: 'PILOTO'`: los tres correos de cada solicitud real llegan
+> a segurodeviaje@ con copia a Eloisa y Miguel; todavía nada llega a Mesa Control ni a
+> Cotizaciones Daños (ver "Etapas").
 
 ## Flujo
 
@@ -154,16 +155,24 @@ manual (HTTP) → Create file → Convert file → Apply to each (correos)
 fuera de Select o va como texto, Outlook lo vuelve a codificar y llega dañado ("Acrobat no
 pudo abrir…").
 
+## Etapas
+
+`ETAPA` en `Code.gs` decide a quién llegan los correos de cada envío del formulario. Se cambia
+el valor, se guarda y listo; no hay que tocar el activador ni Power Automate.
+
+| `ETAPA` | TCI | TCC | Expediente | Copia |
+|---|---|---|---|---|
+| `'PRUEBAS'` | `CORREOS_PRUEBAS` | `CORREOS_PRUEBAS` | `CORREOS_PRUEBAS` | nadie |
+| `'PILOTO'` | segurodeviaje@ | segurodeviaje@ | segurodeviaje@ | Eloisa y Miguel |
+| `'PRODUCCION'` | mesacontroldanos@ | cotizacionesdanos@ | segurodeviaje@ | Eloisa y Miguel |
+
+- **PRUEBAS:** `[PRUEBA]` en el asunto y una franja amarilla con los destinatarios y adjuntos
+  reales, SLIP incluido.
+- **PILOTO:** los correos salen en su formato final, sin franja ni `[PRUEBA]`. Si hace falta
+  pedir el TCI o el TCC durante el piloto, se reenvía tal cual a Daños.
+- Cualquier otro valor se trata como `'PRUEBAS'`.
+
 ## Pruebas
-
-Con `MODO_PRUEBAS: true`, los tres correos de **cualquier** envío del formulario llegan solo
-a `CORREOS_PRUEBAS` (mhidalgo@):
-- sin copia a nadie;
-- con `[PRUEBA]` en el asunto;
-- con una franja amarilla que dice a quién irían en producción y con qué adjuntos, SLIP
-  incluido.
-
-Nunca llegan a Mesa Control Daños ni a Cotizaciones Daños.
 
 **Prueba del proceso completo:**
 1. Pide una propuesta en el formulario de propuestas **con tu correo**. Ese formulario no
@@ -192,7 +201,8 @@ de Master Elite. Sirve para revisar el formato rápido, no los adjuntos.
 - [ ] Pruebas completas aprobadas: los 4 planes y persona física y moral.
 - [ ] `Sexo` en las 5 secciones de asegurados.
 - [ ] Sin activadores en el proyecto viejo de la hoja de respuestas.
-- [ ] Cambiar `MODO_PRUEBAS: true` a `false` en `Code.gs` y guardar.
+- [x] Piloto: `ETAPA: 'PILOTO'` (todo a segurodeviaje@, ~20 días).
+- [ ] Cambiar `ETAPA: 'PILOTO'` a `'PRODUCCION'` en `Code.gs` y guardar.
 - [ ] Primer caso real: confirmar con Mesa Control y Cotizaciones Daños que el TCI y el TCC
       llegaron completos.
 

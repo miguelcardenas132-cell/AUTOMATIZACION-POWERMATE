@@ -51,13 +51,20 @@ const CONFIG_EMISION = {
   ],
 
   /**
-   * MODO PRUEBAS. Mientras esté en true, los tres correos de cada envío real
-   * del formulario (TCI, TCC y solicitud general) llegan SOLO a
-   * CORREOS_PRUEBAS, con [PRUEBA] en el asunto y un aviso arriba que dice a
-   * quién iría en producción. Nunca llegan a Mesa Control ni a Cotizaciones.
-   * Para pasar a producción: cambiar a false y guardar.
+   * ETAPA: a quién llegan los correos de cada envío real del formulario.
+   *
+   *   'PRUEBAS'    Los tres llegan SOLO a CORREOS_PRUEBAS, sin copias, con
+   *                [PRUEBA] en el asunto y un aviso con los destinatarios reales.
+   *   'PILOTO'     Los tres (TCI, TCC y expediente) llegan a Seguro de Viaje
+   *                (CORREO_SEGURO_VIAJE), con COPIA_SIEMPRE, en formato final.
+   *                Nada llega a Mesa Control ni a Cotizaciones Daños.
+   *   'PRODUCCION' TCI -> Mesa Control, TCC -> Cotizaciones Daños, expediente
+   *                -> Seguro de Viaje; los tres con COPIA_SIEMPRE.
+   *
+   * Cambiar el valor y guardar; no hay que tocar el trigger ni Power Automate.
+   * Cualquier otro valor se trata como 'PRUEBAS'.
    */
-  MODO_PRUEBAS: true,
+  ETAPA: 'PILOTO',
   CORREOS_PRUEBAS: [
     'mhidalgo@segurosatlas.com.mx'
     // , 'equintanar@segurosatlas.com.mx'  // descomentar para que Eloisa también reciba las pruebas
@@ -177,8 +184,20 @@ function onFormSubmitSolicitudEmision(e) {
   }
   const solicitud = leerRespuestas_(e.response.getItemResponses());
   const payload = construirCorreos_(solicitud);
-  if (CONFIG_EMISION.MODO_PRUEBAS) desviarAPruebas_(payload);
+  aplicarEtapa_(payload);
   enviarAPowerAutomate_(payload);
+}
+
+/** Ajusta los destinatarios según CONFIG_EMISION.ETAPA. */
+function aplicarEtapa_(payload) {
+  const etapa = String(CONFIG_EMISION.ETAPA || '').toUpperCase().trim();
+  if (etapa === 'PRODUCCION') return;
+  if (etapa === 'PILOTO') {
+    payload.correos.forEach(function (correo) { correo.para = CONFIG_EMISION.CORREO_SEGURO_VIAJE; });
+    return;
+  }
+  if (etapa !== 'PRUEBAS') Logger.log('⚠️ ETAPA "' + CONFIG_EMISION.ETAPA + '" no reconocida; se usa PRUEBAS.');
+  desviarAPruebas_(payload);
 }
 
 /**
@@ -681,8 +700,8 @@ function enviarAPowerAutomate_(payload) {
 
 /**
  * Manda los tres correos con datos ficticios (sin adjuntos), para probar el
- * flujo sin llenar el formulario. Siempre van solo a CORREOS_PRUEBAS, aunque
- * MODO_PRUEBAS esté en false.
+ * flujo sin llenar el formulario. Siempre van solo a CORREOS_PRUEBAS, sea
+ * cual sea la ETAPA.
  */
 function probarCorreosEmision() {
   const respuestas = [

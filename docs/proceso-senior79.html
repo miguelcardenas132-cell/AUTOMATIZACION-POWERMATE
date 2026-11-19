@@ -596,12 +596,14 @@ pre.json { margin: 0; overflow-x: auto; background: var(--bg); border: 1px solid
           <div class="io"><div class="out"><b>Salida</b>slip {nombreRtf, nombrePdf, contenidoBase64}</div><div class="fail"><b>Riesgo</b>Plantilla renombrada o convertida a Documentos de Google</div></div>
         </div></li>
         <li class="tstep" data-copy-step><div class="tid">E5</div><div class="tbody">
-          <h3>Modo pruebas</h3>
-          <div class="comp"><span>MODO_PRUEBAS</span><span>CORREOS_PRUEBAS</span><span>desviarAPruebas_</span></div>
+          <h3>Etapa</h3>
+          <div class="comp"><span>ETAPA</span><span>aplicarEtapa_</span><span>desviarAPruebas_</span></div>
           <ul>
-            <li>Con <code>MODO_PRUEBAS: true</code>, los tres correos van solo a CORREOS_PRUEBAS, sin CC, con [PRUEBA] en el asunto y una franja con destinatarios y adjuntos reales. Producción: cambiar a false.</li>
+            <li><code>'PRUEBAS'</code>: los tres correos van solo a CORREOS_PRUEBAS, sin CC, con [PRUEBA] en el asunto y una franja con destinatarios y adjuntos reales.</li>
+            <li><code>'PILOTO'</code>: los tres van a segurodeviaje@ con copia a Eloisa y Miguel, en formato final.</li>
+            <li><code>'PRODUCCION'</code>: TCI a Mesa Control, TCC a Cotizaciones Daños, expediente a Seguro de Viaje.</li>
           </ul>
-          <div class="io"><div class="out"><b>Salida</b>Envío seguro durante validación</div><div class="fail"><b>Riesgo</b>Olvidar desactivarlo al liberar</div></div>
+          <div class="io"><div class="out"><b>Salida</b>Liberación por etapas</div><div class="fail"><b>Riesgo</b>Olvidar pasar a PRODUCCION al terminar el piloto</div></div>
         </div></li>
         <li class="tstep" data-copy-step><div class="tid">E6</div><div class="tbody">
           <h3>Envío en Power Automate</h3>

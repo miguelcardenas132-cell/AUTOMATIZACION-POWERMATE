@@ -7,7 +7,7 @@ El proceso tiene dos circuitos:
 | Circuito | Qué hace | Estado | Documentación |
 |---|---|---|---|
 | **1. Propuesta** | Formulario de propuestas → reglas → PDF con QR → correo al agente o cliente | En producción | Este README |
-| **2. Solicitud de emisión** | QR o botón → formulario de emisión → TCI, TCC y expediente con SLIP | En pruebas (`MODO_PRUEBAS`) | [`proceso-emision/README.md`](proceso-emision/README.md) |
+| **2. Solicitud de emisión** | QR o botón → formulario de emisión → TCI, TCC y expediente con SLIP | Piloto (`ETAPA: 'PILOTO'`: todo a segurodeviaje@) | [`proceso-emision/README.md`](proceso-emision/README.md) |
 
 El mapa visual de los dos circuitos (versión ejecutiva y técnica) está en
 [`docs/proceso-senior79.html`](docs/proceso-senior79.html); se abre en cualquier navegador.
