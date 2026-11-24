@@ -1445,6 +1445,7 @@ function construirCorreoAprobado_(data) {
 
       recuadroCorreo_('&#9888;&#65039;', 'Consideraciones Importantes',
         listaCorreo_([
+          'Verifica que la información de los asegurados y del contratante sea correcta.',
           'Tendrás hasta un máximo de <strong>' + (CONFIG.VIGENCIA_DIAS_HABILES * 24) + ' horas hábiles</strong> ' +
             'para solicitar tu emisión después de recibir la cotización.',
           'Errores u omisiones una vez emitida tu póliza toman de <strong>3 a 5 días hábiles</strong> en ser atendidos.',
