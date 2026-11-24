@@ -32,15 +32,14 @@ Lleva la firma para clientes (Ext. 5114). Si no capturó correo, no sale y el ex
 
 ### Vigencia
 
-La solicitud de emisión se **rechaza sola** si llega después de la fecha más temprana entre:
-- el envío de la propuesta **+ 72 horas hábiles** (3 días hábiles), y
-- la fecha de salida **− 48 horas hábiles** (2 días hábiles).
+La solicitud de emisión se **rechaza sola** si llega después del envío de la propuesta
+**+ 72 horas hábiles** (3 días hábiles).
 
 Es la misma fecha que aparece en el PDF como "VIGENCIA HASTA EL …". Días hábiles = lunes a
 viernes, sin descontar festivos.
 
-- La fecha de envío (*Marca temporal*) y la de salida se leen de la **hoja de respuestas de
-  propuestas**, buscando el folio. No dependen de lo que se capture en el formulario de emisión.
+- La fecha de envío (*Marca temporal*) se lee de la **hoja de respuestas de propuestas**,
+  buscando el folio. No dependen de lo que se capture en el formulario de emisión.
 - **Fuera de vigencia:** no sale TCI, TCC ni expediente. Sale un solo correo, *Solicitud de
   emisión no procesada \|\| Propuesta fuera de vigencia \|\| <folio>*, al correo capturado
   en el formulario, con copia a segurodeviaje@, Eloisa y Miguel. Explica hasta cuándo valía la
@@ -49,8 +48,8 @@ viernes, sin descontar festivos.
 - **No se pudo validar** (sin `ID_HOJA_PROPUESTAS`, sin folio, o el folio no está en la hoja):
   **no se rechaza**. Salen los tres correos y el expediente lleva un aviso naranja para revisar
   la vigencia a mano.
-- Los días se configuran en `CONFIG_EMISION.VIGENCIA` y en `VIGENCIA_DIAS_HABILES` /
-  `DIAS_HABILES_LIMITE_EMISION` del proyecto Cotizaciones 2026. Si se cambian, cambiar los dos.
+- Los días se configuran en `CONFIG_EMISION.VIGENCIA.DIAS_HABILES_DESDE_ENVIO` y en
+  `VIGENCIA_DIAS_HABILES` del proyecto Cotizaciones 2026. Si se cambia uno, cambiar el otro.
 
 ### Datos del TCI / TCC
 

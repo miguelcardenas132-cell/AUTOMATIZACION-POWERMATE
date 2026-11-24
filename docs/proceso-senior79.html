@@ -323,7 +323,7 @@ pre.json { margin: 0; overflow-x: auto; background: var(--bg); border: 1px solid
               <tr data-copy-row><td class="k">Edad elegible</td><td>De 79 años 11 meses a 89 años 11 meses, a la fecha de salida</td></tr>
               <tr data-copy-row><td class="k">Anticipación</td><td>Mínimo 5 días hábiles antes de la salida</td></tr>
               <tr data-copy-row><td class="k">Asegurados</td><td>Máximo 5 por propuesta</td></tr>
-              <tr data-copy-row><td class="k">Vigencia</td><td>72 horas hábiles desde el envío, o hasta 48 horas hábiles antes del viaje si eso ocurre antes</td></tr>
+              <tr data-copy-row><td class="k">Vigencia</td><td>72 horas hábiles desde el envío</td></tr>
               <tr data-copy-row><td class="k">Emisión</td><td>Solicitud dentro de la vigencia; fuera de ella se rechaza en automático</td></tr>
             </tbody>
           </table>
@@ -444,9 +444,9 @@ pre.json { margin: 0; overflow-x: auto; background: var(--bg); border: 1px solid
         </div></li>
         <li class="tstep" data-copy-step><div class="tid">B4</div><div class="tbody">
           <h3>Vigencia y primas</h3>
-          <div class="comp"><span>calcularVigencia_</span><span>VIGENCIA_DIAS_HABILES 3</span><span>DIAS_HABILES_LIMITE_EMISION 2</span></div>
+          <div class="comp"><span>calcularVigencia_</span><span>VIGENCIA_DIAS_HABILES 3</span></div>
           <ul>
-            <li>Vigencia = la fecha más temprana entre envío + 3 días hábiles y salida − 2 días hábiles; se muestra sin hora.</li>
+            <li>Vigencia = envío + 3 días hábiles; se muestra sin hora.</li>
             <li>Total por plan = prima por asegurado × asegurados elegibles, redondeado a 2 decimales.</li>
           </ul>
           <div class="io"><div class="out"><b>Salida</b>vigenciaCotizacion, total* por plan</div><div class="fail"><b>Riesgo</b>Prima vacía en la hoja → total 0</div></div>

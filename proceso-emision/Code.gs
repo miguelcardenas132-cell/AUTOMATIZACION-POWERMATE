@@ -79,12 +79,11 @@ const CONFIG_EMISION = {
 
   /**
    * VIGENCIA de la propuesta. La solicitud de emisión se rechaza sola si
-   * llega después de la fecha más temprana entre:
-   *   - el envío de la propuesta + DIAS_HABILES_DESDE_ENVIO (72 horas hábiles), y
-   *   - la fecha de salida - DIAS_HABILES_ANTES_SALIDA (48 horas hábiles).
-   * Días hábiles = lunes a viernes (sin festivos), igual que el PDF.
+   * llega después del envío de la propuesta + DIAS_HABILES_DESDE_ENVIO
+   * (72 horas hábiles). Días hábiles = lunes a viernes (sin festivos), igual
+   * que el PDF.
    *
-   * La fecha de envío y la de salida se leen de la HOJA DE RESPUESTAS DE
+   * La fecha de envío (y la de salida, solo informativa) se leen de la HOJA DE RESPUESTAS DE
    * PROPUESTAS (la del proyecto Cotizaciones 2026), buscando el folio; así no
    * dependen de lo que se capture en este formulario. ID_HOJA_PROPUESTAS es
    * lo que va entre /d/ y /edit en la URL de esa hoja. Si está vacío, o el
@@ -94,7 +93,6 @@ const CONFIG_EMISION = {
   VIGENCIA: {
     ID_HOJA_PROPUESTAS: '',
     DIAS_HABILES_DESDE_ENVIO: 3,
-    DIAS_HABILES_ANTES_SALIDA: 2,
     // Solo para el texto del correo de rechazo (la regla vive en Cotizaciones 2026).
     DIAS_ANTICIPACION_PROPUESTA: 5,
     COL_MARCA_TEMPORAL: ['Marca temporal', 'Timestamp'],
@@ -389,12 +387,10 @@ function validarVigencia_(solicitud) {
     if (!fila) return sinValidar('el folio ' + solicitud.folio + ' no aparece en la hoja de propuestas');
 
     const envio = fechaDeCelda_(columnaPorTitulo_(fila, V.COL_MARCA_TEMPORAL, 0));
-    const salida = fechaDeCelda_(columnaPorTitulo_(fila, V.COL_FECHA_SALIDA, -1));
-    if (!envio || !salida) return sinValidar('no se pudo leer la fecha de envío o de salida del folio ' + solicitud.folio);
+    const salida = fechaDeCelda_(columnaPorTitulo_(fila, V.COL_FECHA_SALIDA, -1)); // solo informativa
+    if (!envio) return sinValidar('no se pudo leer la fecha de envío del folio ' + solicitud.folio);
 
-    const porEnvio = sumarDiasHabiles_(envio, V.DIAS_HABILES_DESDE_ENVIO);
-    const porSalida = sumarDiasHabiles_(salida, -V.DIAS_HABILES_ANTES_SALIDA);
-    const vence = porSalida < porEnvio ? porSalida : porEnvio;
+    const vence = sumarDiasHabiles_(envio, V.DIAS_HABILES_DESDE_ENVIO);
     const hoy = soloFecha_(solicitud.fecha || new Date());
     return { estado: hoy > vence ? 'VENCIDA' : 'VIGENTE', envio: envio, salida: salida, vence: vence };
   } catch (error) {
@@ -515,8 +511,7 @@ function correoRechazoVigencia_(solicitud, d) {
       ', pero <strong>no fue posible procesarla porque la propuesta está fuera de vigencia</strong>.') +
     p('La propuesta era válida hasta el <strong>' + fechaTexto_(v.vence) + '</strong>. La solicitud de emisión debe ' +
       'enviarse dentro de las <strong>' + (V.DIAS_HABILES_DESDE_ENVIO * 24) + ' horas hábiles</strong> siguientes al envío ' +
-      'de la propuesta (' + fechaTexto_(v.envio) + ') y, como máximo, <strong>' + (V.DIAS_HABILES_ANTES_SALIDA * 24) +
-      ' horas hábiles antes de la fecha de salida</strong> (' + fechaTexto_(v.salida) + '), lo que ocurra primero.') +
+      'de la propuesta (' + fechaTexto_(v.envio) + ').') +
     p('Para continuar, solicita una nueva propuesta. Recuerda que las propuestas se piden con al menos ' +
       V.DIAS_ANTICIPACION_PROPUESTA + ' días hábiles de anticipación a la salida.', 8) +
     boton +
@@ -678,7 +673,8 @@ function correoSeguroViaje_(solicitud, d, slip) {
   const v = solicitud.vigencia || { estado: 'SIN_VALIDAR', motivo: 'no se revisó' };
   const vigencia = v.estado === 'VIGENTE'
     ? '<div style="padding:0 12px 10px 12px;color:' + COLORES_EMISION.VERDE + ';">✔ Propuesta vigente hasta el <strong>' +
-      fechaTexto_(v.vence) + '</strong> (enviada el ' + fechaTexto_(v.envio) + ', salida el ' + fechaTexto_(v.salida) + ').</div>'
+      fechaTexto_(v.vence) + '</strong> (enviada el ' + fechaTexto_(v.envio) +
+      (v.salida ? ', salida el ' + fechaTexto_(v.salida) : '') + ').</div>'
     : '<div style="background-color:#fff4e5;border-left:4px solid #e0a800;padding:8px 12px;margin-bottom:10px;color:#7a5b00;">' +
       '⚠️ <strong>No se pudo validar la vigencia</strong> (' + escapar_(v.motivo) + '). Revisar a mano antes de emitir.</div>';
 

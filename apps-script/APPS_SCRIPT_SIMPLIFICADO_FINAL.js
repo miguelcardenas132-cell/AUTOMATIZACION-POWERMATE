@@ -16,8 +16,7 @@
  *      mínima (5 días hábiles) y el máximo de 5 asegurados.
  *   4) Si procede, se genera el HTML de la propuesta (1 página, tamaño carta)
  *      y se guarda en Drive con codificación UTF-8 explícita. La vigencia es
- *      la fecha de envío + 5 días hábiles, o 3 días hábiles antes de la
- *      salida, lo que ocurra primero.
+ *      la fecha de envío + 3 días hábiles (72 horas hábiles).
  *   5) Se construye el cuerpo HTML del correo (aprobación o rechazo).
  *   6) Se dispara el webhook a Power Automate, que adjunta el PDF de la
  *      propuesta y envía el correo.
@@ -77,13 +76,10 @@ const CONFIG = {
   EDAD_MESES_ADICIONALES: 11,
   DIAS_ANTICIPACION_MINIMA: 5,
   // Vigencia de la propuesta: la fecha de envío + VIGENCIA_DIAS_HABILES (72
-  // horas hábiles), o el último día para pedir la emisión
-  // (DIAS_HABILES_LIMITE_EMISION antes de la salida: 48 horas hábiles), lo
-  // que ocurra primero. El script del formulario de emisión
-  // usa los mismos dos valores para rechazar solicitudes fuera de vigencia:
-  // si se cambian aquí, cambiarlos también en CONFIG_EMISION.VIGENCIA.
+  // horas hábiles). El script del formulario de emisión usa el mismo valor
+  // para rechazar solicitudes fuera de vigencia: si se cambia aquí,
+  // cambiarlo también en CONFIG_EMISION.VIGENCIA.DIAS_HABILES_DESDE_ENVIO.
   VIGENCIA_DIAS_HABILES: 3,
-  DIAS_HABILES_LIMITE_EMISION: 2,
   // Posiciones de asegurado que se leen del formulario, y máximo de
   // asegurados elegibles por propuesta (el formato de emisión grupal solo
   // tiene lugar para 5). Se leen todas las posiciones para poder rechazar
@@ -499,7 +495,7 @@ function construirDatosSolicitud_(fila, encabezados, valores) {
   }
   const numAsegurados = asegurados.length;
 
-  const vigenciaDate = calcularVigencia_(hoy, inicioRaw);
+  const vigenciaDate = calcularVigencia_(hoy);
 
   // --- Estatus ---
   // Las fechas invertidas se evalúan primero: si la fecha de regreso es
@@ -623,25 +619,15 @@ function sumarDiasHabiles_(fecha, n) {
   return resultado;
 }
 
-/**
- * Vigencia de la propuesta: fecha de envío + VIGENCIA_DIAS_HABILES, pero
- * nunca después del último día para solicitar la emisión
- * (DIAS_HABILES_LIMITE_EMISION días hábiles antes de la salida). Si la
- * fecha de salida no es válida, se usa solo la cuenta desde el envío.
- */
 /** Plazo para pedir la emisión, para el PDF (debe quedar en 1 hoja). */
 function textoTiempoEmision_() {
-  return 'envía la solicitud en máximo ' + (CONFIG.VIGENCIA_DIAS_HABILES * 24) + ' horas hábiles y hasta ' +
-    (CONFIG.DIAS_HABILES_LIMITE_EMISION * 24) + ' horas hábiles antes del viaje.';
+  return 'envía la solicitud en máximo ' + (CONFIG.VIGENCIA_DIAS_HABILES * 24) +
+    ' horas hábiles después de recibir esta propuesta.';
 }
 
-function calcularVigencia_(hoy, fechaSalida) {
-  const porEnvio = sumarDiasHabiles_(hoy, CONFIG.VIGENCIA_DIAS_HABILES);
-  const salida = fechaSalida instanceof Date ? fechaSalida : new Date(fechaSalida);
-  if (!fechaSalida || isNaN(salida.getTime())) return porEnvio;
-
-  const limiteEmision = sumarDiasHabiles_(salida, -CONFIG.DIAS_HABILES_LIMITE_EMISION);
-  return limiteEmision < porEnvio ? limiteEmision : porEnvio;
+/** Vigencia de la propuesta: fecha de envío + VIGENCIA_DIAS_HABILES. */
+function calcularVigencia_(hoy) {
+  return sumarDiasHabiles_(hoy, CONFIG.VIGENCIA_DIAS_HABILES);
 }
 
 /**
