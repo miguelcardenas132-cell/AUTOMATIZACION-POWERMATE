@@ -1213,6 +1213,15 @@ function pieCorreo_() {
 }
 
 /**
+ * Fecha y hora de la solicitud, en gris, debajo de la firma (igual que en
+ * los correos de la solicitud de emisión). fechaEmision = 'dd/MM/yyyy HH:mm:ss'.
+ */
+function pieFechaCorreo_(data) {
+  return '<div style="margin-top:14px;font-size:9pt;color:#888888;font-family:' + FUENTE_CORREO + ';">' +
+    'Fecha de solicitud: ' + escaparHtml_(String(data.fechaEmision || '').slice(0, 16)) + ' hrs</div>';
+}
+
+/**
  * Firma institucional del área. El bloque de datos va en texto (no como
  * imagen) para que siga siendo legible aunque el cliente de correo bloquee
  * la descarga de imágenes; solo el gráfico del aniversario es un <img>.
@@ -1468,7 +1477,7 @@ function construirCorreoAprobado_(data) {
         ], COLORES.GRIS_FILA, true),
         COLORES.GRIS_FILA) +
 
-      pieCorreo_() +
+      pieCorreo_() + pieFechaCorreo_(data) +
     '</td></tr></table>' +
     barraPieCorreo_() +
     avisoPrivacidadCorreo_()
@@ -1516,7 +1525,7 @@ function construirCorreoRechazo_(data) {
       espaciador_(20) +
 
       avisoExcluidos +
-      pieCorreo_() +
+      pieCorreo_() + pieFechaCorreo_(data) +
     '</td></tr></table>' +
     barraPieCorreo_() +
     avisoPrivacidadCorreo_()
