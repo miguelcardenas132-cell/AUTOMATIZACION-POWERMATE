@@ -882,9 +882,9 @@ function estilosCotizacion_() {
 
     // --- 5. Recuadros operativos ---
     '.ops-caja { margin-top: 4px; border: 1px solid #b9b9b9; }\n' +
-    '.ops-banner { background-color: ' + COLORES.VERDE + '; color: #ffffff; text-align: center;\n' +
-    '              font-weight: bold; font-size: 9.8px; text-transform: uppercase;\n' +
-    '              padding: 3px; letter-spacing: .4px; }\n' +
+    '.ops-banner { background-color: ' + COLORES.VERDE + '; color: #ffffff; text-align: left;\n' +
+    '              font-weight: bold; font-size: 12.5px; text-transform: uppercase;\n' +
+    '              padding: 3px 10px; letter-spacing: .4px; }\n' +
     // border-spacing separa las tarjetas; cellspacing en el HTML cubre el
     // caso de que el convertidor a DOCX ignore la propiedad CSS.
     '.ops { border-collapse: separate; border-spacing: 3px; }\n' +
@@ -894,7 +894,7 @@ function estilosCotizacion_() {
     '.ops p { font-size: 7.8px; line-height: 1.24; }\n' +
     '.ops ul { list-style: none; margin-top: 1px; margin-left: 7px; }\n' +
     '.ops li { font-size: 7.8px; line-height: 1.24; padding-left: 7px; text-indent: -7px; }\n' +
-    // Paso 1: instrucciones a la izquierda y QR de emisión a la derecha.
+    // Solicitud en línea: instrucciones a la izquierda y QR de emisión a la derecha.
     '.paso-qr { border-collapse: collapse; }\n' +
     '.paso-qr td { vertical-align: top; padding: 0; }\n' +
     '.paso-qr-img { text-align: center; vertical-align: middle; }\n' +
@@ -1052,7 +1052,7 @@ function bloqueAccionOperativa_(data) {
       '<table class="paso-qr" role="presentation">' +
       '<colgroup><col style="width:63%"><col style="width:37%"></colgroup><tr>' +
       '<td class="paso-qr-texto">' +
-        '<h3>Paso 1. Solicita tu emisión en línea</h3>' +
+        '<h3>Solicita tu emisión en línea</h3>' +
         '<p>En caso de aceptar la propuesta, escanea el código QR o <a href="' + escaparHtml_(urlEmision) + '">' +
         'da clic aquí</a> y llena la solicitud de emisión. Ten a la mano:</p>' +
         '<ul>' +
@@ -1068,7 +1068,7 @@ function bloqueAccionOperativa_(data) {
       '</tr></table>' +
     '</td>\n' +
     '<td class="celda">' +
-      '<h3>Paso 2. Consideraciones importantes</h3>' +
+      '<h3>Consideraciones importantes</h3>' +
       '<ul>' +
         '<li>• <strong>Revisión de datos:</strong> verifica que la información de los asegurados y del contratante ' +
         'sea correcta y legible.</li>' +
@@ -1435,7 +1435,7 @@ function construirCorreoAprobado_(data) {
 
       '<p style="margin:0 0 8px 0;' + TEXTO_CUERPO_CORREO + '">En caso de aceptación de la propuesta, para proceder ' +
       'con la generación de la póliza, te agradecemos seguir estas indicaciones:</p>' +
-      '<p style="margin:0;' + TEXTO_CUERPO_CORREO + '"><strong><em>¡¡Importante!!:</em></strong> si no se recibe la ' +
+      '<p style="margin:0;' + TEXTO_CUERPO_CORREO + '">Si no se recibe la ' +
       'documentación completa antes de la fecha límite, la póliza no será entregada.</p>' +
       espaciador_(16) +
 
