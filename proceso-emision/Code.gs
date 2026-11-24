@@ -17,6 +17,8 @@
  *      formulario, con todos los archivos que subió el cliente.
  *
  * Los tres llevan siempre en copia a CONFIG_EMISION.COPIA_SIEMPRE.
+ * Además sale una CONFIRMACIÓN de recibido al correo capturado en el
+ * formulario (sin copias), con el resumen de la solicitud.
  *
  * Antes revisa la VIGENCIA de la propuesta (CONFIG_EMISION.VIGENCIA): si la
  * solicitud llega fuera de vigencia no sale ninguno de los tres; sale un
@@ -559,8 +561,59 @@ function construirCorreos_(solicitud) {
         cuerpoHtml: correoSeguroViaje_(solicitud, datos, slip),
         adjuntos: adjuntosPayload_(solicitud.archivos)
       }
-    ]
+    ].concat(datos.correo ? [{
+      // Acuse al cliente, al correo capturado en el formulario. Sin copias.
+      tipo: 'CONFIRMACION',
+      para: datos.correo,
+      cc: '',
+      asunto: 'Recibimos tu solicitud de emisión || Seguro de Viaje SENIOR +79' +
+        (solicitud.folio ? ' || ' + solicitud.folio : ''),
+      cuerpoHtml: correoConfirmacion_(solicitud, datos),
+      adjuntos: []
+    }] : [])
   };
+}
+
+/**
+ * Confirmación al cliente de que su solicitud de emisión se recibió, con el
+ * resumen de lo que capturó para que lo revise. Firma para clientes.
+ */
+function correoConfirmacion_(solicitud, d) {
+  const texto = function (titulo) { return ((buscarRespuesta_(solicitud, [titulo]) || {}).texto || '').trim(); };
+  const p = function (html, extra) {
+    return '<p style="margin:0 0 ' + (extra === undefined ? 12 : extra) + 'px 0;font-family:' + FUENTE_EMISION +
+      ';font-size:' + TAMANO_TRAMITE + ';color:#000000;">' + html + '</p>';
+  };
+  const celda = 'padding:5px 12px;border-bottom:1px solid #d9e9e7;font-family:' + FUENTE_EMISION + ';font-size:10.5pt;vertical-align:top;';
+  const fila = function (etiqueta, valor) {
+    return valor ? '<tr><td width="38%" style="' + celda + 'font-weight:bold;color:' + COLORES_EMISION.VERDE + ';">' +
+      escapar_(etiqueta) + '</td><td style="' + celda + 'color:#222222;">' + escapar_(valor) + '</td></tr>' : '';
+  };
+  const salida = texto('Fecha de Salida'), regreso = texto('Fecha de Regreso');
+  const costo = texto('Costo en USD');
+  const asegurados = leerAsegurados_(solicitud).map(function (a) { return a.nombre; }).join(', ');
+
+  return '<div style="font-family:' + FUENTE_EMISION + ';font-size:' + TAMANO_TRAMITE + ';color:#000000;">' +
+    p('Hola, buen día.') +
+    p('Recibimos tu <strong>solicitud de emisión</strong> del Seguro de Viaje SENIOR +79 y ya la estamos tramitando. ' +
+      'Te haremos llegar tu póliza una vez emitida.') +
+    p('Este es el resumen de lo que capturaste:', 6) +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="' + COLORES_EMISION.VERDE_CLARO + '" ' +
+      'style="border-collapse:collapse;background-color:' + COLORES_EMISION.VERDE_CLARO + ';max-width:620px;margin-bottom:14px;">' +
+      fila('Folio de la propuesta', solicitud.folio) +
+      fila('Contratante', d.contratante) +
+      fila('Plan elegido', texto('Producto Elegido')) +
+      fila('Prima total', costo ? costo + ' USD' : '') +
+      fila('Destino', texto('Destino')) +
+      fila('Fechas del viaje', salida && regreso ? fechaSlip_(salida) + ' al ' + fechaSlip_(regreso) : '') +
+      fila('Asegurados', asegurados) +
+    '</table>' +
+    p('Revisa que los datos sean correctos: con ellos se emitirá tu póliza. Si encuentras un error, responde este ' +
+      'correo lo antes posible. Los errores u omisiones una vez emitida tu póliza toman de <strong>3 a 5 días hábiles</strong> ' +
+      'en ser atendidos.') +
+    p('Saludos.', 0) + p('&nbsp;', 0) + p('&nbsp;', 0) +
+    firmaTexto_(true) +
+  '</div>';
 }
 
 /**
@@ -703,6 +756,8 @@ function correoSeguroViaje_(solicitud, d, slip) {
           '<strong>solicitud de TCI</strong> a Mesa Control Daños y la <strong>solicitud de TCC</strong> a ' +
           'Cotizaciones Daños (contratante: <strong>' + escapar_(d.contratante) + '</strong>, persona ' +
           (d.personaMoral ? 'moral' : 'física') + '). Los archivos que subió el cliente van adjuntos.' + avisoSlip +
+          (d.correo ? ' Al cliente le llegó la confirmación de recibido en ' + escapar_(d.correo) + '.'
+            : ' <strong>No se envió confirmación al cliente: no capturó correo.</strong>') +
         '</td></tr>' +
         '<tr><td style="padding:12px 20px 8px 20px;">' + bloques +
           '<div style="font-family:' + FUENTE_EMISION + ';font-size:9pt;color:#888888;">Fecha de solicitud: ' +

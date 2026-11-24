@@ -22,6 +22,12 @@
 
 Los tres llevan siempre en copia a equintanar@ (Eloisa Quintanar) y mhidalgo@ (Miguel Cárdenas), en `COPIA_SIEMPRE`.
 
+Además sale una **confirmación al cliente**, *Recibimos tu solicitud de emisión \|\| Seguro de
+Viaje SENIOR +79 \|\| <folio>*, al correo capturado en el formulario y sin copias. Trae el
+resumen (folio, contratante, plan, prima, destino, fechas y asegurados), le pide revisar los
+datos y lleva la firma para clientes (Ext. 5114). Si no capturó correo, no sale y el expediente
+lo avisa.
+
 ### Vigencia
 
 La solicitud de emisión se **rechaza sola** si llega después de la fecha más temprana entre:
@@ -243,4 +249,3 @@ de Master Elite. Sirve para revisar el formato rápido, no los adjuntos.
 
 ## Pendientes
 
-- [ ] Acuse al cliente de que su solicitud de emisión se recibió, si se requiere.

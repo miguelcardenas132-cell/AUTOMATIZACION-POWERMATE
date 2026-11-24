@@ -629,17 +629,10 @@ function sumarDiasHabiles_(fecha, n) {
  * (DIAS_HABILES_LIMITE_EMISION días hábiles antes de la salida). Si la
  * fecha de salida no es válida, se usa solo la cuenta desde el envío.
  */
-/**
- * Plazo para pedir la emisión. corto = true para el PDF, que debe quedar en
- * 1 hoja; el correo lleva la versión completa.
- */
-function textoTiempoEmision_(corto) {
-  const desdeEnvio = (CONFIG.VIGENCIA_DIAS_HABILES * 24) + ' horas hábiles';
-  const antesSalida = (CONFIG.DIAS_HABILES_LIMITE_EMISION * 24) + ' horas hábiles';
-  if (corto) return 'envía la solicitud en máximo ' + desdeEnvio + ' y hasta ' + antesSalida + ' antes del viaje.';
-  return 'la solicitud de emisión debe enviarse dentro de las <strong>' + desdeEnvio +
-    '</strong> siguientes al envío de esta propuesta y hasta <strong>' + antesSalida +
-    '</strong> antes de iniciar tu viaje; después se rechaza.';
+/** Plazo para pedir la emisión, para el PDF (debe quedar en 1 hoja). */
+function textoTiempoEmision_() {
+  return 'envía la solicitud en máximo ' + (CONFIG.VIGENCIA_DIAS_HABILES * 24) + ' horas hábiles y hasta ' +
+    (CONFIG.DIAS_HABILES_LIMITE_EMISION * 24) + ' horas hábiles antes del viaje.';
 }
 
 function calcularVigencia_(hoy, fechaSalida) {
@@ -1072,7 +1065,7 @@ function bloqueAccionOperativa_(data) {
       '<ul>' +
         '<li>• <strong>Revisión de datos:</strong> verifica que la información de los asegurados y del contratante ' +
         'sea correcta y legible.</li>' +
-        '<li>• <strong>Tiempo de gestión:</strong> ' + textoTiempoEmision_(true) + '</li>' +
+        '<li>• <strong>Tiempo de gestión:</strong> ' + textoTiempoEmision_() + '</li>' +
         '<li>• <strong>Correcciones:</strong> los cambios por errores u omisiones toman de 3 a 5 días hábiles.</li>' +
         '<li>• <strong>Actualizaciones:</strong> cualquier cambio en los días de viaje requiere una nueva ' +
         'propuesta previa a la emisión.</li>' +
@@ -1433,14 +1426,12 @@ function construirCorreoAprobado_(data) {
 
       construirAvisoExcluidos_(data.pasajerosExcluidos) +
 
-      '<p style="margin:0 0 8px 0;' + TEXTO_CUERPO_CORREO + '">En caso de aceptación de la propuesta, para proceder ' +
-      'con la generación de la póliza, te agradecemos seguir estas indicaciones:</p>' +
-      '<p style="margin:0;' + TEXTO_CUERPO_CORREO + '">Si no se recibe la ' +
-      'documentación completa antes de la fecha límite, la póliza no será entregada.</p>' +
-      espaciador_(16) +
+      '<p style="margin:4px 0 0 0;font-family:' + FUENTE_CORREO + ';font-size:16pt;font-weight:bold;' +
+        'line-height:1.25;color:' + COLORES.VERDE + ';">Para solicitar tu emisión sigue los siguientes pasos</p>' +
+      espaciador_(14) +
 
       recuadroCorreo_('&#128196;', 'Solicitud de Emisión',
-        '<div>Si aceptas la propuesta, llena la <strong>solicitud de emisión en línea</strong> (también puedes ' +
+        '<div>Llena la <strong>solicitud de emisión en línea</strong> (también puedes ' +
         'escanear el código QR de la propuesta). Ten a la mano:</div>' +
         listaCorreo_([
           '<strong>Propuesta aceptada</strong> (el PDF adjunto a este correo).',
@@ -1453,15 +1444,11 @@ function construirCorreoAprobado_(data) {
       espaciador_(16) +
 
       recuadroCorreo_('&#9888;&#65039;', 'Consideraciones Importantes',
-        '<div>Para garantizar un proceso sin contratiempos, te pedimos tomar en cuenta lo siguiente:</div>' +
         listaCorreo_([
-          '<strong>Revisión de datos:</strong> verifica que la información de los asegurados y del contratante ' +
-            'sea correcta y legible.',
-          '<strong>Tiempo de emisión:</strong> ' + textoTiempoEmision_(),
-          '<strong>Correcciones:</strong> los cambios por errores u omisiones en la solicitud inicial toman de ' +
-            '<strong>3 a 5 días hábiles</strong>.',
-          '<strong>Actualizaciones:</strong> cualquier cambio en los días de viaje requiere una ' +
-            '<strong>nueva propuesta</strong> previa a la emisión.'
+          'Tendrás hasta un máximo de <strong>' + (CONFIG.VIGENCIA_DIAS_HABILES * 24) + ' horas hábiles</strong> ' +
+            'para solicitar tu emisión después de recibir la cotización.',
+          'Errores u omisiones una vez emitida tu póliza toman de <strong>3 a 5 días hábiles</strong> en ser atendidos.',
+          'Cualquier cambio en los días de viaje requiere una <strong>re-cotización</strong>.'
         ], COLORES.AMBAR_FONDO),
         COLORES.AMBAR_FONDO, COLORES.AMBAR_BORDE) +
       espaciador_(16) +
