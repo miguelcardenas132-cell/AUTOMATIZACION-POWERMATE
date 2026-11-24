@@ -78,12 +78,12 @@ const CONFIG = {
   DIAS_ANTICIPACION_MINIMA: 5,
   // Vigencia de la propuesta: la fecha de envío + VIGENCIA_DIAS_HABILES (72
   // horas hábiles), o el último día para pedir la emisión
-  // (DIAS_HABILES_LIMITE_EMISION antes de la salida: 24 horas hábiles), lo
+  // (DIAS_HABILES_LIMITE_EMISION antes de la salida: 48 horas hábiles), lo
   // que ocurra primero. El script del formulario de emisión
   // usa los mismos dos valores para rechazar solicitudes fuera de vigencia:
   // si se cambian aquí, cambiarlos también en CONFIG_EMISION.VIGENCIA.
   VIGENCIA_DIAS_HABILES: 3,
-  DIAS_HABILES_LIMITE_EMISION: 1,
+  DIAS_HABILES_LIMITE_EMISION: 2,
   // Posiciones de asegurado que se leen del formulario, y máximo de
   // asegurados elegibles por propuesta (el formato de emisión grupal solo
   // tiene lugar para 5). Se leen todas las posiciones para poder rechazar
