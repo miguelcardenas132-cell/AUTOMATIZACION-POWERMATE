@@ -17,8 +17,9 @@
  *      formulario, con todos los archivos que subió el cliente.
  *
  * Los tres llevan siempre en copia a CONFIG_EMISION.COPIA_SIEMPRE.
- * Además sale una CONFIRMACIÓN de recibido al correo capturado en el
- * formulario (sin copias), con el resumen de la solicitud.
+ * Además sale una CONFIRMACIÓN al correo capturado en el formulario (sin
+ * copias): el mismo formato del correo a Seguro de Viaje, con sus archivos
+ * y sin el SLIP.
  *
  * Antes revisa la VIGENCIA de la propuesta (CONFIG_EMISION.VIGENCIA): si la
  * solicitud llega fuera de vigencia no sale ninguno de los tres; sale un
@@ -562,58 +563,18 @@ function construirCorreos_(solicitud) {
         adjuntos: adjuntosPayload_(solicitud.archivos)
       }
     ].concat(datos.correo ? [{
-      // Acuse al cliente, al correo capturado en el formulario. Sin copias.
+      // Confirmación al cliente, al correo capturado en el formulario. Sin
+      // copias. Lleva sus archivos; el SLIP no (Power Automate solo lo agrega
+      // al correo de tipo SEGURO_VIAJE).
       tipo: 'CONFIRMACION',
       para: datos.correo,
       cc: '',
-      asunto: 'Recibimos tu solicitud de emisión || Seguro de Viaje SENIOR +79' +
+      asunto: 'Confirmación de Solicitud || Seguro de Viaje SENIOR +79' +
         (solicitud.folio ? ' || ' + solicitud.folio : ''),
-      cuerpoHtml: correoConfirmacion_(solicitud, datos),
-      adjuntos: []
+      cuerpoHtml: correoConfirmacion_(solicitud),
+      adjuntos: adjuntosPayload_(solicitud.archivos)
     }] : [])
   };
-}
-
-/**
- * Confirmación al cliente de que su solicitud de emisión se recibió, con el
- * resumen de lo que capturó para que lo revise. Firma para clientes.
- */
-function correoConfirmacion_(solicitud, d) {
-  const texto = function (titulo) { return ((buscarRespuesta_(solicitud, [titulo]) || {}).texto || '').trim(); };
-  const p = function (html, extra) {
-    return '<p style="margin:0 0 ' + (extra === undefined ? 12 : extra) + 'px 0;font-family:' + FUENTE_EMISION +
-      ';font-size:' + TAMANO_TRAMITE + ';color:#000000;">' + html + '</p>';
-  };
-  const celda = 'padding:5px 12px;border-bottom:1px solid #d9e9e7;font-family:' + FUENTE_EMISION + ';font-size:10.5pt;vertical-align:top;';
-  const fila = function (etiqueta, valor) {
-    return valor ? '<tr><td width="38%" style="' + celda + 'font-weight:bold;color:' + COLORES_EMISION.VERDE + ';">' +
-      escapar_(etiqueta) + '</td><td style="' + celda + 'color:#222222;">' + escapar_(valor) + '</td></tr>' : '';
-  };
-  const salida = texto('Fecha de Salida'), regreso = texto('Fecha de Regreso');
-  const costo = texto('Costo en USD');
-  const asegurados = leerAsegurados_(solicitud).map(function (a) { return a.nombre; }).join(', ');
-
-  return '<div style="font-family:' + FUENTE_EMISION + ';font-size:' + TAMANO_TRAMITE + ';color:#000000;">' +
-    p('Hola, buen día.') +
-    p('Recibimos tu <strong>solicitud de emisión</strong> del Seguro de Viaje SENIOR +79 y ya la estamos tramitando. ' +
-      'Te haremos llegar tu póliza una vez emitida.') +
-    p('Este es el resumen de lo que capturaste:', 6) +
-    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="' + COLORES_EMISION.VERDE_CLARO + '" ' +
-      'style="border-collapse:collapse;background-color:' + COLORES_EMISION.VERDE_CLARO + ';max-width:620px;margin-bottom:14px;">' +
-      fila('Folio de la propuesta', solicitud.folio) +
-      fila('Contratante', d.contratante) +
-      fila('Plan elegido', texto('Producto Elegido')) +
-      fila('Prima total', costo ? costo + ' USD' : '') +
-      fila('Destino', texto('Destino')) +
-      fila('Fechas del viaje', salida && regreso ? fechaSlip_(salida) + ' al ' + fechaSlip_(regreso) : '') +
-      fila('Asegurados', asegurados) +
-    '</table>' +
-    p('Revisa que los datos sean correctos: con ellos se emitirá tu póliza. Si encuentras un error, responde este ' +
-      'correo lo antes posible. Los errores u omisiones una vez emitida tu póliza toman de <strong>3 a 5 días hábiles</strong> ' +
-      'en ser atendidos.') +
-    p('Saludos.', 0) + p('&nbsp;', 0) + p('&nbsp;', 0) +
-    firmaTexto_(true) +
-  '</div>';
 }
 
 /**
@@ -711,11 +672,50 @@ function correoSeguroViaje_(solicitud, d, slip) {
   const avisoSlip = slip && slip.ok
     ? ' También va adjunto el <strong>SLIP en PDF</strong> (' + escapar_(slip.nombrePdf) + ') con el recuadro de asegurados ya llenado.'
     : ' <strong style="color:#b3261e;">⚠️ No se generó el SLIP: ' + escapar_(slip ? slip.motivo : '') + '. Llenarlo a mano.</strong>';
+  const folio = solicitud.folio
+    ? cajaFolio_(solicitud.folio)
+    : '<div style="padding:8px 12px;margin-bottom:10px;">⚠️ No se pudo leer el folio de la propuesta adjunta; revisar el PDF.</div>';
+  const v = solicitud.vigencia || { estado: 'SIN_VALIDAR', motivo: 'no se revisó' };
+  const vigencia = v.estado === 'VIGENTE'
+    ? '<div style="padding:0 12px 10px 12px;color:' + COLORES_EMISION.VERDE + ';">✔ Propuesta vigente hasta el <strong>' +
+      fechaTexto_(v.vence) + '</strong> (enviada el ' + fechaTexto_(v.envio) + ', salida el ' + fechaTexto_(v.salida) + ').</div>'
+    : '<div style="background-color:#fff4e5;border-left:4px solid #e0a800;padding:8px 12px;margin-bottom:10px;color:#7a5b00;">' +
+      '⚠️ <strong>No se pudo validar la vigencia</strong> (' + escapar_(v.motivo) + '). Revisar a mano antes de emitir.</div>';
+
+  const intro = folio + vigencia +
+    'Se recibió una solicitud de emisión desde el formulario. Ya se enviaron en automático la ' +
+    '<strong>solicitud de TCI</strong> a Mesa Control Daños y la <strong>solicitud de TCC</strong> a ' +
+    'Cotizaciones Daños (contratante: <strong>' + escapar_(d.contratante) + '</strong>, persona ' +
+    (d.personaMoral ? 'moral' : 'física') + '). Los archivos que subió el cliente van adjuntos.' + avisoSlip +
+    (d.correo ? ' Al cliente le llegó la confirmación con esta misma información en ' + escapar_(d.correo) + '.'
+      : ' <strong>No se envió confirmación al cliente: no capturó correo.</strong>');
+  return marcoExpediente_('Nueva Solicitud de Emisión — Seguro de Viaje SENIOR +79', intro, solicitud, false);
+}
+
+/**
+ * Confirmación al cliente: el mismo formato del correo a Seguro de Viaje,
+ * con todo lo que capturó y sus archivos, sin el SLIP ni los avisos internos.
+ */
+function correoConfirmacion_(solicitud) {
+  const intro = (solicitud.folio ? cajaFolio_(solicitud.folio) : '') +
+    '<p style="margin:4px 0 0 0;font-family:' + FUENTE_EMISION + ';font-size:10.5pt;line-height:1.45;color:#222222;">' +
+    'Hemos recibido tu solicitud de emisión con base en la siguiente información y los documentos adjuntos. ' +
+    'Nuestro equipo ya se encuentra trabajando en ella, y en un lapso máximo de 72 hrs estarás recibiendo tu póliza.</p>';
+  return marcoExpediente_('Confirmación de Solicitud — Seguro de Viaje SENIOR +79', intro, solicitud, true);
+}
+
+function cajaFolio_(folio) {
+  return '<div style="background-color:' + COLORES_EMISION.VERDE_CLARO + ';border-left:4px solid ' + COLORES_EMISION.VERDE + ';' +
+    'padding:8px 12px;margin-bottom:10px;"><strong style="color:' + COLORES_EMISION.VERDE + ';">Folio de la propuesta:</strong> ' +
+    escapar_(folio) + '</div>';
+}
+
+/** Respuestas del formulario agrupadas en SECCIONES; lo que no esté ahí sale en "Otros". */
+function seccionesFormulario_(solicitud) {
   const usadas = {};
   const omitir = function (titulo) {
     return CONFIG_EMISION.OMITIR.some(function (re) { return re.test(titulo); });
   };
-
   let bloques = CONFIG_EMISION.SECCIONES.map(function (seccion) {
     const filas = seccion.preguntas.map(function (pregunta) {
       const r = buscarRespuesta_(solicitud, [pregunta]);
@@ -725,45 +725,29 @@ function correoSeguroViaje_(solicitud, d, slip) {
     }).join('');
     return filas ? bloqueSeccion_(seccion.titulo, filas) : '';
   }).join('');
-
   const otros = solicitud.respuestas
     .filter(function (r) { return !usadas[r.titulo] && !omitir(r.titulo); })
     .map(filaSeccion_).join('');
   if (otros) bloques += bloqueSeccion_('Otros', otros);
+  return bloques;
+}
 
-  const folio = solicitud.folio
-    ? '<strong style="color:' + COLORES_EMISION.VERDE + ';">Folio de la propuesta:</strong> ' + escapar_(solicitud.folio)
-    : '⚠️ No se pudo leer el folio de la propuesta adjunta; revisar el PDF.';
-  const v = solicitud.vigencia || { estado: 'SIN_VALIDAR', motivo: 'no se revisó' };
-  const vigencia = v.estado === 'VIGENTE'
-    ? '<div style="padding:0 12px 10px 12px;color:' + COLORES_EMISION.VERDE + ';">✔ Propuesta vigente hasta el <strong>' +
-      fechaTexto_(v.vence) + '</strong> (enviada el ' + fechaTexto_(v.envio) + ', salida el ' + fechaTexto_(v.salida) + ').</div>'
-    : '<div style="background-color:#fff4e5;border-left:4px solid #e0a800;padding:8px 12px;margin-bottom:10px;color:#7a5b00;">' +
-      '⚠️ <strong>No se pudo validar la vigencia</strong> (' + escapar_(v.motivo) + '). Revisar a mano antes de emitir.</div>';
-
+/** Marco común del expediente: franja verde, introducción, secciones, fecha y firma. */
+function marcoExpediente_(titulo, introHtml, solicitud, cliente) {
   return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f3f4f3" ' +
       'style="border-collapse:collapse;background-color:#f3f4f3;">' +
     '<tr><td align="center" style="padding:20px 8px;">' +
       '<table role="presentation" width="700" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" ' +
         'style="border-collapse:collapse;width:100%;max-width:700px;background-color:#ffffff;">' +
         '<tr><td bgcolor="' + COLORES_EMISION.VERDE + '" style="padding:16px 20px;background-color:' + COLORES_EMISION.VERDE + ';' +
-          'font-family:' + FUENTE_EMISION + ';font-size:16pt;font-weight:bold;color:#ffffff;">' +
-          'Nueva Solicitud de Emisión — Seguro de Viaje SENIOR +79</td></tr>' +
+          'font-family:' + FUENTE_EMISION + ';font-size:16pt;font-weight:bold;color:#ffffff;">' + escapar_(titulo) + '</td></tr>' +
         '<tr><td style="padding:16px 20px 4px 20px;font-family:' + FUENTE_EMISION + ';font-size:10.5pt;color:#222222;">' +
-          '<div style="background-color:' + COLORES_EMISION.VERDE_CLARO + ';border-left:4px solid ' + COLORES_EMISION.VERDE + ';' +
-            'padding:8px 12px;margin-bottom:10px;">' + folio + '</div>' + vigencia +
-          'Se recibió una solicitud de emisión desde el formulario. Ya se enviaron en automático la ' +
-          '<strong>solicitud de TCI</strong> a Mesa Control Daños y la <strong>solicitud de TCC</strong> a ' +
-          'Cotizaciones Daños (contratante: <strong>' + escapar_(d.contratante) + '</strong>, persona ' +
-          (d.personaMoral ? 'moral' : 'física') + '). Los archivos que subió el cliente van adjuntos.' + avisoSlip +
-          (d.correo ? ' Al cliente le llegó la confirmación de recibido en ' + escapar_(d.correo) + '.'
-            : ' <strong>No se envió confirmación al cliente: no capturó correo.</strong>') +
-        '</td></tr>' +
-        '<tr><td style="padding:12px 20px 8px 20px;">' + bloques +
+          introHtml + '</td></tr>' +
+        '<tr><td style="padding:12px 20px 8px 20px;">' + seccionesFormulario_(solicitud) +
           '<div style="font-family:' + FUENTE_EMISION + ';font-size:9pt;color:#888888;">Fecha de solicitud: ' +
             Utilities.formatDate(solicitud.fecha, 'America/Mexico_City', 'dd/MM/yyyy HH:mm') + ' hrs</div>' +
         '</td></tr>' +
-        '<tr><td style="padding:12px 20px 20px 20px;">' + firmaTexto_() + '</td></tr>' +
+        '<tr><td style="padding:12px 20px 20px 20px;">' + firmaTexto_(cliente) + '</td></tr>' +
       '</table>' +
     '</td></tr></table>';
 }
@@ -771,7 +755,7 @@ function correoSeguroViaje_(solicitud, d, slip) {
 function filaSeccion_(respuesta) {
   const valor = respuesta.archivos.length
     ? '📎 ' + escapar_(respuesta.texto) + ' (adjunto)'
-    : escapar_(respuesta.texto || '—');
+    : escapar_(/^\d{4}-\d{2}-\d{2}$/.test(respuesta.texto) ? fechaSlip_(respuesta.texto) : (respuesta.texto || '—'));
   const celda = 'padding:6px 10px;border-bottom:1px solid #e6e6e6;font-family:' + FUENTE_EMISION + ';font-size:10pt;vertical-align:top;';
   return '<tr><td width="42%" style="' + celda + 'font-weight:bold;color:' + COLORES_EMISION.VERDE + ';">' +
     escapar_(respuesta.titulo) + '</td><td style="' + celda + 'color:#222222;">' + valor + '</td></tr>';

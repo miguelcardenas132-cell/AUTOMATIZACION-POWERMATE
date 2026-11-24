@@ -22,11 +22,13 @@
 
 Los tres llevan siempre en copia a equintanar@ (Eloisa Quintanar) y mhidalgo@ (Miguel Cárdenas), en `COPIA_SIEMPRE`.
 
-Además sale una **confirmación al cliente**, *Recibimos tu solicitud de emisión \|\| Seguro de
-Viaje SENIOR +79 \|\| <folio>*, al correo capturado en el formulario y sin copias. Trae el
-resumen (folio, contratante, plan, prima, destino, fechas y asegurados), le pide revisar los
-datos y lleva la firma para clientes (Ext. 5114). Si no capturó correo, no sale y el expediente
-lo avisa.
+Además sale una **confirmación al cliente**, *Confirmación de Solicitud \|\| Seguro de Viaje
+SENIOR +79 \|\| <folio>*, al correo capturado en el formulario y sin copias. Es el mismo formato
+del correo a Seguro de Viaje (todo el formulario por secciones y los archivos que subió), **sin
+el SLIP** ni los avisos internos, con este texto al inicio: *"Hemos recibido tu solicitud de
+emisión con base en la siguiente información y los documentos adjuntos. Nuestro equipo ya se
+encuentra trabajando en ella, y en un lapso máximo de 72 hrs estarás recibiendo tu póliza."*
+Lleva la firma para clientes (Ext. 5114). Si no capturó correo, no sale y el expediente lo avisa.
 
 ### Vigencia
 
