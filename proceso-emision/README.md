@@ -26,7 +26,7 @@ Los tres llevan siempre en copia a equintanar@ (Eloisa Quintanar) y mhidalgo@ (M
 
 La solicitud de emisión se **rechaza sola** si llega después de la fecha más temprana entre:
 - el envío de la propuesta **+ 72 horas hábiles** (3 días hábiles), y
-- la fecha de salida **− 72 horas hábiles** (3 días hábiles).
+- la fecha de salida **− 24 horas hábiles** (1 día hábil).
 
 Es la misma fecha que aparece en el PDF como "VIGENCIA HASTA EL …". Días hábiles = lunes a
 viernes, sin descontar festivos.

@@ -78,7 +78,7 @@ const CONFIG_EMISION = {
    * VIGENCIA de la propuesta. La solicitud de emisión se rechaza sola si
    * llega después de la fecha más temprana entre:
    *   - el envío de la propuesta + DIAS_HABILES_DESDE_ENVIO (72 horas hábiles), y
-   *   - la fecha de salida - DIAS_HABILES_ANTES_SALIDA (72 horas hábiles).
+   *   - la fecha de salida - DIAS_HABILES_ANTES_SALIDA (24 horas hábiles).
    * Días hábiles = lunes a viernes (sin festivos), igual que el PDF.
    *
    * La fecha de envío y la de salida se leen de la HOJA DE RESPUESTAS DE
@@ -91,7 +91,9 @@ const CONFIG_EMISION = {
   VIGENCIA: {
     ID_HOJA_PROPUESTAS: '',
     DIAS_HABILES_DESDE_ENVIO: 3,
-    DIAS_HABILES_ANTES_SALIDA: 3,
+    DIAS_HABILES_ANTES_SALIDA: 1,
+    // Solo para el texto del correo de rechazo (la regla vive en Cotizaciones 2026).
+    DIAS_ANTICIPACION_PROPUESTA: 5,
     COL_MARCA_TEMPORAL: ['Marca temporal', 'Timestamp'],
     COL_FECHA_SALIDA: ['Fecha de Salida']
   },
@@ -513,7 +515,7 @@ function correoRechazoVigencia_(solicitud, d) {
       'de la propuesta (' + fechaTexto_(v.envio) + ') y, como máximo, <strong>' + (V.DIAS_HABILES_ANTES_SALIDA * 24) +
       ' horas hábiles antes de la fecha de salida</strong> (' + fechaTexto_(v.salida) + '), lo que ocurra primero.') +
     p('Para continuar, solicita una nueva propuesta. Recuerda que las propuestas se piden con al menos ' +
-      '5 días hábiles de anticipación a la salida.', 8) +
+      V.DIAS_ANTICIPACION_PROPUESTA + ' días hábiles de anticipación a la salida.', 8) +
     boton +
     p('Saludos.', 0) + p('&nbsp;', 0) + p('&nbsp;', 0) +
     firmaTexto_(true) +

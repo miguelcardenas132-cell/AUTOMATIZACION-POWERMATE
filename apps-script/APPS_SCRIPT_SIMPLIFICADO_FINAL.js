@@ -78,12 +78,12 @@ const CONFIG = {
   DIAS_ANTICIPACION_MINIMA: 5,
   // Vigencia de la propuesta: la fecha de envío + VIGENCIA_DIAS_HABILES (72
   // horas hábiles), o el último día para pedir la emisión
-  // (DIAS_HABILES_LIMITE_EMISION antes de la salida, también 72 horas
-  // hábiles), lo que ocurra primero. El script del formulario de emisión
+  // (DIAS_HABILES_LIMITE_EMISION antes de la salida: 24 horas hábiles), lo
+  // que ocurra primero. El script del formulario de emisión
   // usa los mismos dos valores para rechazar solicitudes fuera de vigencia:
   // si se cambian aquí, cambiarlos también en CONFIG_EMISION.VIGENCIA.
   VIGENCIA_DIAS_HABILES: 3,
-  DIAS_HABILES_LIMITE_EMISION: 3,
+  DIAS_HABILES_LIMITE_EMISION: 1,
   // Posiciones de asegurado que se leen del formulario, y máximo de
   // asegurados elegibles por propuesta (el formato de emisión grupal solo
   // tiene lugar para 5). Se leen todas las posiciones para poder rechazar
@@ -629,6 +629,19 @@ function sumarDiasHabiles_(fecha, n) {
  * (DIAS_HABILES_LIMITE_EMISION días hábiles antes de la salida). Si la
  * fecha de salida no es válida, se usa solo la cuenta desde el envío.
  */
+/**
+ * Plazo para pedir la emisión. corto = true para el PDF, que debe quedar en
+ * 1 hoja; el correo lleva la versión completa.
+ */
+function textoTiempoEmision_(corto) {
+  const desdeEnvio = (CONFIG.VIGENCIA_DIAS_HABILES * 24) + ' horas hábiles';
+  const antesSalida = (CONFIG.DIAS_HABILES_LIMITE_EMISION * 24) + ' horas hábiles';
+  if (corto) return 'envía la solicitud en máximo ' + desdeEnvio + ' y hasta ' + antesSalida + ' antes del viaje.';
+  return 'la solicitud de emisión debe enviarse dentro de las <strong>' + desdeEnvio +
+    '</strong> siguientes al envío de esta propuesta y hasta <strong>' + antesSalida +
+    '</strong> antes de iniciar tu viaje; después se rechaza.';
+}
+
 function calcularVigencia_(hoy, fechaSalida) {
   const porEnvio = sumarDiasHabiles_(hoy, CONFIG.VIGENCIA_DIAS_HABILES);
   const salida = fechaSalida instanceof Date ? fechaSalida : new Date(fechaSalida);
@@ -1059,8 +1072,7 @@ function bloqueAccionOperativa_(data) {
       '<ul>' +
         '<li>• <strong>Revisión de datos:</strong> verifica que la información de los asegurados y del contratante ' +
         'sea correcta y legible.</li>' +
-        '<li>• <strong>Tiempo de gestión:</strong> la solicitud de emisión deberá ser enviada hasta ' +
-        '72 horas hábiles antes de iniciar tu viaje.</li>' +
+        '<li>• <strong>Tiempo de gestión:</strong> ' + textoTiempoEmision_(true) + '</li>' +
         '<li>• <strong>Correcciones:</strong> los cambios por errores u omisiones toman de 3 a 5 días hábiles.</li>' +
         '<li>• <strong>Actualizaciones:</strong> cualquier cambio en los días de viaje requiere una nueva ' +
         'propuesta previa a la emisión.</li>' +
@@ -1445,8 +1457,7 @@ function construirCorreoAprobado_(data) {
         listaCorreo_([
           '<strong>Revisión de datos:</strong> verifica que la información de los asegurados y del contratante ' +
             'sea correcta y legible.',
-          '<strong>Tiempo de emisión:</strong> la solicitud debe enviarse hasta <strong>72 horas hábiles</strong> ' +
-            'antes del inicio del viaje.',
+          '<strong>Tiempo de emisión:</strong> ' + textoTiempoEmision_(),
           '<strong>Correcciones:</strong> los cambios por errores u omisiones en la solicitud inicial toman de ' +
             '<strong>3 a 5 días hábiles</strong>.',
           '<strong>Actualizaciones:</strong> cualquier cambio en los días de viaje requiere una ' +
