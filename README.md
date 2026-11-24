@@ -59,8 +59,8 @@ convierte el HTML a PDF y envía el correo.
 | Edad elegible | De 79 años 11 meses a 89 años 11 meses, a la fecha de salida | `EDAD_MINIMA`, `EDAD_MAXIMA`, `EDAD_MESES_ADICIONALES` |
 | Anticipación mínima | 5 días hábiles (lunes a viernes, sin festivos) antes de la salida | `DIAS_ANTICIPACION_MINIMA` |
 | Máximo de asegurados | 5 por propuesta (cupo del formato grupal) | `MAX_ASEGURADOS` |
-| Vigencia de la propuesta | Envío + 5 días hábiles, o 3 días hábiles antes de la salida, lo que ocurra primero | `VIGENCIA_DIAS_HABILES`, `DIAS_HABILES_LIMITE_EMISION` |
-| Solicitud de emisión | Hasta 72 horas hábiles antes de iniciar el viaje | Texto del PDF y del correo |
+| Vigencia de la propuesta | Envío + 72 horas hábiles (3 días hábiles), o 72 horas hábiles antes de la salida, lo que ocurra primero | `VIGENCIA_DIAS_HABILES`, `DIAS_HABILES_LIMITE_EMISION` |
+| Solicitud de emisión | Dentro de la vigencia; fuera de ella se rechaza sola | `CONFIG_EMISION.VIGENCIA` en `proceso-emision/Code.gs` |
 | Primas | Se leen del Sheet (`PrimaMaster`, `PrimaSmart`, `PrimaElite`, `PrimaPremium`); el script no tiene tarifas propias | Fórmulas del Sheet |
 
 Los pasajeros que no cumplen la edad no frenan la propuesta. Quedan fuera de ella y el correo

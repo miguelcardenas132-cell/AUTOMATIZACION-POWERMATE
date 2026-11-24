@@ -10,7 +10,8 @@
 1. El cliente recibe la **propuesta** (proyecto Cotizaciones 2026, ver el README de la raíz).
 2. Acepta la propuesta y escanea el **QR**, que lo lleva al formulario **"Solicitud de
    Emisión de Póliza de Seguro de Viaje"**.
-3. Cuando envía el formulario, `Code.gs` arma **tres correos** y los manda a Power Automate.
+3. Cuando envía el formulario, `Code.gs` revisa la **vigencia** de la propuesta (ver
+   "Vigencia"). Si está vigente, arma **tres correos** y los manda a Power Automate.
    Power Automate los envía desde el buzón compartido **segurodeviaje@segurosatlas.com.mx**.
 
 | Correo | Para | Contenido | Adjuntos |
@@ -20,6 +21,28 @@
 | `SOLICITUD DE EMISIÓN \|\| SENIOR +79 \|\| <contratante> \|\| <folio>` | segurodeviaje@segurosatlas.com.mx | Todo el formulario, por secciones | Todo lo que subió el cliente + **SLIP en PDF** |
 
 Los tres llevan siempre en copia a equintanar@ (Eloisa Quintanar) y mhidalgo@ (Miguel Cárdenas), en `COPIA_SIEMPRE`.
+
+### Vigencia
+
+La solicitud de emisión se **rechaza sola** si llega después de la fecha más temprana entre:
+- el envío de la propuesta **+ 72 horas hábiles** (3 días hábiles), y
+- la fecha de salida **− 72 horas hábiles** (3 días hábiles).
+
+Es la misma fecha que aparece en el PDF como "VIGENCIA HASTA EL …". Días hábiles = lunes a
+viernes, sin descontar festivos.
+
+- La fecha de envío (*Marca temporal*) y la de salida se leen de la **hoja de respuestas de
+  propuestas**, buscando el folio. No dependen de lo que se capture en el formulario de emisión.
+- **Fuera de vigencia:** no sale TCI, TCC ni expediente. Sale un solo correo, *Solicitud de
+  emisión no procesada \|\| Propuesta fuera de vigencia \|\| <folio>*, al correo capturado
+  en el formulario, con copia a segurodeviaje@, Eloisa y Miguel. Explica hasta cuándo valía la
+  propuesta, trae el botón **Solicitar nueva propuesta** y lleva la firma para clientes
+  (Ext. 5114).
+- **No se pudo validar** (sin `ID_HOJA_PROPUESTAS`, sin folio, o el folio no está en la hoja):
+  **no se rechaza**. Salen los tres correos y el expediente lleva un aviso naranja para revisar
+  la vigencia a mano.
+- Los días se configuran en `CONFIG_EMISION.VIGENCIA` y en `VIGENCIA_DIAS_HABILES` /
+  `DIAS_HABILES_LIMITE_EMISION` del proyecto Cotizaciones 2026. Si se cambian, cambiar los dos.
 
 ### Datos del TCI / TCC
 
@@ -114,6 +137,12 @@ debe tener activadores.
    - evento *Al enviarse el formulario*.
 5. Sube las 4 plantillas de `plantillas-slip/` a Google Drive de la misma cuenta, **sin
    cambiarles el nombre ni convertirlas** a Documentos de Google.
+6. **Vigencia:** pega en `CONFIG_EMISION.VIGENCIA.ID_HOJA_PROPUESTAS` el ID de la hoja de
+   respuestas de propuestas (lo que va entre `/d/` y `/edit` en su URL). Guarda y ejecuta
+   `probarVigencia()` una vez: pide permiso para leer Hojas de cálculo (sin ese permiso el
+   activador falla) y muestra el folio más reciente con su vigencia. La hoja de propuestas debe
+   tener la columna **"Folio de propuesta"** o **"Estado de envío"**, que es donde Cotizaciones
+   2026 deja el folio completo.
 
 ### Power Automate: flujo "Solicitud de Emisión SV"
 
@@ -166,6 +195,9 @@ el valor, se guarda y listo; no hay que tocar el activador ni Power Automate.
 | `'PILOTO'` | segurodeviaje@ | segurodeviaje@ | segurodeviaje@ | Eloisa y Miguel |
 | `'PRODUCCION'` | mesacontroldanos@ | cotizacionesdanos@ | segurodeviaje@ | Eloisa y Miguel |
 
+El rechazo por vigencia va al cliente en `'PILOTO'` y `'PRODUCCION'`; en `'PRUEBAS'` va a
+`CORREOS_PRUEBAS`.
+
 - **PRUEBAS:** `[PRUEBA]` en el asunto y una franja amarilla con los destinatarios y adjuntos
   reales, SLIP incluido.
 - **PILOTO:** los correos salen en su formato final, sin franja ni `[PRUEBA]`. Si hace falta
@@ -192,6 +224,9 @@ el valor, se guarda y listo; no hay que tocar el activador ni Power Automate.
 
 Casos para cubrir: 1 y 5 asegurados, persona física y moral, y cada uno de los 4 planes
 (cada uno tiene su SLIP).
+
+`probarRechazoVigencia()` manda a `CORREOS_PRUEBAS` el correo de rechazo por vigencia con
+datos ficticios. `probarVigencia()` no manda nada: revisa la conexión con la hoja de propuestas.
 
 `probarCorreosEmision()` manda los tres correos con datos ficticios **sin archivos** y el SLIP
 de Master Elite. Sirve para revisar el formato rápido, no los adjuntos.

@@ -76,10 +76,13 @@ const CONFIG = {
   // cumple EDAD_MAXIMA años y EDAD_MESES_ADICIONALES meses (inclusive).
   EDAD_MESES_ADICIONALES: 11,
   DIAS_ANTICIPACION_MINIMA: 5,
-  // Vigencia de la propuesta: la fecha de envío + VIGENCIA_DIAS_HABILES, o
-  // el último día para pedir la emisión (DIAS_HABILES_LIMITE_EMISION antes
-  // de la salida, equivalente a 72 horas hábiles), lo que ocurra primero.
-  VIGENCIA_DIAS_HABILES: 5,
+  // Vigencia de la propuesta: la fecha de envío + VIGENCIA_DIAS_HABILES (72
+  // horas hábiles), o el último día para pedir la emisión
+  // (DIAS_HABILES_LIMITE_EMISION antes de la salida, también 72 horas
+  // hábiles), lo que ocurra primero. El script del formulario de emisión
+  // usa los mismos dos valores para rechazar solicitudes fuera de vigencia:
+  // si se cambian aquí, cambiarlos también en CONFIG_EMISION.VIGENCIA.
+  VIGENCIA_DIAS_HABILES: 3,
   DIAS_HABILES_LIMITE_EMISION: 3,
   // Posiciones de asegurado que se leen del formulario, y máximo de
   // asegurados elegibles por propuesta (el formato de emisión grupal solo

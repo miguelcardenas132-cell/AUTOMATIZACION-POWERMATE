@@ -18,6 +18,10 @@
  *
  * Los tres llevan siempre en copia a CONFIG_EMISION.COPIA_SIEMPRE.
  *
+ * Antes revisa la VIGENCIA de la propuesta (CONFIG_EMISION.VIGENCIA): si la
+ * solicitud llega fuera de vigencia no sale ninguno de los tres; sale un
+ * solo correo de rechazo al cliente con copia a Seguro de Viaje.
+ *
  * Trigger: función onFormSubmitSolicitudEmision, origen "Desde el
  * formulario", evento "Al enviarse el formulario".
  * Servicio avanzado: Drive API v2 (solo para leer el folio del PDF de la
@@ -70,9 +74,35 @@ const CONFIG_EMISION = {
     // , 'equintanar@segurosatlas.com.mx'  // descomentar para que Eloisa también reciba las pruebas
   ],
 
+  /**
+   * VIGENCIA de la propuesta. La solicitud de emisión se rechaza sola si
+   * llega después de la fecha más temprana entre:
+   *   - el envío de la propuesta + DIAS_HABILES_DESDE_ENVIO (72 horas hábiles), y
+   *   - la fecha de salida - DIAS_HABILES_ANTES_SALIDA (72 horas hábiles).
+   * Días hábiles = lunes a viernes (sin festivos), igual que el PDF.
+   *
+   * La fecha de envío y la de salida se leen de la HOJA DE RESPUESTAS DE
+   * PROPUESTAS (la del proyecto Cotizaciones 2026), buscando el folio; así no
+   * dependen de lo que se capture en este formulario. ID_HOJA_PROPUESTAS es
+   * lo que va entre /d/ y /edit en la URL de esa hoja. Si está vacío, o el
+   * folio no aparece en la hoja, la solicitud NO se rechaza: sale normal con
+   * un aviso naranja para revisar la vigencia a mano.
+   */
+  VIGENCIA: {
+    ID_HOJA_PROPUESTAS: '',
+    DIAS_HABILES_DESDE_ENVIO: 3,
+    DIAS_HABILES_ANTES_SALIDA: 3,
+    COL_MARCA_TEMPORAL: ['Marca temporal', 'Timestamp'],
+    COL_FECHA_SALIDA: ['Fecha de Salida']
+  },
+  // Botón "Solicitar nueva propuesta" del correo de rechazo.
+  URL_NUEVA_PROPUESTA: 'https://docs.google.com/forms/d/e/1FAIpQLSfPedluEXJ32DFHxBjCRddBUzMgjsgK5OnwfZPluPuR6XHycw/viewform',
+
   // Firma de los tres correos (misma que usa el equipo en Outlook).
   FIRMA: {
     TELEFONO: '(55) 9177 &ndash; 5000 Ext. 4931 Cel: 55 1322 6276',
+    // Correos que recibe el cliente (rechazo por vigencia): sin celular.
+    TELEFONO_CLIENTE: '(55) 9177 &ndash; 5000 Ext. 5114',
     CORREO: 'segurodeviaje@segurosatlas.com.mx',
     DIRECCION: ['AV. Paseo de los Tamarindos No. 60 INT. PB, C.P. 05120', 'Col. Bosques de las Lomas, Ciudad de México'],
     // Imagen del 85 aniversario: debe ser una URL pública (Outlook bloquea base64).
@@ -183,17 +213,26 @@ function onFormSubmitSolicitudEmision(e) {
     return;
   }
   const solicitud = leerRespuestas_(e.response.getItemResponses());
-  const payload = construirCorreos_(solicitud);
+  solicitud.vigencia = validarVigencia_(solicitud);
+  const payload = solicitud.vigencia.estado === 'VENCIDA'
+    ? construirRechazoVigencia_(solicitud)
+    : construirCorreos_(solicitud);
   aplicarEtapa_(payload);
   enviarAPowerAutomate_(payload);
 }
 
-/** Ajusta los destinatarios según CONFIG_EMISION.ETAPA. */
+/**
+ * Ajusta los destinatarios según CONFIG_EMISION.ETAPA. En PILOTO solo el
+ * TCI y el TCC cambian (a Seguro de Viaje); el expediente ya va ahí y el
+ * rechazo por vigencia sí le llega al cliente.
+ */
 function aplicarEtapa_(payload) {
   const etapa = String(CONFIG_EMISION.ETAPA || '').toUpperCase().trim();
   if (etapa === 'PRODUCCION') return;
   if (etapa === 'PILOTO') {
-    payload.correos.forEach(function (correo) { correo.para = CONFIG_EMISION.CORREO_SEGURO_VIAJE; });
+    payload.correos.forEach(function (correo) {
+      if (correo.tipo === 'TCI' || correo.tipo === 'TCC') correo.para = CONFIG_EMISION.CORREO_SEGURO_VIAJE;
+    });
     return;
   }
   if (etapa !== 'PRUEBAS') Logger.log('⚠️ ETAPA "' + CONFIG_EMISION.ETAPA + '" no reconocida; se usa PRUEBAS.');
@@ -320,8 +359,166 @@ function buscarFolio_(archivos) {
 }
 
 // ============================================================================
+// 3b. VIGENCIA DE LA PROPUESTA
+// ============================================================================
+
+/**
+ * Regresa { estado, motivo, envio, salida, vence }:
+ *   VIGENTE      la solicitud llegó a tiempo.
+ *   VENCIDA      llegó después de `vence`: se rechaza sola.
+ *   SIN_VALIDAR  no se pudo revisar (sin folio, sin ID de la hoja, folio no
+ *                encontrado, fechas ilegibles o error): sale normal con aviso.
+ * Nunca lanza error: si algo falla, la solicitud no se pierde.
+ */
+function validarVigencia_(solicitud) {
+  const V = CONFIG_EMISION.VIGENCIA;
+  const sinValidar = function (motivo) {
+    Logger.log('⚠️ Vigencia sin validar: ' + motivo);
+    return { estado: 'SIN_VALIDAR', motivo: motivo };
+  };
+  if (!V.ID_HOJA_PROPUESTAS) return sinValidar('falta el ID de la hoja de propuestas en CONFIG_EMISION.VIGENCIA');
+  if (!solicitud.folio) return sinValidar('la solicitud no trae folio');
+
+  try {
+    const fila = buscarFilaPropuesta_(SpreadsheetApp.openById(V.ID_HOJA_PROPUESTAS), solicitud.folio);
+    if (!fila) return sinValidar('el folio ' + solicitud.folio + ' no aparece en la hoja de propuestas');
+
+    const envio = fechaDeCelda_(columnaPorTitulo_(fila, V.COL_MARCA_TEMPORAL, 0));
+    const salida = fechaDeCelda_(columnaPorTitulo_(fila, V.COL_FECHA_SALIDA, -1));
+    if (!envio || !salida) return sinValidar('no se pudo leer la fecha de envío o de salida del folio ' + solicitud.folio);
+
+    const porEnvio = sumarDiasHabiles_(envio, V.DIAS_HABILES_DESDE_ENVIO);
+    const porSalida = sumarDiasHabiles_(salida, -V.DIAS_HABILES_ANTES_SALIDA);
+    const vence = porSalida < porEnvio ? porSalida : porEnvio;
+    const hoy = soloFecha_(solicitud.fecha || new Date());
+    return { estado: hoy > vence ? 'VENCIDA' : 'VIGENTE', envio: envio, salida: salida, vence: vence };
+  } catch (error) {
+    return sinValidar('error al leer la hoja de propuestas: ' + error.message);
+  }
+}
+
+/**
+ * Busca el folio en todas las pestañas de la hoja de propuestas (columna
+ * "Folio de propuesta" o "Estado de envío", donde lo deja Cotizaciones
+ * 2026). Regresa { encabezados, valores } de la fila, o null.
+ */
+function buscarFilaPropuesta_(libro, folio) {
+  const exacto = new RegExp(folio.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?!\\d)');
+  const celdas = libro.createTextFinder(folio).matchCase(true).findAll();
+  for (let i = 0; i < celdas.length; i++) {
+    if (!exacto.test(String(celdas[i].getValue()))) continue;
+    const hoja = celdas[i].getSheet();
+    const fila = celdas[i].getRow();
+    if (fila === 1) continue;
+    const ancho = hoja.getLastColumn();
+    return {
+      encabezados: hoja.getRange(1, 1, 1, ancho).getValues()[0].map(function (h) { return String(h).trim(); }),
+      valores: hoja.getRange(fila, 1, 1, ancho).getValues()[0]
+    };
+  }
+  return null;
+}
+
+/** Valor de la primera columna cuyo título coincide; si no hay, la columna `respaldo` (-1 = ninguna). */
+function columnaPorTitulo_(fila, titulos, respaldo) {
+  const buscados = titulos.map(normalizar_);
+  for (let i = 0; i < fila.encabezados.length; i++) {
+    if (buscados.indexOf(normalizar_(fila.encabezados[i])) !== -1) return fila.valores[i];
+  }
+  return respaldo >= 0 ? fila.valores[respaldo] : '';
+}
+
+/** Date, "dd/MM/yyyy" o "yyyy-MM-dd" -> Date a medianoche; null si no se entiende. */
+function fechaDeCelda_(valor) {
+  if (valor instanceof Date && !isNaN(valor.getTime())) return soloFecha_(valor);
+  const texto = String(valor || '').trim();
+  let m = texto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+  m = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return null;
+}
+
+function soloFecha_(fecha) {
+  return new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
+}
+
+/** Suma (o resta) n días hábiles, lunes a viernes. Igual que en Cotizaciones 2026. */
+function sumarDiasHabiles_(fecha, n) {
+  const resultado = soloFecha_(fecha);
+  const paso = n >= 0 ? 1 : -1;
+  let restantes = Math.abs(n);
+  while (restantes > 0) {
+    resultado.setDate(resultado.getDate() + paso);
+    const diaSemana = resultado.getDay();
+    if (diaSemana !== 0 && diaSemana !== 6) restantes--;
+  }
+  return resultado;
+}
+
+function fechaTexto_(fecha) {
+  return fecha ? Utilities.formatDate(fecha, 'America/Mexico_City', 'dd/MM/yyyy') : '';
+}
+
+// ============================================================================
 // 4. CORREOS
 // ============================================================================
+
+/**
+ * Propuesta fuera de vigencia: un solo correo al correo capturado en el
+ * formulario, con copia a Seguro de Viaje y COPIA_SIEMPRE. No sale TCI, TCC
+ * ni expediente. El SLIP va igual en el payload porque el flujo siempre lo
+ * convierte, pero no se adjunta a este correo.
+ */
+function construirRechazoVigencia_(solicitud) {
+  const datos = datosContratante_(solicitud);
+  const slip = construirSlip_(solicitud);
+  const copia = [CONFIG_EMISION.CORREO_SEGURO_VIAJE].concat(CONFIG_EMISION.COPIA_SIEMPRE)
+    .filter(function (c) { return c; }).join(';');
+  Logger.log('⛔ Solicitud rechazada por vigencia. Folio ' + solicitud.folio + ', venció el ' + fechaTexto_(solicitud.vigencia.vence));
+  return {
+    folio: solicitud.folio,
+    slip: { nombreRtf: slip.nombreRtf, nombrePdf: slip.nombrePdf, contenidoBase64: slip.contenidoBase64 },
+    correos: [{
+      tipo: 'RECHAZO_VIGENCIA',
+      para: datos.correo || CONFIG_EMISION.CORREO_SEGURO_VIAJE,
+      cc: copia,
+      asunto: 'Solicitud de emisión no procesada || Propuesta fuera de vigencia || ' + solicitud.folio,
+      cuerpoHtml: correoRechazoVigencia_(solicitud, datos),
+      adjuntos: []
+    }]
+  };
+}
+
+function correoRechazoVigencia_(solicitud, d) {
+  const v = solicitud.vigencia;
+  const V = CONFIG_EMISION.VIGENCIA;
+  const p = function (html, extra) {
+    return '<p style="margin:0 0 ' + (extra === undefined ? 12 : extra) + 'px 0;font-family:' + FUENTE_EMISION +
+      ';font-size:' + TAMANO_TRAMITE + ';color:#000000;">' + html + '</p>';
+  };
+  const boton = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 16px 0;"><tr>' +
+    '<td bgcolor="' + COLORES_EMISION.VERDE + '" style="background-color:' + COLORES_EMISION.VERDE + ';border-radius:4px;">' +
+    '<a href="' + escapar_(CONFIG_EMISION.URL_NUEVA_PROPUESTA) + '" style="display:inline-block;padding:10px 18px;' +
+    'font-family:' + FUENTE_EMISION + ';font-size:10.5pt;font-weight:bold;color:#ffffff;text-decoration:none;">' +
+    'Solicitar nueva propuesta</a></td></tr></table>';
+
+  return '<div style="font-family:' + FUENTE_EMISION + ';font-size:' + TAMANO_TRAMITE + ';color:#000000;">' +
+    p('Hola, buen día.') +
+    p('Recibimos la solicitud de emisión de la propuesta <strong>' + escapar_(solicitud.folio) + '</strong>' +
+      (d.contratante ? ' (contratante: <strong>' + escapar_(d.contratante) + '</strong>)' : '') +
+      ', pero <strong>no fue posible procesarla porque la propuesta está fuera de vigencia</strong>.') +
+    p('La propuesta era válida hasta el <strong>' + fechaTexto_(v.vence) + '</strong>. La solicitud de emisión debe ' +
+      'enviarse dentro de las <strong>' + (V.DIAS_HABILES_DESDE_ENVIO * 24) + ' horas hábiles</strong> siguientes al envío ' +
+      'de la propuesta (' + fechaTexto_(v.envio) + ') y, como máximo, <strong>' + (V.DIAS_HABILES_ANTES_SALIDA * 24) +
+      ' horas hábiles antes de la fecha de salida</strong> (' + fechaTexto_(v.salida) + '), lo que ocurra primero.') +
+    p('Para continuar, solicita una nueva propuesta. Recuerda que las propuestas se piden con al menos ' +
+      '5 días hábiles de anticipación a la salida.', 8) +
+    boton +
+    p('Saludos.', 0) + p('&nbsp;', 0) + p('&nbsp;', 0) +
+    firmaTexto_(true) +
+  '</div>';
+}
 
 function construirCorreos_(solicitud) {
   const datos = datosContratante_(solicitud);
@@ -482,6 +679,12 @@ function correoSeguroViaje_(solicitud, d, slip) {
   const folio = solicitud.folio
     ? '<strong style="color:' + COLORES_EMISION.VERDE + ';">Folio de la propuesta:</strong> ' + escapar_(solicitud.folio)
     : '⚠️ No se pudo leer el folio de la propuesta adjunta; revisar el PDF.';
+  const v = solicitud.vigencia || { estado: 'SIN_VALIDAR', motivo: 'no se revisó' };
+  const vigencia = v.estado === 'VIGENTE'
+    ? '<div style="padding:0 12px 10px 12px;color:' + COLORES_EMISION.VERDE + ';">✔ Propuesta vigente hasta el <strong>' +
+      fechaTexto_(v.vence) + '</strong> (enviada el ' + fechaTexto_(v.envio) + ', salida el ' + fechaTexto_(v.salida) + ').</div>'
+    : '<div style="background-color:#fff4e5;border-left:4px solid #e0a800;padding:8px 12px;margin-bottom:10px;color:#7a5b00;">' +
+      '⚠️ <strong>No se pudo validar la vigencia</strong> (' + escapar_(v.motivo) + '). Revisar a mano antes de emitir.</div>';
 
   return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f3f4f3" ' +
       'style="border-collapse:collapse;background-color:#f3f4f3;">' +
@@ -493,7 +696,7 @@ function correoSeguroViaje_(solicitud, d, slip) {
           'Nueva Solicitud de Emisión — Seguro de Viaje SENIOR +79</td></tr>' +
         '<tr><td style="padding:16px 20px 4px 20px;font-family:' + FUENTE_EMISION + ';font-size:10.5pt;color:#222222;">' +
           '<div style="background-color:' + COLORES_EMISION.VERDE_CLARO + ';border-left:4px solid ' + COLORES_EMISION.VERDE + ';' +
-            'padding:8px 12px;margin-bottom:10px;">' + folio + '</div>' +
+            'padding:8px 12px;margin-bottom:10px;">' + folio + '</div>' + vigencia +
           'Se recibió una solicitud de emisión desde el formulario. Ya se enviaron en automático la ' +
           '<strong>solicitud de TCI</strong> a Mesa Control Daños y la <strong>solicitud de TCC</strong> a ' +
           'Cotizaciones Daños (contratante: <strong>' + escapar_(d.contratante) + '</strong>, persona ' +
@@ -528,9 +731,13 @@ function bloqueSeccion_(titulo, filasHtml) {
       '<td height="14" style="height:14px;font-size:1px;line-height:1px;">&nbsp;</td></tr></table>';
 }
 
-/** Firma del equipo: mismos colores y renglones que la firma de Outlook. */
-function firmaTexto_() {
+/**
+ * Firma del equipo: mismos colores y renglones que la firma de Outlook.
+ * cliente = true para correos que recibe el cliente (Ext. 5114, sin celular).
+ */
+function firmaTexto_(cliente) {
   const F = CONFIG_EMISION.FIRMA;
+  const telefono = cliente ? F.TELEFONO_CLIENTE : F.TELEFONO;
   // Arial: 12 pt el nombre, 9 pt "DINE" y 8 pt el resto (estilo de la firma de Outlook).
   const linea = function (html, estilo) {
     return '<div style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:8pt;line-height:1.35;' + estilo + '">' +
@@ -540,7 +747,7 @@ function firmaTexto_() {
   return linea('Seguro de Viaje', 'font-size:12pt;font-weight:bold;color:#0f4761;') +
     linea('DINE (Dirección de Negocios Especiales)', 'font-size:9pt;color:#7f7f7f;') +
     linea('&nbsp;', 'color:#595959;') +
-    linea(etiqueta('Tel.') + ' ' + F.TELEFONO, 'color:#595959;') +
+    linea(etiqueta('Tel.') + ' ' + telefono, 'color:#595959;') +
     linea(etiqueta('Correo.') + ' <a href="mailto:' + F.CORREO + '" style="color:#467886;">' + F.CORREO + '</a>', 'color:#595959;') +
     F.DIRECCION.map(function (renglon) { return linea(escapar_(renglon), 'color:#2f5496;'); }).join('') +
     '<img src="' + escapar_(F.URL_IMAGEN) + '" alt="85 Aniversario Seguros Atlas" width="360" ' +
@@ -723,6 +930,54 @@ function probarCorreosEmision() {
   const pruebas = desviarAPruebas_(payload);
   enviarAPowerAutomate_(payload);
   Logger.log('✅ Enviados ' + payload.correos.length + ' correos de prueba a ' + pruebas);
+}
+
+/** Manda a CORREOS_PRUEBAS el correo de rechazo por vigencia, con datos ficticios. */
+function probarRechazoVigencia() {
+  const respuestas = [['Nombre Completo del Contratante', 'Contratante de Prueba'], ['Correo Electronico', 'prueba@example.com'],
+    ['Producto Elegido', 'Master'], ['Nombre Completo', 'Asegurado de Prueba'], ['Fecha de Nacimiento', '1943-03-10']]
+    .map(function (r) { return { titulo: r[0], texto: r[1], archivos: [] }; });
+  const hoy = soloFecha_(new Date());
+  const solicitud = {
+    respuestas: respuestas, archivos: [], fecha: new Date(), folio: 'SEGURO_VIAJE_+79-15D-FRA-01122026-0001',
+    vigencia: { estado: 'VENCIDA', envio: sumarDiasHabiles_(hoy, -6), salida: sumarDiasHabiles_(hoy, 4), vence: sumarDiasHabiles_(hoy, -3) }
+  };
+  const payload = construirRechazoVigencia_(solicitud);
+  const pruebas = desviarAPruebas_(payload);
+  enviarAPowerAutomate_(payload);
+  Logger.log('✅ Enviado el rechazo por vigencia de prueba a ' + pruebas);
+}
+
+/**
+ * Revisa la conexión con la hoja de propuestas SIN enviar nada: toma el
+ * folio más reciente de la primera pestaña y calcula su vigencia.
+ * Ejecútala una vez después de pegar ID_HOJA_PROPUESTAS: también autoriza
+ * al script a leer Hojas de cálculo (sin esa autorización el activador falla).
+ */
+function probarVigencia() {
+  const V = CONFIG_EMISION.VIGENCIA;
+  if (!V.ID_HOJA_PROPUESTAS) {
+    Logger.log('❌ Falta pegar ID_HOJA_PROPUESTAS en CONFIG_EMISION.VIGENCIA.');
+    return;
+  }
+  const hoja = SpreadsheetApp.openById(V.ID_HOJA_PROPUESTAS).getSheets()[0];
+  const valores = hoja.getDataRange().getValues();
+  const patron = /SEGURO_VIAJE_\S+-\d{8}-\d{4,}/;
+  for (let f = valores.length - 1; f >= 1; f--) {
+    for (let c = 0; c < valores[f].length; c++) {
+      const m = String(valores[f][c]).match(patron);
+      if (!m) continue;
+      const r = validarVigencia_({ folio: m[0], fecha: new Date() });
+      Logger.log('Folio más reciente: ' + m[0] + ' (fila ' + (f + 1) + ')');
+      Logger.log(r.estado === 'SIN_VALIDAR'
+        ? '⚠️ ' + r.motivo
+        : (r.estado === 'VIGENTE' ? '✅ VIGENTE' : '⛔ VENCIDA') + ' · enviada ' + fechaTexto_(r.envio) +
+          ' · salida ' + fechaTexto_(r.salida) + ' · vence ' + fechaTexto_(r.vence));
+      return;
+    }
+  }
+  Logger.log('⚠️ No encontré folios con consecutivo en "' + hoja.getName() + '". ' +
+    'Revisa que exista la columna "Folio de propuesta" o "Estado de envío" en la hoja de propuestas.');
 }
 
 // ============================================================================
