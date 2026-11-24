@@ -521,7 +521,7 @@ function correoRechazoVigencia_(solicitud, d) {
       V.DIAS_ANTICIPACION_PROPUESTA + ' días hábiles de anticipación a la salida.', 8) +
     boton +
     p('Saludos.', 0) + p('&nbsp;', 0) + p('&nbsp;', 0) +
-    firmaTexto_(true) +
+    firmaTexto_(true) + pieFecha_(solicitud.fecha) +
   '</div>';
 }
 
@@ -542,7 +542,7 @@ function construirCorreos_(solicitud) {
         para: CONFIG_EMISION.CORREO_TCI,
         cc: copia,
         asunto: 'SOLICITUD DE TCI || NUEVA POLIZA || ' + datos.sucursal,
-        cuerpoHtml: correoTramite_('TCI', datos),
+        cuerpoHtml: correoTramite_('TCI', datos, solicitud.fecha),
         adjuntos: documentosContratante
       },
       {
@@ -550,7 +550,7 @@ function construirCorreos_(solicitud) {
         para: CONFIG_EMISION.CORREO_TCC,
         cc: copia,
         asunto: 'SOLICITUD DE TCC || NUEVA POLIZA || ' + datos.sucursal,
-        cuerpoHtml: correoTramite_('TCC', datos),
+        cuerpoHtml: correoTramite_('TCC', datos, solicitud.fecha),
         adjuntos: documentosContratante
       },
       {
@@ -625,7 +625,7 @@ function datosContratante_(solicitud) {
  * Correo de TCI o TCC: mismo texto y orden que la solicitud que se manda a
  * mano a Mesa Control / Cotizaciones Daños.
  */
-function correoTramite_(tipo, d) {
+function correoTramite_(tipo, d, fecha) {
   const F = CONFIG_EMISION.FIJOS;
   const p = function (html, extra) {
     return '<p style="margin:0 0 ' + (extra || 0) + 'px 0;font-family:' + FUENTE_EMISION + ';font-size:' + TAMANO_TRAMITE + ';color:#000000;">' +
@@ -663,7 +663,7 @@ function correoTramite_(tipo, d) {
     '</ol>' +
     // Dos renglones en blanco (dos "enter") entre "Saludos." y la firma.
     p('Saludos.') + p('&nbsp;') + p('&nbsp;') +
-    firmaTexto_() +
+    firmaTexto_() + pieFecha_(fecha) +
   '</div>';
 }
 
@@ -743,11 +743,8 @@ function marcoExpediente_(titulo, introHtml, solicitud, cliente) {
           'font-family:' + FUENTE_EMISION + ';font-size:16pt;font-weight:bold;color:#ffffff;">' + escapar_(titulo) + '</td></tr>' +
         '<tr><td style="padding:16px 20px 4px 20px;font-family:' + FUENTE_EMISION + ';font-size:10.5pt;color:#222222;">' +
           introHtml + '</td></tr>' +
-        '<tr><td style="padding:12px 20px 8px 20px;">' + seccionesFormulario_(solicitud) +
-          '<div style="font-family:' + FUENTE_EMISION + ';font-size:9pt;color:#888888;">Fecha de solicitud: ' +
-            Utilities.formatDate(solicitud.fecha, 'America/Mexico_City', 'dd/MM/yyyy HH:mm') + ' hrs</div>' +
-        '</td></tr>' +
-        '<tr><td style="padding:12px 20px 20px 20px;">' + firmaTexto_(cliente) + '</td></tr>' +
+        '<tr><td style="padding:12px 20px 8px 20px;">' + seccionesFormulario_(solicitud) + '</td></tr>' +
+        '<tr><td style="padding:12px 20px 20px 20px;">' + firmaTexto_(cliente) + pieFecha_(solicitud.fecha) + '</td></tr>' +
       '</table>' +
     '</td></tr></table>';
 }
@@ -793,6 +790,12 @@ function firmaTexto_(cliente) {
     F.DIRECCION.map(function (renglon) { return linea(escapar_(renglon), 'color:#2f5496;'); }).join('') +
     '<img src="' + escapar_(F.URL_IMAGEN) + '" alt="85 Aniversario Seguros Atlas" width="360" ' +
       'style="display:block;width:360px;max-width:100%;height:auto;border:0;margin-top:6px;">';
+}
+
+/** Fecha y hora de la solicitud, en gris, al final de cada correo. */
+function pieFecha_(fecha) {
+  return '<div style="margin-top:14px;font-family:' + FUENTE_EMISION + ';font-size:9pt;color:#888888;">Fecha de solicitud: ' +
+    Utilities.formatDate(fecha || new Date(), 'America/Mexico_City', 'dd/MM/yyyy HH:mm') + ' hrs</div>';
 }
 
 function escapar_(texto) {
