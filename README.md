@@ -166,7 +166,12 @@ dirigido a `prueba@example.com`; cambia ese correo en `construirDatosPrueba_` pa
      - Buzón: segurodeviaje@segurosatlas.com.mx.
      - Para: `emailCliente`. CC: `correoCC`. Asunto: `asunto`.
      - Cuerpo: `cuerpoCorreoHtml`, **sin** el `<p class="editor-paragraph">` que agrega el editor.
-     - Adjunto: nombre `nombreArchivo`; contenido, la salida de *Convertir archivo*.
+     - Adjunto 1: nombre `nombreArchivo`; contenido, la salida de *Convertir archivo*.
+     - Adjunto 2 (condiciones generales): antes del envío, OneDrive › *Obtener contenido de
+       archivo mediante ruta* con el PDF `Condiciones_Generales_Seguro_de_Viaje.pdf`; en el envío,
+       *Agregar nuevo elemento* en Datos adjuntos, nombre `Condiciones Generales Seguro de Viaje.pdf`
+       y contenido *Contenido del archivo* de ese paso. Si cambian las condiciones, se reemplaza el
+       PDF en OneDrive con el mismo nombre.
 4. **Rama Falso:** el mismo envío desde el buzón compartido, con el cuerpo `cuerpoCorreoHtml`
    y sin adjuntos.
 

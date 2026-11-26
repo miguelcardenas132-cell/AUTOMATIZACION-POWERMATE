@@ -1388,7 +1388,8 @@ function construirCorreoAprobado_(data) {
       '<tr><td style="padding:28px 32px 8px 32px;">' +
         '<p style="margin:0 0 12px 0;font-size:16px;line-height:24px;">¡Hola <strong>' + escaparHtml_(data.nombreSolicitante) +
           '</strong>, buen día!</p>' +
-        '<p style="margin:0;font-size:15px;line-height:23px;color:#43554c;">En adjunto encontrarás la propuesta solicitada.</p>' +
+        '<p style="margin:0;font-size:15px;line-height:23px;color:#43554c;">En adjunto encontrarás la propuesta solicitada ' +
+          'y las <strong>condiciones generales</strong> del producto.</p>' +
       '</td></tr>' +
 
       // Resumen
