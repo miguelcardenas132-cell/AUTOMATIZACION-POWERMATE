@@ -1343,10 +1343,16 @@ function construirCorreoAprobado_(data) {
     '</td></tr>';
   const tituloRecuadro = (icono, texto) =>
     '<p style="margin:0 0 8px 0;font-size:16px;font-weight:bold;color:' + C.TEXTO + ';">' + icono + '&nbsp; ' + texto + '</p>';
+  // Número en una celda con alto y ancho fijos: Outlook de escritorio ignora
+  // el tamaño de un <span>, pero respeta el de una celda (ahí sale cuadrado).
   const circulo = (n, texto) =>
-    '<tr><td width="30" valign="top" style="padding:4px 0;"><span style="display:inline-block;width:22px;height:22px;line-height:22px;' +
-      'text-align:center;border-radius:11px;background-color:' + C.OSCURO + ';color:#ffffff;font-size:12px;font-weight:bold;">' + n + '</span></td>' +
-    '<td style="padding:4px 0;">' + texto + '</td></tr>';
+    '<tr><td width="32" valign="top" style="padding:3px 0;">' +
+      '<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>' +
+        '<td width="22" height="22" align="center" valign="middle" bgcolor="' + C.OSCURO + '" style="width:22px;height:22px;' +
+          'background-color:' + C.OSCURO + ';border-radius:11px;color:#ffffff;font-size:12px;font-weight:bold;line-height:22px;' +
+          'mso-line-height-rule:exactly;font-family:Arial,Helvetica,sans-serif;">' + n + '</td>' +
+      '</tr></table></td>' +
+    '<td valign="top" style="padding:4px 0 4px 0;">' + texto + '</td></tr>';
   const asegurados = data.numAsegurados + '<br><span style="font-weight:normal;">' +
     data.asegurados.map((a) => escaparHtml_(a.nombre) + ' (' + a.edad + ' años)').join('<br>') + '</span>';
   const urlEmision = construirUrlEmision_(data);
@@ -1437,11 +1443,20 @@ function construirCorreoAprobado_(data) {
           '<li style="margin-bottom:4px;">Propuesta aceptada (el PDF adjunto a este correo).</li>' +
           '<li><strong>Obligatorio del contratante:</strong> Constancia de Situación Fiscal (CSF) actualizada e INE o pasaporte.</li>' +
         '</ul>' +
+        // Botón "a prueba de Outlook": el relleno va en la celda (Outlook de
+        // escritorio ignora el padding de un <a>) y, para Outlook, una
+        // forma VML redondeada del mismo tamaño.
+        '<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" ' +
+          'href="' + escaparHtml_(urlEmision) + '" style="height:46px;v-text-anchor:middle;width:200px;" arcsize="14%" stroke="f" ' +
+          'fillcolor="' + C.VERDE + '"><w:anchorlock/><center style="color:#ffffff;font-family:Arial,sans-serif;font-size:15px;' +
+          'font-weight:bold;">Solicitar emisión</center></v:roundrect><![endif]-->' +
+        '<!--[if !mso]><!-->' +
         '<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>' +
-          '<td bgcolor="' + C.VERDE + '" style="background-color:' + C.VERDE + ';border-radius:6px;">' +
-          '<a href="' + escaparHtml_(urlEmision) + '" style="display:inline-block;padding:13px 28px;font-size:15px;font-weight:bold;' +
-            'color:#ffffff;text-decoration:none;font-family:Arial,Helvetica,sans-serif;">Solicitar emisión</a>' +
-          '</td></tr></table>') +
+          '<td bgcolor="' + C.VERDE + '" style="background-color:' + C.VERDE + ';border-radius:6px;padding:13px 28px;">' +
+          '<a href="' + escaparHtml_(urlEmision) + '" style="font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;' +
+            'font-family:Arial,Helvetica,sans-serif;display:inline-block;">Solicitar emisión</a>' +
+          '</td></tr></table>' +
+        '<!--<![endif]-->') +
       recuadro(
         tituloRecuadro('&#9888;&#65039;', 'Consideraciones Importantes') +
         '<ul style="margin:0;padding-left:20px;">' +

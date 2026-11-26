@@ -499,8 +499,8 @@ function correoRechazoVigencia_(solicitud, d) {
       ';font-size:' + TAMANO_TRAMITE + ';color:#000000;">' + html + '</p>';
   };
   const boton = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 16px 0;"><tr>' +
-    '<td bgcolor="' + COLORES_EMISION.VERDE + '" style="background-color:' + COLORES_EMISION.VERDE + ';border-radius:4px;">' +
-    '<a href="' + escapar_(CONFIG_EMISION.URL_NUEVA_PROPUESTA) + '" style="display:inline-block;padding:10px 18px;' +
+    '<td bgcolor="' + COLORES_EMISION.VERDE + '" style="background-color:' + COLORES_EMISION.VERDE + ';border-radius:4px;padding:10px 18px;">' +
+    '<a href="' + escapar_(CONFIG_EMISION.URL_NUEVA_PROPUESTA) + '" style="display:inline-block;' +
     'font-family:' + FUENTE_EMISION + ';font-size:10.5pt;font-weight:bold;color:#ffffff;text-decoration:none;">' +
     'Solicitar nueva propuesta</a></td></tr></table>';
 
