@@ -1313,109 +1313,168 @@ function filaResumen_(etiqueta, valor) {
     '</tr>';
 }
 
+/**
+ * Correo de la propuesta aprobada (diseño "mailing_propuesta_senior79",
+ * 2026-11): encabezado verde con destino y días, resumen, planes, aviso de
+ * pasajeros fuera de edad (solo si hay), los 3 recuadros para solicitar la
+ * emisión y pie verde oscuro con la fecha de solicitud. Tablas y estilos en
+ * línea para Outlook; las esquinas redondeadas son un extra.
+ */
 function construirCorreoAprobado_(data) {
-  const filaPlan = (plan, total) =>
-    '<tr>' +
-    '<td style="padding:7px 14px 7px ' + (SANGRIA_RECUADRO - 1) + 'px;border:1px solid ' + COLORES.BORDE + ';color:#333;' +
-      'font-size:11pt;font-family:\'Aptos Display\',Arial,sans-serif;">' + escaparHtml_(plan) + '</td>' +
-    '<td style="padding:7px 14px;border:1px solid ' + COLORES.BORDE + ';text-align:right;font-weight:bold;color:#333;' +
-      'font-size:11pt;font-family:\'Aptos Display\',Arial,sans-serif;">' +
-      formatearMoneda_(total) + ' USD</td>' +
-    '</tr>';
+  const C = { VERDE: '#0e6765', OSCURO: '#0a4f4d', TENUE: '#eef6f5', BORDE: '#cfe3e1', LINEA: '#e1eeed',
+    FONDO: '#edf3f2', TEXTO: '#1f2d27', SUAVE: '#5b6e64', CUERPO: '#2f3f37' };
+  const plural = data.numAsegurados === 1 ? 'asegurado' : 'asegurados';
+  const fila = (etiqueta, valorHtml, ultima, extra) =>
+    '<tr><td style="padding:11px 14px;background-color:' + C.TENUE + ';color:' + C.SUAVE + ';width:42%;vertical-align:top;' +
+      (ultima ? '' : 'border-bottom:1px solid ' + C.LINEA + ';') + '">' + etiqueta + '</td>' +
+    '<td style="padding:11px 14px;font-weight:bold;' + (ultima ? '' : 'border-bottom:1px solid ' + C.LINEA + ';') +
+      (extra || '') + '">' + valorHtml + '</td></tr>';
+  const plan = (nombre, total, sombreado) => {
+    const fondo = sombreado ? 'background-color:' + C.TENUE + ';' : '';
+    return '<tr><td style="padding:13px 14px;border-bottom:1px solid ' + C.LINEA + ';' + fondo + 'font-weight:bold;">' + nombre + '</td>' +
+      '<td align="right" style="padding:13px 14px;border-bottom:1px solid ' + C.LINEA + ';' + fondo + 'font-weight:bold;color:' + C.VERDE + ';">' +
+      formatearMoneda_(total) + ' USD</td></tr>';
+  };
+  const recuadro = (contenido, fondo) =>
+    '<tr><td style="padding:16px 32px 0 32px;">' +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ' + C.BORDE + ';' +
+        'border-radius:8px;' + (fondo ? 'background-color:' + fondo + ';' : '') + '"' + (fondo ? ' bgcolor="' + fondo + '"' : '') + '>' +
+      '<tr><td style="padding:18px 20px;font-size:14px;line-height:22px;color:' + C.CUERPO + ';">' + contenido + '</td></tr></table>' +
+    '</td></tr>';
+  const tituloRecuadro = (icono, texto) =>
+    '<p style="margin:0 0 8px 0;font-size:16px;font-weight:bold;color:' + C.TEXTO + ';">' + icono + '&nbsp; ' + texto + '</p>';
+  const circulo = (n, texto) =>
+    '<tr><td width="30" valign="top" style="padding:4px 0;"><span style="display:inline-block;width:22px;height:22px;line-height:22px;' +
+      'text-align:center;border-radius:11px;background-color:' + C.OSCURO + ';color:#ffffff;font-size:12px;font-weight:bold;">' + n + '</span></td>' +
+    '<td style="padding:4px 0;">' + texto + '</td></tr>';
+  const asegurados = data.numAsegurados + '<br><span style="font-weight:normal;">' +
+    data.asegurados.map((a) => escaparHtml_(a.nombre) + ' (' + a.edad + ' años)').join('<br>') + '</span>';
+  const urlEmision = construirUrlEmision_(data);
+  const avisoExcluidos = data.pasajerosExcluidos && data.pasajerosExcluidos.length
+    ? '<tr><td style="padding:20px 32px 4px 32px;">' +
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#fff7e6" ' +
+          'style="background-color:#fff7e6;border-left:4px solid #e0a100;border-radius:6px;">' +
+        '<tr><td style="padding:16px 18px;font-size:14px;line-height:22px;color:#4a3b12;">' +
+          '<strong style="display:block;margin-bottom:4px;color:#7a5600;">Aviso importante</strong>' +
+          textoExcluidosPorEdad_(data.pasajerosExcluidos) +
+        '</td></tr></table></td></tr>'
+    : '';
 
-  return envolverCorreo_(
-    encabezadoCorreo_('Propuesta Seguro de Viaje SENIOR +79') +
-    // Tabla, no <div>: un <div> con borde y sin ancho explícito puede
-    // desalinearse por debajo del ancho de la fila 100% del encabezado en
-    // clientes con soporte de CSS irregular (ver envolverCorreo_). Usando
-    // tabla en ambos, el ancho de las dos secciones queda garantizado igual.
-    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">' +
-    '<tr><td bgcolor="#ffffff" style="padding:18px;background-color:#ffffff;border:1px solid ' + COLORES.BORDE + ';border-top:none;">' +
+  return '<div style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:' + C.FONDO + ';">' +
+      'Tu propuesta de Seguro de Viaje SENIOR +79 a ' + escaparHtml_(data.destino) + ' está lista. Vigente hasta el ' +
+      escaparHtml_(data.vigenciaCotizacion) + '.</div>' +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="' + C.FONDO + '" ' +
+      'style="background-color:' + C.FONDO + ';font-family:Arial,Helvetica,sans-serif;color:' + C.TEXTO + ';">' +
+    '<tr><td align="center" style="padding:24px 12px;">' +
+    '<!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->' +
+    '<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" ' +
+      'style="width:100%;max-width:600px;background-color:#ffffff;border-radius:10px;overflow:hidden;font-family:Arial,Helvetica,sans-serif;">' +
 
-      '<p style="margin:8px 0 16px 0;font-weight:bold;">¡Hola ' + escaparHtml_(data.nombreSolicitante) + ', buen día!</p>' +
-      '<p style="margin:0 0 16px 0;">En adjunto encontrarás la <strong>propuesta solicitada</strong>. ' +
-      'A continuación, el resumen:</p>' +
+      // Encabezado
+      '<tr><td bgcolor="' + C.VERDE + '" style="background-color:' + C.VERDE + ';padding:16px 28px;">' +
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>' +
+          '<td valign="middle">' +
+            '<p style="margin:0 0 2px 0;font-size:11px;color:#c4e2e0;text-transform:uppercase;letter-spacing:1.5px;">Propuesta</p>' +
+            '<h1 style="margin:0;font-size:20px;line-height:26px;color:#ffffff;font-weight:bold;">Seguro de Viaje SENIOR +79</h1>' +
+            '<p style="margin:2px 0 0 0;font-size:13px;color:#dff0ef;">Destino: <strong style="color:#ffffff;">' +
+              escaparHtml_(data.destino) + '</strong> &nbsp;·&nbsp; ' + data.duracionDias + ' días</p>' +
+          '</td>' +
+          '<td align="right" valign="middle" width="120"><img src="' + escaparHtml_(CONFIG.URL_LOGO_CORREO) + '" width="110" ' +
+            'alt="Seguros Atlas" style="display:block;margin-left:auto;width:110px;height:auto;border:0;"></td>' +
+        '</tr></table>' +
+      '</td></tr>' +
 
-      '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" ' +
-      'style="border-collapse:collapse;background-color:' + COLORES.VERDE_CLARO + ';">' +
-        filaResumen_('Folio', data.folio) +
-        filaResumen_('Destino', data.destino) +
-        filaResumen_('Fechas del viaje', data.fechaInicio + ' al ' + data.fechaFin) +
-        filaResumen_('Duración del viaje', data.duracionDias + ' días') +
-        filaResumen_('Asegurados', String(data.numAsegurados) + ' — ' + data.listaAsegurados) +
-        filaResumen_('Vigencia de esta propuesta', data.vigenciaCotizacion) +
-      '</table>' +
+      // Saludo
+      '<tr><td style="padding:28px 32px 8px 32px;">' +
+        '<p style="margin:0 0 12px 0;font-size:16px;line-height:24px;">¡Hola <strong>' + escaparHtml_(data.nombreSolicitante) +
+          '</strong>, buen día!</p>' +
+        '<p style="margin:0;font-size:15px;line-height:23px;color:#43554c;">En adjunto encontrarás la propuesta solicitada.</p>' +
+      '</td></tr>' +
 
-      // Separador explícito: dos tablas distintas (resumen de la solicitud
-      // vs. primas por plan), no una continuación de la misma.
-      espaciador_(20) +
+      // Resumen
+      '<tr><td style="padding:16px 32px 8px 32px;">' +
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ' + C.BORDE + ';' +
+          'border-radius:8px;font-size:14px;border-collapse:separate;">' +
+          fila('Folio', escaparHtml_(data.folio), false, 'word-break:break-all;') +
+          fila('Destino', escaparHtml_(String(data.destino).toUpperCase())) +
+          fila('Fechas del viaje', escaparHtml_(data.fechaInicio) + ' al ' + escaparHtml_(data.fechaFin)) +
+          fila('Duración del viaje', data.duracionDias + ' días') +
+          fila('Asegurados', asegurados, false, 'line-height:21px;') +
+          fila('Vigencia de esta propuesta', escaparHtml_(data.vigenciaCotizacion), true, 'color:#b3261e;') +
+        '</table>' +
+      '</td></tr>' +
 
-      '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:8px;">' +
-        '<tr>' +
-          '<th style="padding:7px 14px 7px ' + (SANGRIA_RECUADRO - 1) + 'px;border:1px solid ' + COLORES.BORDE + ';background-color:' + COLORES.VERDE + ';color:#ffffff;text-align:left;font-size:11pt;">Plan</th>' +
-          '<th style="padding:7px 14px;border:1px solid ' + COLORES.BORDE + ';background-color:' + COLORES.VERDE + ';color:#ffffff;text-align:right;font-size:11pt;">' +
-            '<span style="font-weight:normal;font-size:9pt;color:#e3f1ef;">Prima Neta por (' +
-            data.numAsegurados + ' ' + (data.numAsegurados === 1 ? 'asegurado' : 'asegurados') + ') + IVA en USD</span>' +
-            '<br>Prima total' +
-          '</th>' +
-        '</tr>' +
-        filaPlan('Master', data.totalMaster) +
-        filaPlan('Master Smart', data.totalSmart) +
-        filaPlan('Master Elite', data.totalElite) +
-        filaPlan('Master Premium', data.totalPremium) +
-      '</table>' +
-      '<p style="margin:0 0 18px 0;font-size:11px;color:#666;font-style:italic;">Importes en dólares americanos (USD) ' +
-      'para ' + data.numAsegurados + ' asegurado(s). Primas netas, sin IVA.</p>' +
+      // Planes
+      '<tr><td style="padding:24px 32px 6px 32px;">' +
+        '<h2 style="margin:0 0 4px 0;font-size:18px;color:' + C.OSCURO + ';">Planes disponibles</h2>' +
+        '<p style="margin:0 0 12px 0;font-size:13px;color:' + C.SUAVE + ';">Prima Neta por ' + data.numAsegurados + ' ' + plural +
+          ' + IVA en USD</p>' +
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:15px;border-collapse:separate;">' +
+          '<tr><td bgcolor="' + C.OSCURO + '" style="padding:10px 14px;background-color:' + C.OSCURO + ';color:#ffffff;font-size:12px;' +
+            'text-transform:uppercase;letter-spacing:1px;border-radius:6px 0 0 0;">Plan</td>' +
+          '<td bgcolor="' + C.OSCURO + '" align="right" style="padding:10px 14px;background-color:' + C.OSCURO + ';color:#ffffff;font-size:12px;' +
+            'text-transform:uppercase;letter-spacing:1px;border-radius:0 6px 0 0;">Prima total</td></tr>' +
+          plan('Master', data.totalMaster, false) +
+          plan('Master Smart', data.totalSmart, true) +
+          plan('Master Elite', data.totalElite, false) +
+          plan('Master Premium', data.totalPremium, true) +
+        '</table>' +
+        '<p style="margin:10px 0 0 0;font-size:12px;line-height:18px;color:#6b7d73;">Importes en dólares americanos (USD) para ' +
+          data.numAsegurados + ' asegurado(s). Primas netas, sin IVA.</p>' +
+      '</td></tr>' +
 
-      construirAvisoExcluidos_(data.pasajerosExcluidos) +
+      avisoExcluidos +
 
-      '<p style="margin:4px 0 0 0;font-family:' + FUENTE_CORREO + ';font-size:16pt;font-weight:bold;' +
-        'line-height:1.25;color:' + COLORES.VERDE + ';">Para solicitar tu emisión sigue los siguientes pasos</p>' +
-      espaciador_(14) +
+      // Pasos
+      '<tr><td style="padding:30px 32px 0 32px;">' +
+        '<h2 style="margin:0;font-size:18px;color:' + C.OSCURO + ';">Para solicitar tu emisión sigue los siguientes pasos</h2>' +
+      '</td></tr>' +
+      recuadro(
+        tituloRecuadro('&#128196;', 'Solicitud de Emisión') +
+        '<p style="margin:0 0 8px 0;">Llena la solicitud de emisión en línea (también puedes escanear el código QR de la propuesta). Ten a la mano:</p>' +
+        '<ul style="margin:0 0 16px 0;padding-left:20px;">' +
+          '<li style="margin-bottom:4px;">Propuesta aceptada (el PDF adjunto a este correo).</li>' +
+          '<li><strong>Obligatorio del contratante:</strong> Constancia de Situación Fiscal (CSF) actualizada e INE o pasaporte.</li>' +
+        '</ul>' +
+        '<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>' +
+          '<td bgcolor="' + C.VERDE + '" style="background-color:' + C.VERDE + ';border-radius:6px;">' +
+          '<a href="' + escaparHtml_(urlEmision) + '" style="display:inline-block;padding:13px 28px;font-size:15px;font-weight:bold;' +
+            'color:#ffffff;text-decoration:none;font-family:Arial,Helvetica,sans-serif;">Solicitar emisión</a>' +
+          '</td></tr></table>') +
+      recuadro(
+        tituloRecuadro('&#9888;&#65039;', 'Consideraciones Importantes') +
+        '<ul style="margin:0;padding-left:20px;">' +
+          '<li style="margin-bottom:4px;">Verifica que la información de los asegurados y del contratante sea correcta.</li>' +
+          '<li style="margin-bottom:4px;">Tendrás hasta un máximo de <strong>' + (CONFIG.VIGENCIA_DIAS_HABILES * 24) + ' horas hábiles</strong> ' +
+            'para solicitar tu emisión después de recibir la cotización.</li>' +
+          '<li style="margin-bottom:4px;">Errores u omisiones una vez emitida tu póliza toman de <strong>3 a 5 días hábiles</strong> en ser atendidos.</li>' +
+          '<li>Cualquier cambio en los días de viaje requiere una re-cotización.</li>' +
+        '</ul>') +
+      recuadro(
+        tituloRecuadro('&#128195;', 'Registro de Constancia Fiscal') +
+        '<p style="margin:0 0 10px 0;">En caso de requerir factura, antes de solicitar la emisión es indispensable registrar la ' +
+          'Constancia de Situación Fiscal (CSF) enviando un correo a <a href="mailto:constanciafiscal@segurosatlas.com.mx" ' +
+          'style="color:' + C.OSCURO + ';font-weight:bold;">constanciafiscal@segurosatlas.com.mx</a> con este formato estricto:</p>' +
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:14px;">' +
+          circulo(1, '<strong>Asunto (mayúsculas):</strong> RFC DEL CONTRATANTE.') +
+          circulo(2, '<strong>Contenido:</strong> completamente en blanco (sin firma, sin texto).') +
+          circulo(3, '<strong>Archivo adjunto (PDF en mayúsculas):</strong> CONSTANCIA + RFC.') +
+          circulo(4, '<strong>Confirmación:</strong> deberás recibir un correo de vuelta con el estatus de "Registro Exitoso".') +
+        '</table>', C.TENUE) +
 
-      recuadroCorreo_('&#128196;', 'Solicitud de Emisión',
-        '<div>Llena la <strong>solicitud de emisión en línea</strong> (también puedes ' +
-        'escanear el código QR de la propuesta). Ten a la mano:</div>' +
-        listaCorreo_([
-          '<strong>Propuesta aceptada</strong> (el PDF adjunto a este correo).',
-          '<strong>Obligatorio del contratante:</strong> Constancia de Situación Fiscal (CSF) actualizada e ' +
-            'INE o pasaporte.'
-        ], COLORES.GRIS_TABLA) +
-        espaciador_(8) +
-        botonCorreo_('Solicitar emisión', construirUrlEmision_(data)),
-        COLORES.GRIS_TABLA, COLORES.AZUL) +
-      espaciador_(16) +
+      '<tr><td style="padding:0 0 28px 0;font-size:0;line-height:0;">&nbsp;</td></tr>' +
 
-      recuadroCorreo_('&#9888;&#65039;', 'Consideraciones Importantes',
-        listaCorreo_([
-          'Verifica que la información de los asegurados y del contratante sea correcta.',
-          'Tendrás hasta un máximo de <strong>' + (CONFIG.VIGENCIA_DIAS_HABILES * 24) + ' horas hábiles</strong> ' +
-            'para solicitar tu emisión después de recibir la cotización.',
-          'Errores u omisiones una vez emitida tu póliza toman de <strong>3 a 5 días hábiles</strong> en ser atendidos.',
-          'Cualquier cambio en los días de viaje requiere una <strong>re-cotización</strong>.'
-        ], COLORES.AMBAR_FONDO),
-        COLORES.AMBAR_FONDO, COLORES.AMBAR_BORDE) +
-      espaciador_(16) +
+      // Pie
+      '<tr><td bgcolor="' + C.OSCURO + '" style="background-color:' + C.OSCURO + ';padding:20px 32px;font-size:12px;line-height:19px;color:#c4e2e0;">' +
+        '<p style="margin:0 0 6px 0;">Fecha de solicitud: ' + escaparHtml_(String(data.fechaEmision || '').slice(0, 16)) + ' hrs</p>' +
+        '<p style="margin:0 0 6px 0;">Este correo es enviado por Seguro de Viaje de Seguros Atlas. Si tienes alguna duda contacta con tu ejecutivo asignado.</p>' +
+        '<p style="margin:0;"><a href="' + escaparHtml_(CONFIG.URL_AVISO_PRIVACIDAD) + '" style="color:#ffffff;">Aviso de Privacidad</a>' +
+          ' &nbsp;·&nbsp; Contacto: <a href="mailto:segurodeviaje@segurosatlas.com.mx" style="color:#ffffff;">segurodeviaje@segurosatlas.com.mx</a></p>' +
+      '</td></tr>' +
 
-      recuadroCorreo_('&#128195;', 'Registro de Constancia Fiscal',
-        '<div>En caso de requerir factura, antes de solicitar la emisión es indispensable registrar la ' +
-        'Constancia de Situación Fiscal (CSF) enviando un correo a ' +
-        '<a href="mailto:constanciafiscal@segurosatlas.com.mx" style="color:' + COLORES.VERDE + ';">' +
-        'constanciafiscal@segurosatlas.com.mx</a> con este formato estricto:</div>' +
-        listaCorreo_([
-          '<strong>Asunto (mayúsculas):</strong> RFC DEL CONTRATANTE.',
-          '<strong>Contenido:</strong> completamente en blanco (sin firma, sin texto).',
-          '<strong>Archivo adjunto (PDF en mayúsculas):</strong> CONSTANCIA + RFC.',
-          '<strong>Confirmación:</strong> deberás recibir un correo de vuelta con el estatus de ' +
-            '<strong>"Registro Exitoso"</strong>.'
-        ], COLORES.GRIS_FILA, true),
-        COLORES.GRIS_FILA) +
-
-      pieCorreo_() + pieFechaCorreo_(data) +
-    '</td></tr></table>' +
-    barraPieCorreo_() +
-    avisoPrivacidadCorreo_()
-  );
+    '</table>' +
+    '<!--[if mso]></td></tr></table><![endif]-->' +
+    '</td></tr></table>';
 }
 
 /**
