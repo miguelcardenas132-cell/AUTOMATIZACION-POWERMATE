@@ -756,35 +756,36 @@ function escaparHtml_(valor) {
 // ============================================================================
 
 /**
- * Maquetación para que Word Online la convierta a una sola página carta.
+ * Réplica del diseño "Propuesta Seguro Senior 79 años (rediseño)", ajustada
+ * para que quepa en una hoja carta con el pie reservado.
  *
  * Todo se arma con tablas y <colgroup>, nunca con flex ni grid: el motor de
- * conversión HTML->DOCX los ignora y colapsaría las cuadrículas en una sola
- * columna. Las imágenes van como data: URI porque el convertidor tampoco
- * descarga recursos externos. Las esquinas redondeadas (border-radius) son
- * un extra: si el convertidor las ignora, los recuadros quedan rectos.
+ * conversión HTML->PDF de OneDrive/Word los ignora. Las imágenes y la fuente
+ * van como data: URI porque el convertidor no descarga recursos externos.
+ * Títulos, planes y precios en Montserrat (ASSETS.FUENTE_MONTSERRAT); si el
+ * convertidor no la toma, caen a Arial negrita.
  *
  * Orden de la hoja:
- *   1. Encabezado verde: título, vigencia y logo.
- *   2. Ficha: folio, emisión, solicitante y agente; debajo, los datos del viaje.
+ *   1. Encabezado verde a todo lo ancho: título, vigencia y logo.
+ *   2. Franja gris: folio, emisión, solicitante, agente y datos del viaje.
  *   3. Planes disponibles: prima de cada plan y tabla de coberturas.
  *   4. Especificaciones (izquierda) y "Emite tu póliza en 3 pasos" con el QR
  *      de emisión, factura y nueva propuesta (derecha).
  *   5. Pie: espacio reservado (ALTO_PIE_PDF) mientras llega su diseño.
- *
- * El pie se ancla al fondo de la hoja (html/body/marco a height:100% y
- * marco-pie con vertical-align:bottom).
  */
 const PDF = {
-  VERDE: '#0E6764',        // encabezado y planes 1 y 3
-  VERDE_OSCURO: '#0B4C4A', // planes 2 y 4
-  VERDE_TEXTO: '#0E6764',
-  VERDE_SUAVE: '#E9F2F0',  // filas de coberturas principales y nota de 72 hrs
-  GRIS_FICHA: '#EEF2F1',
-  LINEA: '#DCE5E3',
-  TEXTO: '#1D2B2A',
-  TEXTO_SUAVE: '#5B6B6A'
+  VERDE: '#027371',          // encabezado, planes Master y Elite, títulos
+  VERDE_OSCURO: '#034F4D',   // planes Smart y Premium
+  VERDE_TENUE: '#EEF4F2',    // franja de datos, filas principales, nota de 72 hrs, tarjeta de nueva propuesta
+  VERDE_BORDE: '#126A6B',    // borde de la tarjeta de nueva propuesta
+  VERDE_LINEA: '#BFD9D3',    // líneas entre los pasos
+  BORDE: '#D3E2DE',          // bordes de tarjetas
+  LINEA: '#E2E9E7',          // líneas de la tabla
+  TEXTO: '#1F2A2A',
+  TEXTO_SUAVE: '#5C6766',
+  TEXTO_CLARO: '#D6ECE9'     // textos secundarios sobre verde
 };
+const FUENTE_TITULOS_PDF = "'Montserrat', Arial, Helvetica, sans-serif";
 // Alto reservado para el pie de página (px). Cambiar cuando llegue su diseño.
 const ALTO_PIE_PDF = 58;
 
@@ -809,110 +810,124 @@ function generarHtmlCotizacion_(data) {
 }
 
 function estilosCotizacion_() {
+  const T = FUENTE_TITULOS_PDF;
   return '' +
-    '@page { size: letter; margin: 0.3cm; }\n' +
+    "@font-face { font-family: 'Montserrat'; font-style: normal; font-weight: 700 800;\n" +
+    "             src: url(" + ASSETS.FUENTE_MONTSERRAT + ") format('woff2'); }\n" +
+    '@page { size: letter; margin: 0; }\n' +
     '* { box-sizing: border-box; margin: 0; padding: 0; }\n' +
     'html, body { height: 100%; }\n' +
-    'body { font-family: Arial, Helvetica, sans-serif; font-size: 8.4px; color: ' + PDF.TEXTO + '; line-height: 1.25;\n' +
+    'body { font-family: Arial, Helvetica, sans-serif; font-size: 8.6px; color: ' + PDF.TEXTO + '; line-height: 1.25;\n' +
     '       -webkit-print-color-adjust: exact; print-color-adjust: exact; }\n' +
     'table { border-collapse: collapse; width: 100%; }\n' +
-    'a { color: ' + PDF.VERDE_TEXTO + '; font-weight: bold; text-decoration: underline; }\n' +
+    'a { color: ' + PDF.VERDE + '; font-weight: bold; text-decoration: underline; }\n' +
     '.marco { width: 100%; height: 100%; border-collapse: collapse; }\n' +
     '.marco-contenido { vertical-align: top; }\n' +
     '.marco-pie { vertical-align: bottom; }\n' +
-    '.cuerpo { padding: 0 16px; }\n' +
+    '.cuerpo { padding: 0 36px; }\n' +
 
     // --- 1. Encabezado ---
     '.enc { background-color: ' + PDF.VERDE + '; }\n' +
-    '.enc td { padding: 9px 16px 9px; vertical-align: middle; color: #ffffff; }\n' +
-    '.enc .kicker { font-size: 7.6px; font-weight: bold; letter-spacing: 1.8px; color: #CFE6E3; }\n' +
-    '.enc .titulo { font-size: 21px; font-weight: bold; color: #ffffff; margin-top: 2px; }\n' +
-    '.enc .linea-vig { margin-top: 5px; font-size: 8.6px; color: #E6F4F2; }\n' +
-    '.enc .vig { background-color: #ffffff; color: ' + PDF.VERDE_TEXTO + '; font-weight: bold; font-size: 8.8px;\n' +
-    '            padding: 2px 9px; border-radius: 9px; }\n' +
+    '.enc td { padding: 15px 36px 13px; vertical-align: middle; color: #ffffff; }\n' +
+    '.enc .kicker { font-family: ' + T + '; font-size: 9.2px; font-weight: 700; letter-spacing: 2px; color: #E3F2F0; }\n' +
+    '.enc .titulo { font-family: ' + T + '; font-size: 24px; font-weight: 800; color: #ffffff; margin-top: 3px; line-height: 1.1; }\n' +
+    '.enc .linea-vig { margin-top: 7px; font-size: 10px; color: #ffffff; }\n' +
+    '.enc .vig { background-color: #ffffff; color: ' + PDF.VERDE + '; font-weight: bold; font-size: 10px;\n' +
+    '            padding: 2.5px 10px; border-radius: 10px; margin-right: 7px; }\n' +
     '.enc .logo { text-align: right; width: 30%; }\n' +
-    '.enc .logo img { height: 38px; width: auto; }\n' +
+    '.enc .logo img { height: 40px; width: auto; }\n' +
 
-    // --- 2. Ficha y datos del viaje ---
-    '.ficha-fondo { background-color: ' + PDF.GRIS_FICHA + '; padding: 5px 16px 6px; }\n' +
-    '.ficha { border-collapse: separate; border-spacing: 0 3px; }\n' +
-    '.ficha td { font-size: 8.6px; vertical-align: middle; }\n' +
-    '.ficha .et { font-weight: bold; color: ' + PDF.TEXTO + '; padding-right: 8px; white-space: nowrap; }\n' +
-    '.ficha .val { background-color: #ffffff; border-radius: 8px; padding: 2.5px 10px; }\n' +
-    '.viaje { border-top: 1px solid ' + PDF.LINEA + '; margin-top: 3px; }\n' +
-    '.viaje td { padding: 4px 0 0; vertical-align: top; }\n' +
-    '.viaje .et { font-size: 6.8px; font-weight: bold; letter-spacing: 1.2px; color: ' + PDF.TEXTO_SUAVE + '; }\n' +
-    '.viaje .val { font-size: 9.6px; font-weight: bold; color: ' + PDF.TEXTO + '; }\n' +
+    // --- 2. Franja gris de datos ---
+    '.ficha-fondo { background-color: ' + PDF.VERDE_TENUE + '; padding: 7px 36px 7px; }\n' +
+    '.ficha { border-collapse: separate; border-spacing: 0 4px; }\n' +
+    '.ficha td { font-size: 9.4px; vertical-align: middle; }\n' +
+    '.ficha .et { font-weight: bold; color: ' + PDF.TEXTO + '; white-space: nowrap; }\n' +
+    '.ficha .val { background-color: #ffffff; border-radius: 9px; padding: 2.5px 11px; color: #2B3332; }\n' +
+    '.viaje { margin-top: 2px; }\n' +
+    '.viaje td { padding: 3px 0 0; vertical-align: top; }\n' +
+    '.viaje .et { font-size: 6.8px; font-weight: bold; letter-spacing: 1.3px; color: ' + PDF.TEXTO_SUAVE + '; }\n' +
+    '.viaje .val { font-size: 9.4px; font-weight: bold; color: ' + PDF.TEXTO + '; }\n' +
+    '.separador { border-top: 1.5px solid #DCE3E1; margin: 9px 0 0; height: 1px; }\n' +
 
     // --- 3. Planes y coberturas ---
-    '.cob { margin-top: 7px; border-collapse: collapse; }\n' +
+    '.cob { margin-top: 9px; border-collapse: separate; border-spacing: 0; }\n' +
     '.cob th { vertical-align: bottom; }\n' +
-    '.cob th.izq { text-align: left; padding: 0 6px 4px 0; }\n' +
-    '.cob .pd { font-size: 10.4px; font-weight: bold; color: ' + PDF.VERDE_TEXTO + '; letter-spacing: .5px; line-height: 1.1; }\n' +
-    '.cob .pd-sub { font-size: 7.2px; font-weight: normal; color: ' + PDF.TEXTO_SUAVE + '; margin-top: 1px; }\n' +
-    '.cob th.plan { color: #ffffff; text-align: center; padding: 4px 3px 4px; border-left: 4px solid #ffffff;\n' +
-    '               border-radius: 6px 6px 0 0; }\n' +
+    '.cob th.izq { text-align: left; padding: 0 6px 5px 0; }\n' +
+    '.cob .pd { font-family: ' + T + '; font-size: 11.2px; font-weight: 800; color: ' + PDF.VERDE + '; letter-spacing: .4px; line-height: 1.1; }\n' +
+    '.cob .pd-sub { font-size: 7.8px; font-weight: normal; color: ' + PDF.TEXTO_SUAVE + '; margin-top: 2px; line-height: 1.2; }\n' +
+    '.cob th.esp { width: 5px; }\n' +
+    '.cob th.plan { color: #ffffff; text-align: center; padding: 5px 3px 5px; border-radius: 8px 8px 0 0; }\n' +
     '.cob th.p1 { background-color: ' + PDF.VERDE + '; }\n' +
     '.cob th.p2 { background-color: ' + PDF.VERDE_OSCURO + '; }\n' +
-    '.cob .nom { font-size: 9px; font-weight: bold; }\n' +
-    '.cob .precio { font-size: 14.5px; font-weight: bold; line-height: 1.15; }\n' +
-    '.cob .usd { font-size: 6.8px; font-weight: normal; color: #CFE6E3; }\n' +
-    '.cob tbody tr:first-child td { border-top: 2px solid ' + PDF.VERDE + '; }\n' +
-    '.cob td { border-bottom: 1px solid ' + PDF.LINEA + '; padding: 1.7px 8px; font-size: 8.2px; line-height: 1.15; }\n' +
+    '.cob .nom { font-family: ' + T + '; font-size: 9.6px; font-weight: 700; }\n' +
+    '.cob .precio { font-family: ' + T + '; font-size: 16.5px; font-weight: 800; line-height: 1.15; }\n' +
+    '.cob .usd { font-size: 7.8px; font-weight: normal; color: ' + PDF.TEXTO_CLARO + '; }\n' +
+    '.cob tbody tr:first-child td { border-top: 2.5px solid ' + PDF.VERDE + '; }\n' +
+    '.cob td { border-bottom: 1px solid ' + PDF.LINEA + '; padding: 2.1px 7px; font-size: 8.6px; line-height: 1.13; color: #2B3332; }\n' +
     '.cob td.num { text-align: right; }\n' +
-    '.cob tr.principal td { background-color: ' + PDF.VERDE_SUAVE + '; font-weight: bold; }\n' +
-    '.cob tr.sublimite td.concepto { padding-left: 20px; }\n' +
-    '.cob .inc { color: ' + PDF.VERDE_TEXTO + '; font-weight: bold; }\n' +
-    '.cob .subnota { display: block; color: ' + PDF.TEXTO_SUAVE + '; font-size: 6.8px; font-weight: normal; }\n' +
-    '.nota-tabla { font-size: 7.6px; font-weight: bold; color: ' + PDF.TEXTO + '; text-align: right; margin: 3px 0 0; }\n' +
+    '.cob tr.principal td { background-color: ' + PDF.VERDE_TENUE + '; font-weight: bold; color: ' + PDF.TEXTO + '; }\n' +
+    '.cob tr.sublimite td.concepto { padding-left: 22px; }\n' +
+    '.cob .inc { color: ' + PDF.VERDE + '; font-weight: bold; }\n' +
+    '.cob .subnota { display: block; color: ' + PDF.TEXTO_SUAVE + '; font-size: 7px; font-weight: normal; }\n' +
+    '.nota-tabla { font-size: 8px; font-weight: bold; color: #3A4443; text-align: right; margin: 4px 0 0; }\n' +
 
     // --- 4. Cierre: especificaciones y pasos ---
-    '.cierre { margin-top: 7px; border-collapse: collapse; }\n' +
-    '.cierre > tbody > tr > td, .cierre > tr > td { vertical-align: top; }\n' +
-    '.espec { border: 1px solid ' + PDF.LINEA + '; border-radius: 8px; padding: 8px 11px 7px; }\n' +
-    '.titulo-sec { font-size: 9.8px; font-weight: bold; color: ' + PDF.VERDE_TEXTO + '; letter-spacing: .6px; margin-bottom: 4px; }\n' +
-    '.espec table td { font-size: 7.9px; line-height: 1.28; padding: 0 0 3px; vertical-align: top; }\n' +
-    '.espec td.vin { color: ' + PDF.VERDE_TEXTO + '; width: 10px; font-size: 7px; padding-top: 1px; }\n' +
-    '.pasos td { vertical-align: top; padding-right: 8px; }\n' +
-    '.paso-num { width: 16px; height: 16px; background-color: ' + PDF.VERDE + '; color: #ffffff; font-weight: bold;\n' +
-    '            font-size: 8.4px; text-align: center; border-radius: 8px; line-height: 16px; padding: 0 !important; }\n' +
-    '.paso-tit { font-size: 9.2px; font-weight: bold; color: ' + PDF.TEXTO + '; margin: 4px 0 2px; }\n' +
-    '.paso-txt { font-size: 7.9px; line-height: 1.3; color: ' + PDF.TEXTO + '; }\n' +
+    '.cierre { margin-top: 9px; border-collapse: separate; border-spacing: 0; }\n' +
+    '.cierre td.c-esp { vertical-align: middle; border: 1px solid ' + PDF.BORDE + '; border-radius: 14px; padding: 12px 14px; }\n' +
+    '.cierre td.c-pasos { vertical-align: top; }\n' +
+    '.titulo-sec { font-family: ' + T + '; font-size: 11.2px; font-weight: 800; color: ' + PDF.VERDE + '; letter-spacing: .6px; margin-bottom: 6px; }\n' +
+    '.espec td { font-size: 8.5px; line-height: 1.32; padding: 0 0 4px; vertical-align: top; color: #2B3332; }\n' +
+    '.espec td.vin { color: ' + PDF.VERDE + '; width: 13px; font-size: 7.5px; padding-top: 1.5px; }\n' +
+    '.espec strong { color: ' + PDF.TEXTO + '; }\n' +
+    '.pasos-num td { vertical-align: middle; padding: 0; }\n' +
+    '.paso-num { width: 19px; height: 19px; background-color: ' + PDF.VERDE + '; color: #ffffff; font-family: ' + T + ';\n' +
+    '            font-weight: 800; font-size: 9px; text-align: center; border-radius: 10px; line-height: 19px; }\n' +
+    '.paso-linea { padding: 0 10px 0 8px !important; }\n' +
+    '.paso-linea div { border-top: 2px solid ' + PDF.VERDE_LINEA + '; height: 1px; }\n' +
+    '.pasos > tbody > tr > td, .pasos > tr > td { vertical-align: top; padding: 0 0 0 0; }\n' +
+    '.paso-tit { font-family: ' + T + '; font-size: 10px; font-weight: 700; color: ' + PDF.TEXTO + '; margin: 6px 0 3px; }\n' +
+    '.paso-txt { padding-right: 8px; }\n' +
+    '.paso-txt { font-size: 8.5px; line-height: 1.32; color: #2B3332; }\n' +
+    '.paso-qr { padding: 0 !important; width: 74px; text-align: right; }\n' +
     '.paso-qr img { width: 72px; height: 72px; display: block; }\n' +
-    '.nota-72 { background-color: ' + PDF.VERDE_SUAVE + '; color: ' + PDF.VERDE_TEXTO + '; font-weight: bold; font-size: 8.2px;\n' +
-    '           text-align: center; padding: 4px 6px; border-radius: 9px; margin-top: 5px; }\n' +
-    '.tarjetas { margin-top: 5px; border-collapse: separate; border-spacing: 0; }\n' +
-    '.tarjeta { border: 1px solid ' + PDF.LINEA + '; border-radius: 8px; padding: 5px 9px; vertical-align: top; }\n' +
-    '.tarjeta.nueva { background-color: #EEF6F4; border-color: ' + PDF.VERDE + '; }\n' +
-    '.tarjeta h3 { font-size: 9px; color: ' + PDF.VERDE_TEXTO + '; margin-bottom: 2px; }\n' +
-    '.tarjeta p { font-size: 7.7px; line-height: 1.3; }\n' +
-    '.tarjeta .correo { font-weight: bold; color: ' + PDF.VERDE_TEXTO + '; }\n' +
-    '.tarjeta .pares td { font-size: 7.4px; padding: 0.5px 0; vertical-align: top; }\n' +
-    '.tarjeta .pares td.k { font-size: 6.6px; letter-spacing: 1px; color: ' + PDF.TEXTO_SUAVE + '; width: 50px; padding-top: 1px; }\n' +
-    '.tarjeta .pares td.v { font-weight: bold; }\n' +
-    '.tarjeta .qr img { width: 56px; height: 56px; display: block; }\n' +
-    '.tarjeta .min { font-weight: bold; margin-top: 2px; }\n' +
+    '.nota-72 { background-color: ' + PDF.VERDE_TENUE + '; color: ' + PDF.VERDE + '; font-weight: bold; font-size: 8.8px;\n' +
+    '           padding: 5px 13px; border-radius: 12px; margin-top: 6px; }\n' +
+    '.tarjetas { margin-top: 7px; border-collapse: separate; border-spacing: 0; }\n' +
+    '.tarjeta { border: 1px solid ' + PDF.BORDE + '; border-radius: 12px; padding: 7px 12px; vertical-align: top; }\n' +
+    '.tarjeta.nueva { background-color: ' + PDF.VERDE_TENUE + '; border: 1.5px solid ' + PDF.VERDE_BORDE + '; }\n' +
+    '.tarjeta h3 { font-family: ' + T + '; font-size: 10px; font-weight: 800; color: ' + PDF.VERDE + '; margin-bottom: 3px; line-height: 1.2; }\n' +
+    '.tarjeta p { font-size: 8.4px; line-height: 1.32; color: #2B3332; }\n' +
+    '.tarjeta .correo { font-weight: bold; color: ' + PDF.VERDE + '; }\n' +
+    '.tarjeta .pares { margin-top: 2px; }\n' +
+    '.tarjeta .pares td { font-size: 8.2px; padding: 0.6px 0; vertical-align: top; color: #2B3332; }\n' +
+    '.tarjeta .pares td.k { font-size: 7px; font-weight: bold; letter-spacing: 1.2px; color: ' + PDF.TEXTO_SUAVE + '; width: 58px; padding-top: 1.6px; }\n' +
+    '.tarjeta .pares td.v { font-weight: bold; color: ' + PDF.TEXTO + '; }\n' +
+    '.tarjeta .pares td.v.n { font-weight: normal; color: #2B3332; }\n' +
+    '.tarjeta .qr { width: 70px; vertical-align: middle; }\n' +
+    '.tarjeta .qr div { background-color: #ffffff; border-radius: 9px; padding: 5px; }\n' +
+    '.tarjeta .qr img { width: 58px; height: 58px; display: block; }\n' +
+    '.tarjeta .min { font-weight: bold; color: ' + PDF.TEXTO + '; margin-top: 3px; }\n' +
 
     // --- 5. Pie (reservado) ---
     '.pie td { height: ' + ALTO_PIE_PDF + 'px; }\n';
 }
 
-/** Franja verde: título, vigencia y logo. */
+/** Franja verde a todo lo ancho: título, vigencia y logo. */
 function bloqueEncabezado_(data) {
   return '<table class="enc" role="presentation">\n<tr>\n' +
     '<td>' +
       '<div class="kicker">SEGURO DE VIAJE · PROPUESTA</div>' +
       '<div class="titulo">Seguro Senior +79 años</div>' +
       '<div class="linea-vig"><span class="vig">Vigente hasta el ' + escaparHtml_(data.vigenciaCotizacion) + '</span>' +
-      '&nbsp;&nbsp; Las sumas aseguradas se expresan en dólares (USD)</div>' +
+      ' Las sumas aseguradas se expresan en dólares (USD)</div>' +
     '</td>\n' +
     '<td class="logo"><img alt="Seguros Atlas" src="' + ASSETS.LOGO_HEADER + '"></td>\n' +
     '</tr>\n</table>\n';
 }
 
 /**
- * Ficha gris: folio, emisión, solicitante y agente (solo si aplica); debajo,
- * destino, fechas, duración y número de asegurados.
+ * Franja gris: folio, emisión, solicitante y agente (solo si aplica), cada
+ * dato en su burbuja blanca; debajo, destino, fechas, duración y asegurados.
  */
 function bloqueFicha_(data) {
   const par = (etiqueta, valor) => valor
@@ -925,7 +940,7 @@ function bloqueFicha_(data) {
 
   return '<div class="ficha-fondo">\n' +
     '<table class="ficha" role="presentation">\n' +
-    '<colgroup><col style="width:9%"><col style="width:41%"><col style="width:4%"><col style="width:8%"><col style="width:38%"></colgroup>\n' +
+    '<colgroup><col style="width:11%"><col style="width:38%"><col style="width:4%"><col style="width:9%"><col style="width:38%"></colgroup>\n' +
     '<tr>' + par('Folio', data.folio) + '<td></td>' + par('Emisión', emision) + '</tr>\n' +
     '<tr>' + par('Solicitante', data.nombreSolicitante) + '<td></td>' + par('Agente', agente) + '</tr>\n' +
     '</table>\n' +
@@ -940,13 +955,14 @@ function bloqueFicha_(data) {
 }
 
 /**
- * Planes disponibles: encabezado con la prima total de cada plan y, debajo,
- * las coberturas. Las principales (con número romano) van resaltadas; los
+ * Planes disponibles: burbujas con la prima total de cada plan y, debajo, las
+ * coberturas. Las principales (con número romano) van resaltadas; los
  * sub-límites, con sangría.
  */
 function bloqueCoberturas_(data) {
   const totales = [data.totalMaster, data.totalSmart, data.totalElite, data.totalPremium];
   const encabezados = PLANES.map((plan, i) =>
+    '<th class="esp"></th>' +
     '<th class="plan ' + (i % 2 === 0 ? 'p1' : 'p2') + '">' +
       '<div class="nom">' + escaparHtml_(plan) + '</div>' +
       '<div class="precio">' + formatearMoneda_(totales[i]) + '</div>' +
@@ -960,17 +976,20 @@ function bloqueCoberturas_(data) {
         ? '<span class="subnota">' + escaparHtml_(cobertura.nota[columna]) + '</span>'
         : '';
       const texto = valor === 'Incluido' ? '<span class="inc">Incluido</span>' : escaparHtml_(valor);
-      return '<td class="num">' + texto + nota + '</td>';
+      return '<td class="num" colspan="2">' + texto + nota + '</td>';
     }).join('');
     return '<tr class="' + (esPrincipal ? 'principal' : 'sublimite') + '"><td class="concepto">' +
       escaparHtml_(cobertura.concepto) + '</td>' + celdas + '</tr>';
   }).join('\n');
 
-  return '<table class="cob">\n' +
-    '<colgroup><col style="width:32%"><col style="width:17%"><col style="width:17%"><col style="width:17%"><col style="width:17%"></colgroup>\n' +
+  return '<div class="separador"></div>\n' +
+    '<table class="cob">\n' +
+    '<colgroup><col style="width:24%">' +
+      '<col style="width:0.8%"><col style="width:18.2%"><col style="width:0.8%"><col style="width:18.2%">' +
+      '<col style="width:0.8%"><col style="width:18.2%"><col style="width:0.8%"><col style="width:18.2%"></colgroup>\n' +
     '<thead>\n<tr>' +
       '<th class="izq"><div class="pd">PLANES<br>DISPONIBLES</div>' +
-      '<div class="pd-sub">Coberturas y sumas aseguradas en USD</div></th>' +
+      '<div class="pd-sub">Coberturas y sumas aseguradas<br>en USD</div></th>' +
       encabezados +
     '</tr>\n</thead>\n<tbody>\n' + filas + '\n</tbody>\n</table>\n' +
     '<p class="nota-tabla">Prima neta + IVA por ' + data.numAsegurados + ' ' +
@@ -980,17 +999,16 @@ function bloqueCoberturas_(data) {
 /** Especificaciones a la izquierda; "Emite tu póliza en 3 pasos" a la derecha. */
 function bloqueCierre_(data) {
   return '<table class="cierre" role="presentation">\n' +
-    '<colgroup><col style="width:36%"><col style="width:3%"><col style="width:61%"></colgroup>\n<tr>\n' +
-    '<td>' + bloqueEspecificaciones_() + '</td>\n<td></td>\n' +
-    '<td>' + bloquePasos_(data) + '</td>\n' +
+    '<colgroup><col style="width:35%"><col style="width:3%"><col style="width:62%"></colgroup>\n<tr>\n' +
+    '<td class="c-esp">' + bloqueEspecificaciones_() + '</td>\n<td></td>\n' +
+    '<td class="c-pasos">' + bloquePasos_(data) + '</td>\n' +
     '</tr>\n</table>\n';
 }
 
 function bloqueEspecificaciones_() {
   const punto = (html) => '<tr><td class="vin">&#9670;</td><td>' + html + '</td></tr>';
-  return '<div class="espec">\n' +
-    '<div class="titulo-sec">ESPECIFICACIONES</div>\n' +
-    '<table role="presentation">\n' +
+  return '<div class="titulo-sec">ESPECIFICACIONES</div>\n' +
+    '<table class="espec" role="presentation">\n' +
       punto('<strong>Edad de aceptación:</strong> de ' + textoRangoEdad_() + '.') +
       punto('<strong>Asegurados:</strong> mexicanos o extranjeros residentes en México.') +
       punto('<strong>Cobertura:</strong> desde las 00:00 hrs del inicio hasta las 23:59 hrs de la culminación del viaje.') +
@@ -998,58 +1016,59 @@ function bloqueEspecificaciones_() {
       punto('<strong>Territorialidad:</strong> México y el extranjero, excepto Afganistán, Bielorrusia, Crimea, ' +
         'Zaporizhzhia, Kherson, Donetsk, Luhansk, Irán, Israel, Corea del Norte, Rusia, Siria, Venezuela o cualquier ' +
         'país en conflicto al momento de solicitar la propuesta.') +
-    '</table>\n</div>\n';
+    '</table>\n';
 }
 
 /**
- * Los 3 pasos (el tercero con el QR de emisión prellenada), el plazo de 72
- * horas hábiles y las tarjetas de factura y de nueva propuesta.
+ * Los 3 pasos con sus círculos unidos por una línea (el tercero con el QR de
+ * emisión prellenada), el plazo de 72 horas hábiles y las tarjetas de
+ * factura y de nueva propuesta.
  */
 function bloquePasos_(data) {
   const urlEmision = construirUrlEmision_(data);
   const urlNueva = CONFIG.URL_NUEVA_PROPUESTA;
-  const paso = (numero, titulo, cuerpo) =>
-    '<table role="presentation" style="width:auto;"><tr><td class="paso-num" width="16" align="center">' + numero + '</td></tr></table>' +
-    '<div class="paso-tit">' + titulo + '</div>' + cuerpo;
+  // Círculo del paso y, en los dos primeros, la línea que lo une con el siguiente.
+  const cabeza = (n, conLinea) => '<table class="pasos-num" role="presentation"><tr>' +
+    '<td class="paso-num" width="19" align="center">' + n + '</td>' +
+    (conLinea ? '<td class="paso-linea"><div></div></td>' : '<td></td>') + '</tr></table>';
 
   return '<div class="titulo-sec">EMITE TU PÓLIZA EN 3 PASOS</div>\n' +
     '<table class="pasos" role="presentation">\n' +
-    '<colgroup><col style="width:31%"><col style="width:31%"><col style="width:38%"></colgroup>\n<tr>\n' +
-    '<td>' + paso(1, 'Revisa tu propuesta',
-      '<div class="paso-txt">Confirma que tus datos sean correctos y legibles.</div>') + '</td>\n' +
-    '<td>' + paso(2, 'Ten a la mano',
+    '<colgroup><col style="width:33%"><col style="width:33%"><col style="width:34%"></colgroup>\n<tr>\n' +
+    '<td>' + cabeza(1, true) + '<div class="paso-tit">Revisa tu propuesta</div>' +
+      '<div class="paso-txt">Confirma que tus datos sean correctos y legibles.</div></td>\n' +
+    '<td>' + cabeza(2, true) + '<div class="paso-tit">Ten a la mano</div>' +
       '<div class="paso-txt">&#10003; Esta propuesta aceptada<br>&#10003; Constancia de Situación Fiscal<br>' +
-      '&#10003; INE o pasaporte del contratante</div>') + '</td>\n' +
-    '<td>' + paso(3, 'Solicita tu emisión',
+      '&#10003; INE o pasaporte del contratante</div></td>\n' +
+    '<td>' + cabeza(3, false) + '<div class="paso-tit">Solicita tu emisión</div>' +
       '<table role="presentation"><tr>' +
-        '<td class="paso-txt">Escanea el QR<br>o <a href="' + escaparHtml_(urlEmision) + '">da clic aquí</a>.</td>' +
+        '<td class="paso-txt" style="padding:0;vertical-align:top;">Escanea el QR<br>o <a href="' + escaparHtml_(urlEmision) + '">da clic aquí</a>.</td>' +
         '<td class="paso-qr"><a href="' + escaparHtml_(urlEmision) + '">' +
           '<img alt="Código QR para solicitar la emisión" src="' + qrDataUri_(urlEmision) + '"></a></td>' +
-      '</tr></table>') + '</td>\n' +
+      '</tr></table></td>\n' +
     '</tr>\n</table>\n' +
     '<div class="nota-72">Tienes ' + (CONFIG.VIGENCIA_DIAS_HABILES * 24) + ' hrs hábiles para solicitar tu emisión ' +
       'a partir de que recibes esta propuesta.</div>\n' +
     '<table class="tarjetas" role="presentation">\n' +
-    '<colgroup><col style="width:53%"><col style="width:3%"><col style="width:44%"></colgroup>\n<tr>\n' +
+    '<colgroup><col style="width:51%"><col style="width:3%"><col style="width:46%"></colgroup>\n<tr>\n' +
     '<td class="tarjeta">' +
       '<h3>¿Requieres factura?</h3>' +
       '<p>Antes de emitir, envía tu CSF a:<br><span class="correo">constanciafiscal@segurosatlas.com.mx</span></p>' +
       '<table class="pares" role="presentation">' +
         '<tr><td class="k">ASUNTO</td><td class="v">RFC DEL CONTRATANTE</td></tr>' +
-        '<tr><td class="k">MENSAJE</td><td class="v">En blanco, sin firma</td></tr>' +
+        '<tr><td class="k">MENSAJE</td><td class="v n">En blanco, sin firma</td></tr>' +
         '<tr><td class="k">ADJUNTO</td><td class="v">CONSTANCIA + RFC (PDF)</td></tr>' +
-        '<tr><td class="k">RESPUESTA</td><td class="v">“Registro Exitoso”</td></tr>' +
       '</table>' +
     '</td>\n<td></td>\n' +
     '<td class="tarjeta nueva">' +
       '<table role="presentation"><tr>' +
-        '<td style="vertical-align:top;padding-right:6px;">' +
+        '<td style="vertical-align:top;padding-right:8px;">' +
           '<h3>¿Quieres una nueva propuesta?</h3>' +
           '<p>Escanea el QR o <a href="' + escaparHtml_(urlNueva) + '">da clic aquí</a>.</p>' +
           '<p class="min">Mínimo ' + CONFIG.DIAS_ANTICIPACION_MINIMA + ' días hábiles antes del viaje.</p>' +
         '</td>' +
-        '<td class="qr" style="vertical-align:middle;width:58px;"><a href="' + escaparHtml_(urlNueva) + '">' +
-          '<img alt="Código QR para nueva propuesta" src="' + qrDataUri_(urlNueva) + '"></a></td>' +
+        '<td class="qr"><div><a href="' + escaparHtml_(urlNueva) + '">' +
+          '<img alt="Código QR para nueva propuesta" src="' + qrDataUri_(urlNueva) + '"></a></div></td>' +
       '</tr></table>' +
     '</td>\n' +
     '</tr>\n</table>\n';
