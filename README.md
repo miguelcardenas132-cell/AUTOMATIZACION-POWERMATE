@@ -199,6 +199,11 @@ servidor aunque nadie tenga Outlook abierto. Hace falta acceso total al buzón.
 
 ## Mantenimiento
 
+- **Diseño del PDF (noviembre 2026):** encabezado verde, ficha gris, planes con la prima arriba,
+  especificaciones y "Emite tu póliza en 3 pasos". El pie es un espacio reservado
+  (`ALTO_PIE_PDF`) mientras llega su diseño. La versión anterior está en
+  `apps-script/respaldos/APPS_SCRIPT_diseno_PDF_anterior_2026-11-26.js`.
+
 - **Textos del PDF:** `generarHtmlCotizacion_` y las funciones que lo siguen. El PDF debe
   quedar en **1 hoja carta**: después de cualquier cambio, revisa `ejemplos/propuesta_aprobada.pdf`.
 - **Textos del correo:** `construirCorreoAprobado_`, `construirCorreoRechazo_` y los
