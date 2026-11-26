@@ -767,9 +767,9 @@ function escaparHtml_(valor) {
  * Títulos, planes y precios en Montserrat (ASSETS.FUENTE_MONTSERRAT); el
  * resto en Arial (el diseño usa Arimo, que mide igual).
  *
- * La hoja es una tabla de alto completo con dos celdas: arriba encabezado,
- * datos y coberturas; abajo (pegado al fondo) especificaciones, pasos, nota
- * legal y pie, igual que el diseño.
+ * La hoja es una tabla de alto completo con dos celdas: arriba todo el
+ * contenido hasta la nota legal ("Importante"); abajo, pegado al fondo, el
+ * pie. El espacio que sobra queda en blanco entre la nota legal y el pie.
  */
 const PDF = {
   VERDE: '#027370',
@@ -797,10 +797,10 @@ function generarHtmlCotizacion_(data) {
       bloqueFicha_(data) +
       bloqueViaje_(data) +
       bloqueCoberturas_(data) +
-    '</td></tr>\n' +
-    '<tr><td class="marco-abajo">\n' +
       bloqueCierre_(data) +
       bloqueLegal_() +
+    '</td></tr>\n' +
+    '<tr><td class="marco-abajo">\n' +
       bloquePie_() +
     '</td></tr>\n' +
     '</table>\n</body>\n</html>';
