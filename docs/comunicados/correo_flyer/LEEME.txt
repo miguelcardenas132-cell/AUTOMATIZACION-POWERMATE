@@ -1,31 +1,24 @@
 CORREO TIPO FLYER · SEGURO DE VIAJE SENIOR +79
 ==============================================
 
-Los 3 archivos deben estar juntos en la misma carpeta:
+Para enviar solo necesitas estos 4 archivos, juntos en la misma carpeta:
   Correo_flyer_SENIOR79.htm
-  hero.jpg   (foto con el título)
-  logo.png   (logo Seguros Atlas)
+  flyer_1.jpg   (encabezado, pasos, requisitos y aviso)
+  flyer_2.jpg   (botón COTIZA AHORA)
+  flyer_3.jpg   (¿Necesitas factura?)
 
-El botón "COTIZA AHORA" abre el formulario de propuestas.
+El flyer va en imágenes para que se vea igual en cualquier Outlook.
+  - El botón COTIZA AHORA (y la parte de arriba) abren el formulario de propuestas.
+  - La parte de "¿Necesitas factura?" abre un correo a constanciafiscal@segurosatlas.com.mx.
 
-CÓMO ENVIARLO (copiar y pegar)
-------------------------------
-  1. Doble clic en Correo_flyer_SENIOR79.htm: se abre en Edge o Chrome.
-  2. Da clic en cualquier parte de la página, Ctrl+A y Ctrl+C.
-  3. En Outlook: Nuevo correo desde segurodeviaje@ y pega con Ctrl+V en el cuerpo.
-  4. Revisa que se vean la foto y el logo.
+CÓMO ENVIARLO
+-------------
+  1. Clic derecho al ZIP > Extraer todo > Extraer.
+  2. En la carpeta extraída, doble clic en Correo_flyer_SENIOR79.htm (se abre en Edge).
+  3. Clic en la página, Ctrl+A y Ctrl+C.
+  4. Outlook > Nuevo correo desde segurodeviaje@ > clic en el cuerpo > Ctrl+V.
+  5. Asunto sugerido: Cotiza y emite tu póliza en 3 pasos · Seguro de Viaje SENIOR +79
+  6. Mándatelo primero a ti; revisa en Outlook y en el celular y da clic en COTIZA AHORA.
+  7. Destinatarios en CCO.
 
-OTRA FORMA (Outlook de escritorio, si al pegar algo se mueve)
-  1. Archivo > Opciones > Barra de herramientas de acceso rápido.
-  2. "Comandos disponibles en": Comandos que no están en la cinta de opciones.
-  3. Busca "Adjuntar archivo..." / "Insertar archivo" > Agregar > Aceptar.
-  4. En el correo nuevo usa ese botón, elige el .htm y en la flechita de
-     "Insertar" elige "Insertar como texto".
-
-ANTES DE MANDARLO A TODOS
-  - Asunto sugerido: Cotiza y emite tu póliza en 3 pasos · Seguro de Viaje SENIOR +79
-  - Mándatelo primero a ti; ábrelo en Outlook y en el celular.
-  - Da clic en "COTIZA AHORA" para confirmar que abre el formulario.
-  - Destinatarios en CCO.
-
-Nota: en Outlook de escritorio las esquinas pueden verse rectas y la letra en Arial.
+(La carpeta "fuente" y fuente_flyer_html.htm solo sirven para regenerar las imágenes.)
