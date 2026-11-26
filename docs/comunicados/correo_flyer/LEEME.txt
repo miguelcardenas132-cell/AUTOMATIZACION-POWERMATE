@@ -1,0 +1,32 @@
+CORREO TIPO FLYER · SEGURO DE VIAJE SENIOR +79
+==============================================
+
+Archivos (no los separes: el .htm busca las imágenes en la carpeta img):
+  Correo_flyer_SENIOR79.htm
+  img/hero.jpg   (foto con el título "Cotiza y emite tu póliza en 3 pasos")
+  img/logo.png   (logo Seguros Atlas)
+
+El botón "COTIZA AHORA" abre el formulario de propuestas.
+
+CÓMO ENVIARLO
+-------------
+Opción A · Outlook de escritorio (la más fiel al diseño)
+  1. Descomprime la carpeta completa en tu computadora.
+  2. Outlook > Nuevo correo (desde segurodeviaje@).
+  3. Pestaña Insertar > Adjuntar archivo > Examinar este equipo.
+  4. Elige Correo_flyer_SENIOR79.htm. En el botón "Insertar" da clic en la flechita > "Insertar como texto".
+  5. El flyer queda dentro del correo, con las imágenes incrustadas.
+
+Opción B · Copiar y pegar (Outlook web o el nuevo Outlook)
+  1. Abre Correo_flyer_SENIOR79.htm con doble clic (Chrome o Edge).
+  2. Ctrl+A, Ctrl+C y pega (Ctrl+V) en el correo nuevo.
+  3. Revisa que se vean la foto y el logo; si no, usa la opción A.
+
+Antes de mandarlo a todos
+  - Asunto sugerido: Cotiza y emite tu póliza en 3 pasos · Seguro de Viaje SENIOR +79
+  - Mándatelo primero a ti y ábrelo en Outlook y en el celular.
+  - Da clic en "COTIZA AHORA" para confirmar que abre el formulario.
+  - Destinatarios en CCO.
+
+Nota: en Outlook de escritorio las esquinas redondeadas se ven rectas y la letra
+cambia a Arial; es normal en ese programa. El botón sí sale redondo y naranja.
