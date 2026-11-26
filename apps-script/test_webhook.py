@@ -34,6 +34,7 @@ CUERPOS_RECHAZO = {
     "RECHAZADO_FECHAS": "correo_rechazo_fechas.html",
     "RECHAZADO_SIN_ELEGIBLES": "correo_rechazo_sin_elegibles.html",
     "RECHAZADO_EXCESO_ASEGURADOS": "correo_rechazo_exceso_asegurados.html",
+    "RECHAZADO_DESTINO": "correo_rechazo_destino.html",
 }
 
 

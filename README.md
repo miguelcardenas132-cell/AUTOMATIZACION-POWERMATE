@@ -59,6 +59,7 @@ convierte el HTML a PDF y envía el correo.
 | Edad elegible | De 79 años 11 meses a 89 años 11 meses, a la fecha de salida | `EDAD_MINIMA`, `EDAD_MAXIMA`, `EDAD_MESES_ADICIONALES` |
 | Anticipación mínima | 5 días hábiles (lunes a viernes, sin festivos) antes de la salida | `DIAS_ANTICIPACION_MINIMA` |
 | Máximo de asegurados | 5 por propuesta (cupo del formato grupal) | `MAX_ASEGURADOS` |
+| Destino | Se rechaza si incluye un país excluido o en conflicto (Afganistán, Bielorrusia, Crimea, Zaporizhzhia, Kherson, Donetsk, Luhansk, Irán, Israel, Corea del Norte, Rusia, Siria, Venezuela) | `PAISES_EXCLUIDOS` (también en `proceso-emision/Code.gs`) |
 | Vigencia de la propuesta | Envío + 72 horas hábiles (3 días hábiles) | `VIGENCIA_DIAS_HABILES` |
 | Solicitud de emisión | Dentro de la vigencia; fuera de ella se rechaza sola | `CONFIG_EMISION.VIGENCIA` en `proceso-emision/Code.gs` |
 | Primas | Se leen del Sheet (`PrimaMaster`, `PrimaSmart`, `PrimaElite`, `PrimaPremium`); el script no tiene tarifas propias | Fórmulas del Sheet |
@@ -73,6 +74,7 @@ El script evalúa las reglas en este orden, y la primera que aplica define el es
 | Estatus | Cuándo | Resultado |
 |---|---|---|
 | `RECHAZADO_FECHAS` | La fecha de regreso no es posterior a la de salida | Correo de rechazo |
+| `RECHAZADO_DESTINO` | El destino incluye un país excluido o en conflicto | Correo de rechazo |
 | `RECHAZADO_TIEMPO` | Menos de 5 días hábiles antes de la salida | Correo de rechazo |
 | `RECHAZADO_SIN_ELEGIBLES` | Ningún pasajero en el rango de edad | Correo de rechazo |
 | `RECHAZADO_EXCESO_ASEGURADOS` | Más de 5 asegurados elegibles | Correo de rechazo |

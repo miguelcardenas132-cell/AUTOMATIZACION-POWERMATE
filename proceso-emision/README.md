@@ -51,6 +51,14 @@ viernes, sin descontar festivos.
 - Los días se configuran en `CONFIG_EMISION.VIGENCIA.DIAS_HABILES_DESDE_ENVIO` y en
   `VIGENCIA_DIAS_HABILES` del proyecto Cotizaciones 2026. Si se cambia uno, cambiar el otro.
 
+### Destino excluido
+
+Si la respuesta *Destino* incluye un país de `CONFIG_EMISION.PAISES_EXCLUIDOS` (misma lista que
+`CONFIG.PAISES_EXCLUIDOS` de Cotizaciones 2026), la solicitud se rechaza igual que por vigencia:
+un solo correo *Solicitud de emisión no procesada \|\| Destino fuera de cobertura \|\| <folio>*
+al cliente, con copia a segurodeviaje@, Eloisa y Miguel. Se compara sin mayúsculas ni acentos y
+por palabra completa.
+
 ### Datos del TCI / TCC
 
 | Renglón | Origen |

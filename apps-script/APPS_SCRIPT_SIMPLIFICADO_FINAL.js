@@ -128,8 +128,33 @@ const CONFIG = {
     RECHAZADO_TIEMPO: 'RECHAZADO_TIEMPO',
     RECHAZADO_SIN_ELEGIBLES: 'RECHAZADO_SIN_ELEGIBLES',
     RECHAZADO_FECHAS: 'RECHAZADO_FECHAS',
-    RECHAZADO_EXCESO_ASEGURADOS: 'RECHAZADO_EXCESO_ASEGURADOS'
+    RECHAZADO_EXCESO_ASEGURADOS: 'RECHAZADO_EXCESO_ASEGURADOS',
+    RECHAZADO_DESTINO: 'RECHAZADO_DESTINO'
   },
+
+  /**
+   * Destinos fuera de la territorialidad del producto (países excluidos o en
+   * conflicto). Cada fila: nombre que se muestra y las formas en que lo
+   * pueden escribir. Se compara sin mayúsculas ni acentos y por palabra
+   * completa ("Irán" no choca con "Tirana"). Para agregar un país, agrega
+   * una fila; el formulario de emisión usa la misma lista (copiarla también
+   * en CONFIG_EMISION.PAISES_EXCLUIDOS de proceso-emision/Code.gs).
+   */
+  PAISES_EXCLUIDOS: [
+    ['Afganistán', ['afganistan', 'afghanistan']],
+    ['Bielorrusia', ['bielorrusia', 'belarus', 'bielorusia']],
+    ['Crimea', ['crimea']],
+    ['Zaporizhzhia', ['zaporizhzhia', 'zaporiyia', 'zaporozhie', 'zaporiya']],
+    ['Kherson', ['kherson', 'jerson']],
+    ['Donetsk', ['donetsk']],
+    ['Luhansk', ['luhansk', 'lugansk']],
+    ['Irán', ['iran']],
+    ['Israel', ['israel']],
+    ['Corea del Norte', ['corea del norte', 'north korea', 'norcorea']],
+    ['Rusia', ['rusia', 'russia', 'federacion rusa']],
+    ['Siria', ['siria', 'syria']],
+    ['Venezuela', ['venezuela']]
+  ],
 
   // --- Mapeo de columnas (fila 1 de la hoja de respuestas) ---
   COL_PERFIL: 'Perfil',
@@ -503,8 +528,11 @@ function construirDatosSolicitud_(fila, encabezados, valores) {
   // Luego la anticipación, la elegibilidad de pasajeros y, al final, el
   // máximo de asegurados por propuesta.
   let estatus = CONFIG.ESTATUS.APROBADO;
+  const paisExcluido = paisExcluido_(valorOpcional_(encabezados, valores, CONFIG.COL_DESTINO));
   if (duracionDias <= 0) {
     estatus = CONFIG.ESTATUS.RECHAZADO_FECHAS;
+  } else if (paisExcluido) {
+    estatus = CONFIG.ESTATUS.RECHAZADO_DESTINO;
   } else if (diasAnticipacion !== null && diasAnticipacion < CONFIG.DIAS_ANTICIPACION_MINIMA) {
     estatus = CONFIG.ESTATUS.RECHAZADO_TIEMPO;
   } else if (numAsegurados === 0) {
@@ -555,6 +583,7 @@ function construirDatosSolicitud_(fila, encabezados, valores) {
     numAsegurados: numAsegurados,
     listaAsegurados: asegurados.map((a) => a.nombre + ' (' + a.edad + ' años)').join(', '),
     pasajerosExcluidos: pasajerosExcluidos,
+    paisExcluido: paisExcluido,
 
     primaMaster: primaMaster,
     primaSmart: primaSmart,
@@ -1511,12 +1540,14 @@ function construirCorreoRechazo_(data) {
     motivo = motivoRechazoTiempo_(data);
   } else if (data.estatus === CONFIG.ESTATUS.RECHAZADO_EXCESO_ASEGURADOS) {
     motivo = motivoRechazoExcesoAsegurados_(data);
+  } else if (data.estatus === CONFIG.ESTATUS.RECHAZADO_DESTINO) {
+    motivo = motivoRechazoDestino_(data);
   } else {
     motivo = motivoRechazoSinElegibles_(data);
   }
 
   const avisoExcluidos = (data.estatus === CONFIG.ESTATUS.RECHAZADO_SIN_ELEGIBLES ||
-    data.estatus === CONFIG.ESTATUS.RECHAZADO_FECHAS)
+    data.estatus === CONFIG.ESTATUS.RECHAZADO_FECHAS || data.estatus === CONFIG.ESTATUS.RECHAZADO_DESTINO)
     ? ''
     : construirAvisoExcluidos_(data.pasajerosExcluidos);
 
@@ -1539,6 +1570,31 @@ function construirCorreoRechazo_(data) {
     barraPieCorreo_() +
     avisoPrivacidadCorreo_()
   );
+}
+
+function motivoRechazoDestino_(data) {
+  return '<p style="margin:0 0 14px 0;">Tu solicitud para el destino <strong>' + escaparHtml_(data.destino) + '</strong> ' +
+    'no pudo ser procesada porque <strong>' + escaparHtml_(data.paisExcluido) + '</strong> está fuera de la ' +
+    'territorialidad del Seguro de Viaje SENIOR +79.</p>' +
+    '<p style="margin:0 0 14px 0;">El producto no cubre viajes a: <strong>' +
+    CONFIG.PAISES_EXCLUIDOS.map((p) => escaparHtml_(p[0])).join(', ') + '</strong>, ni a cualquier país que se ' +
+    'encuentre en conflicto al momento de solicitar la propuesta.</p>' +
+    '<p style="margin:0;">Si tu viaje incluye otro destino, solicita una nueva propuesta solo con los países cubiertos ' +
+    'o contacta a tu ejecutivo.</p>';
+}
+
+/**
+ * Nombre del país excluido que aparece en el destino capturado, o '' si
+ * ninguno. Compara sin mayúsculas ni acentos y por palabra completa.
+ */
+function paisExcluido_(destino) {
+  const texto = ' ' + String(destino || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, ' ') + ' ';
+  for (let i = 0; i < CONFIG.PAISES_EXCLUIDOS.length; i++) {
+    const [nombre, formas] = CONFIG.PAISES_EXCLUIDOS[i];
+    if (formas.some((forma) => texto.indexOf(' ' + forma + ' ') !== -1)) return nombre;
+  }
+  return '';
 }
 
 function motivoRechazoTiempo_(data) {

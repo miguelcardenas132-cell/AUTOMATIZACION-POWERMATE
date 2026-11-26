@@ -98,6 +98,28 @@ const CONFIG_EMISION = {
     COL_MARCA_TEMPORAL: ['Marca temporal', 'Timestamp'],
     COL_FECHA_SALIDA: ['Fecha de Salida']
   },
+  /**
+   * Destinos fuera de la territorialidad (países excluidos o en conflicto).
+   * Misma lista que CONFIG.PAISES_EXCLUIDOS de Cotizaciones 2026: si se
+   * agrega un país, agregarlo en los dos. Se compara sin mayúsculas ni
+   * acentos y por palabra completa.
+   */
+  PAISES_EXCLUIDOS: [
+    ['Afganistán', ['afganistan', 'afghanistan']],
+    ['Bielorrusia', ['bielorrusia', 'belarus', 'bielorusia']],
+    ['Crimea', ['crimea']],
+    ['Zaporizhzhia', ['zaporizhzhia', 'zaporiyia', 'zaporozhie', 'zaporiya']],
+    ['Kherson', ['kherson', 'jerson']],
+    ['Donetsk', ['donetsk']],
+    ['Luhansk', ['luhansk', 'lugansk']],
+    ['Irán', ['iran']],
+    ['Israel', ['israel']],
+    ['Corea del Norte', ['corea del norte', 'north korea', 'norcorea']],
+    ['Rusia', ['rusia', 'russia', 'federacion rusa']],
+    ['Siria', ['siria', 'syria']],
+    ['Venezuela', ['venezuela']]
+  ],
+
   // Botón "Solicitar nueva propuesta" del correo de rechazo.
   URL_NUEVA_PROPUESTA: 'https://docs.google.com/forms/d/e/1FAIpQLSfPedluEXJ32DFHxBjCRddBUzMgjsgK5OnwfZPluPuR6XHycw/viewform',
 
@@ -216,10 +238,12 @@ function onFormSubmitSolicitudEmision(e) {
     return;
   }
   const solicitud = leerRespuestas_(e.response.getItemResponses());
-  solicitud.vigencia = validarVigencia_(solicitud);
-  const payload = solicitud.vigencia.estado === 'VENCIDA'
-    ? construirRechazoVigencia_(solicitud)
-    : construirCorreos_(solicitud);
+  solicitud.paisExcluido = paisExcluido_(valorPregunta_(solicitud, 'Destino'));
+  solicitud.vigencia = solicitud.paisExcluido ? { estado: 'SIN_VALIDAR', motivo: 'destino excluido' } : validarVigencia_(solicitud);
+  let payload;
+  if (solicitud.paisExcluido) payload = construirRechazoDestino_(solicitud);
+  else if (solicitud.vigencia.estado === 'VENCIDA') payload = construirRechazoVigencia_(solicitud);
+  else payload = construirCorreos_(solicitud);
   aplicarEtapa_(payload);
   enviarAPowerAutomate_(payload);
 }
@@ -294,6 +318,21 @@ function leerRespuestas_(itemResponses) {
   // viene vacío se intenta leer del PDF adjunto.
   solicitud.folio = valor_(solicitud, 'FOLIO') || buscarFolio_(todosLosArchivos);
   return solicitud;
+}
+
+/** Texto de la primera respuesta con ese título ('' si no está). */
+function valorPregunta_(solicitud, titulo) {
+  return ((buscarRespuesta_(solicitud, [titulo]) || {}).texto || '').trim();
+}
+
+/** Nombre del país excluido que aparece en el destino, o '' si ninguno. */
+function paisExcluido_(destino) {
+  const texto = ' ' + normalizar_(destino).replace(/[^a-z0-9]+/g, ' ') + ' ';
+  for (let i = 0; i < CONFIG_EMISION.PAISES_EXCLUIDOS.length; i++) {
+    const fila = CONFIG_EMISION.PAISES_EXCLUIDOS[i];
+    if (fila[1].some(function (forma) { return texto.indexOf(' ' + forma + ' ') !== -1; })) return fila[0];
+  }
+  return '';
 }
 
 function normalizar_(texto) {
@@ -472,27 +511,52 @@ function fechaTexto_(fecha) {
  * convierte, pero no se adjunta a este correo.
  */
 function construirRechazoVigencia_(solicitud) {
+  const v = solicitud.vigencia;
+  const V = CONFIG_EMISION.VIGENCIA;
+  Logger.log('⛔ Solicitud rechazada por vigencia. Folio ' + solicitud.folio + ', venció el ' + fechaTexto_(v.vence));
+  return construirRechazo_(solicitud, 'RECHAZO_VIGENCIA', 'Propuesta fuera de vigencia',
+    'no fue posible procesarla porque la propuesta está fuera de vigencia',
+    'La propuesta era válida hasta el <strong>' + fechaTexto_(v.vence) + '</strong>. La solicitud de emisión debe ' +
+      'enviarse dentro de las <strong>' + (V.DIAS_HABILES_DESDE_ENVIO * 24) + ' horas hábiles</strong> siguientes al envío ' +
+      'de la propuesta (' + fechaTexto_(v.envio) + ').');
+}
+
+/** Destino fuera de la territorialidad: mismo tipo de correo que el rechazo por vigencia. */
+function construirRechazoDestino_(solicitud) {
+  Logger.log('⛔ Solicitud rechazada por destino excluido (' + solicitud.paisExcluido + '). Folio ' + solicitud.folio);
+  return construirRechazo_(solicitud, 'RECHAZO_DESTINO', 'Destino fuera de cobertura',
+    'no fue posible procesarla porque <strong>' + escapar_(solicitud.paisExcluido) + '</strong> está fuera de la ' +
+      'territorialidad del Seguro de Viaje SENIOR +79',
+    'El producto no cubre viajes a: <strong>' + CONFIG_EMISION.PAISES_EXCLUIDOS.map(function (p) { return escapar_(p[0]); })
+      .join(', ') + '</strong>, ni a cualquier país que se encuentre en conflicto al momento de solicitar la propuesta.');
+}
+
+/**
+ * Rechazo de la solicitud de emisión: un solo correo al correo capturado en
+ * el formulario, con copia a Seguro de Viaje y COPIA_SIEMPRE. No sale TCI,
+ * TCC ni expediente. El SLIP va igual en el payload porque el flujo siempre
+ * lo convierte, pero no se adjunta a este correo.
+ */
+function construirRechazo_(solicitud, tipo, motivoAsunto, motivoCorto, detalleHtml) {
   const datos = datosContratante_(solicitud);
   const slip = construirSlip_(solicitud);
   const copia = [CONFIG_EMISION.CORREO_SEGURO_VIAJE].concat(CONFIG_EMISION.COPIA_SIEMPRE)
     .filter(function (c) { return c; }).join(';');
-  Logger.log('⛔ Solicitud rechazada por vigencia. Folio ' + solicitud.folio + ', venció el ' + fechaTexto_(solicitud.vigencia.vence));
   return {
     folio: solicitud.folio,
     slip: { nombreRtf: slip.nombreRtf, nombrePdf: slip.nombrePdf, contenidoBase64: slip.contenidoBase64 },
     correos: [{
-      tipo: 'RECHAZO_VIGENCIA',
+      tipo: tipo,
       para: datos.correo || CONFIG_EMISION.CORREO_SEGURO_VIAJE,
       cc: copia,
-      asunto: 'Solicitud de emisión no procesada || Propuesta fuera de vigencia || ' + solicitud.folio,
-      cuerpoHtml: correoRechazoVigencia_(solicitud, datos),
+      asunto: 'Solicitud de emisión no procesada || ' + motivoAsunto + (solicitud.folio ? ' || ' + solicitud.folio : ''),
+      cuerpoHtml: correoRechazo_(solicitud, datos, motivoCorto, detalleHtml),
       adjuntos: []
     }]
   };
 }
 
-function correoRechazoVigencia_(solicitud, d) {
-  const v = solicitud.vigencia;
+function correoRechazo_(solicitud, d, motivoCorto, detalleHtml) {
   const V = CONFIG_EMISION.VIGENCIA;
   const p = function (html, extra) {
     return '<p style="margin:0 0 ' + (extra === undefined ? 12 : extra) + 'px 0;font-family:' + FUENTE_EMISION +
@@ -508,10 +572,8 @@ function correoRechazoVigencia_(solicitud, d) {
     p('Hola, buen día.') +
     p('Recibimos la solicitud de emisión de la propuesta <strong>' + escapar_(solicitud.folio) + '</strong>' +
       (d.contratante ? ' (contratante: <strong>' + escapar_(d.contratante) + '</strong>)' : '') +
-      ', pero <strong>no fue posible procesarla porque la propuesta está fuera de vigencia</strong>.') +
-    p('La propuesta era válida hasta el <strong>' + fechaTexto_(v.vence) + '</strong>. La solicitud de emisión debe ' +
-      'enviarse dentro de las <strong>' + (V.DIAS_HABILES_DESDE_ENVIO * 24) + ' horas hábiles</strong> siguientes al envío ' +
-      'de la propuesta (' + fechaTexto_(v.envio) + ').') +
+      ', pero <strong>' + motivoCorto + '</strong>.') +
+    p(detalleHtml) +
     p('Para continuar, solicita una nueva propuesta. Recuerda que las propuestas se piden con al menos ' +
       V.DIAS_ANTICIPACION_PROPUESTA + ' días hábiles de anticipación a la salida.', 8) +
     boton +

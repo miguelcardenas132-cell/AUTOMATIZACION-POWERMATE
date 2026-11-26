@@ -46,14 +46,14 @@ const C = __gas.CONFIG;
 const DIA = 24 * 60 * 60 * 1000;
 const hoy = new Date();
 
-function solicitud(diasHastaSalida, diasViaje, pasajeros) {
+function solicitud(diasHastaSalida, diasViaje, pasajeros, destino) {
   const inicio = new Date(hoy.getTime() + diasHastaSalida * DIA);
   const fin = new Date(inicio.getTime() + diasViaje * DIA);
   const encabezados = [C.COL_PERFIL, C.COL_AGENTE_INFO, C.COL_NOMBRE_SOLICITANTE, C.COL_EMAIL_CLIENTE,
     C.COL_CORREO_CC, C.COL_DESTINO, C.COL_FECHA_INICIO, C.COL_FECHA_FIN, C.COL_FOLIO,
     C.COL_PRIMA_MASTER, C.COL_PRIMA_SMART, C.COL_PRIMA_ELITE, C.COL_PRIMA_PREMIUM];
   const valores = ['Soy Agente', 'A-0000 Agente de Ejemplo', 'Nombre de Ejemplo', 'prueba@example.com', '',
-    'Francia', inicio, fin, 'SEGURO_VIAJE_+79-EJEMPLO', 127.32, 145.06, 159.41, 170.58];
+    destino || 'Francia', inicio, fin, 'SEGURO_VIAJE_+79-EJEMPLO', 127.32, 145.06, 159.41, 170.58];
   pasajeros.forEach(function (p, i) {
     encabezados.push('Nombre Asegurado ' + (i + 1), 'Fecha de Nacimiento Asegurado ' + (i + 1));
     valores.push(p[0], new Date(inicio.getFullYear() - p[1], inicio.getMonth(), inicio.getDate()));
@@ -75,7 +75,8 @@ const rechazos = {
   fechas: solicitud(20, -3, tres),
   tiempo: solicitud(2, 10, tres),
   sin_elegibles: solicitud(20, 10, [['Pasajero Excluido', 65], ['Otro Excluido', 71]]),
-  exceso_asegurados: solicitud(20, 10, seis)
+  exceso_asegurados: solicitud(20, 10, seis),
+  destino: solicitud(20, 10, tres, 'Rusia y Finlandia')
 };
 
 fs.mkdirSync(salida, { recursive: true });
